@@ -92,7 +92,10 @@ export const getUserProfile = async (
     isDeluxe: userSnap.data().isDeluxe,
     createdAt: userSnap.data().createdAt,
     subscriptionId: userSnap.data().subscriptionPlan || null,
-    stripeCustomerId: userSnap.data().stripeCustomerId || null,
+    stripeCustomerId:
+      typeof userSnap.data().stripeCustomerId === "object"
+        ? userSnap.data().stripeCustomerId.id
+        : userSnap.data().stripeCustomerId,
   };
 };
 
