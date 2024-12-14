@@ -3,19 +3,18 @@ import { ActivityIndicator, Text, View, Image } from "react-native";
 
 function LoadingScreen() {
   return (
-    <View className="bg-white flex-1 justify-center items-center">
-      {/* App Image */}
+    <View className="items-center justify-center flex-1 bg-white">
       <Image
-        source={require("../assets/images/react-logo.png")} //
+        source={require("../assets/images/icon.png")} //
         style={{ width: 100, height: 100 }}
         className="mb-6"
       />
-      <Text className="text-2xl font-bold text-gray-800 mb-4">Health Chat</Text>
-      <Text className="text-lg text-gray-400 mb-4">
-        Health Chat description
+      <Text className="mb-4 text-2xl font-bold text-gray-800">Health Chat</Text>
+      <Text className="mb-4 text-lg text-gray-400">
+        HealthChat Your AI Health Assistant
       </Text>
       <ActivityIndicator size="large" color="#4F46E5" />
-      <Text className="text-gray-500 mt-4">Loading, please wait...</Text>
+      <Text className="mt-4 text-gray-500">Loading, please wait...</Text>
     </View>
   );
 }

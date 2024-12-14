@@ -71,7 +71,7 @@ export const AuthContextProvider = ({
 
   const handleAuthError = (error: AuthError) => {
     let errorMessage = "An unexpected error occurred";
-    console.log(error);
+    console.log(error.code);
 
     switch (error.code) {
       case "auth/wrong-password":
@@ -89,12 +89,15 @@ export const AuthContextProvider = ({
       case "auth/network-request-failed":
         errorMessage = "Network error. Please check your connection.";
         break;
+      case "auth/invalid-credential":
+        errorMessage = "Invalid credentials. Please try again.";
+        break;
       default:
         errorMessage = error.message || "Authentication failed";
     }
 
     setError(errorMessage);
-    Alert.alert("Authentication Error", errorMessage);
+    // Alert.alert("Authentication Error", errorMessage);
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {

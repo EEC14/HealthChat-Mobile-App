@@ -15,6 +15,7 @@ import { z } from "zod";
 import { Link, useRouter } from "expo-router";
 import { useAuthContext } from "@/context/AuthContext";
 import { MotiView } from "moti";
+import Octicons from "@expo/vector-icons/Octicons";
 
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -25,6 +26,7 @@ type SignInFormData = z.infer<typeof signInSchema>;
 export default function SignIn() {
   const router = useRouter();
   const { login, isLoading, error, clearError } = useAuthContext();
+  console.log(error);
   const {
     control,
     handleSubmit,
@@ -75,8 +77,17 @@ export default function SignIn() {
         </View>
 
         {error && (
-          <View className="relative px-4 py-3 mb-4 text-red-700 bg-red-100 border border-red-400 rounded">
-            <Text className="text-red-100 dark:text-red-300">sad {error}</Text>
+          <View className="relative flex-row items-center px-4 py-3 mb-4 text-red-700 bg-red-100 border border-red-400 rounded">
+            <Text
+              className="flex-1 text-red-900 dark:text-red-300"
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {error}
+            </Text>
+            <TouchableOpacity onPress={() => clearError()} className="mr-2">
+              <Octicons name="x" size={20} color="black" />
+            </TouchableOpacity>
           </View>
         )}
 
@@ -87,7 +98,7 @@ export default function SignIn() {
               control={control}
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 ${
+                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 focus:border-[1px] focus:border-blue-500 ${
                     errors.email ? "border-[1px] border-red-500" : ""
                   }`}
                   placeholder="Email"
@@ -118,7 +129,7 @@ export default function SignIn() {
                   //   borderWidth: 1,
                   //   borderColor: errors.password ? "red" : "transparent",
                   // }}
-                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 ${
+                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 focus:border-[1px] focus:border-blue-500 ${
                     errors.password ? "border-[1px] border-red-500" : ""
                   }`}
                   placeholder="Password"

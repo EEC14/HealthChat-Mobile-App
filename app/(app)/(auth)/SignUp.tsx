@@ -53,7 +53,6 @@ export default function SignUp() {
 
   const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
     if (!termsAccepted) {
-      // You could show an alert or set an error state here
       Alert.alert("Error", "Please accept the terms and conditions");
       return;
     }
