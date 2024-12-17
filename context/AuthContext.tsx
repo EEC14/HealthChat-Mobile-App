@@ -32,6 +32,7 @@ type AuthContextType = {
   register: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
+  fetchUserDetails: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -159,6 +160,22 @@ export const AuthContextProvider = ({
   const clearError = () => {
     setError(null);
   };
+  const fetchUserDetails = async (): Promise<void> => {
+    if (!user || !user.uid) {
+      console.warn("User is not logged in or has no UID.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const updatedProfile = await getUserProfile(user.uid); // Fetch updated user profile
+      setUser(updatedProfile); // Update the user state
+    } catch (error) {
+      handleAuthError(error as AuthError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -171,6 +188,7 @@ export const AuthContextProvider = ({
         isLoading,
         error,
         clearError,
+        fetchUserDetails,
       }}
     >
       {children}

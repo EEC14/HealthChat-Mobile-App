@@ -1,10 +1,11 @@
 import { Timestamp } from "firebase/firestore";
+export type PlanType = "workout" | "diet";
 
 export type Message = {
   id: number;
   text: string;
   isBot: boolean;
-  timestamp: Timestamp;
+  timestamp: Date;
 };
 
 export type Chat = {

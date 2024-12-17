@@ -18,6 +18,7 @@ import { z } from "zod";
 import { Link, useRouter } from "expo-router";
 import { useAuthContext } from "@/context/AuthContext";
 import { MotiView } from "moti";
+import Octicons from "@expo/vector-icons/Octicons";
 
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -97,8 +98,17 @@ export default function SignUp() {
         </View>
 
         {error && (
-          <View className="relative px-4 py-3 mb-4 bg-red-100 border border-red-400 rounded">
-            <Text className="text-[#b91c1c] dark:text-red-300">{error}</Text>
+          <View className="relative flex-row items-center px-4 py-3 mb-4 text-red-700 bg-red-100 border border-red-400 rounded">
+            <Text
+              className="flex-1 text-red-900 dark:text-red-300"
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {error}
+            </Text>
+            <TouchableOpacity onPress={() => clearError()} className="mr-2">
+              <Octicons name="x" size={20} color="black" />
+            </TouchableOpacity>
           </View>
         )}
 

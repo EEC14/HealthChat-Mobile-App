@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -8,6 +9,7 @@ import {
   Pressable,
   ImageBackground,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -37,15 +39,16 @@ const GrainBackground = () => (
       left: 0,
       right: 0,
       bottom: 0,
-      opacity: 0.09,
+      opacity: 0.13,
       zIndex: -1,
     }}
   />
 );
 const Subscription: React.FC = () => {
+  const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuthContext();
-  console.log(user);
+  const { user, fetchUserDetails } = useAuthContext();
+
   const [selectedPlan, setSelectedPlan] = useState<"Pro" | "Deluxe">("Pro");
 
   // Animated values for various interactions
@@ -160,8 +163,25 @@ const Subscription: React.FC = () => {
     );
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchUserDetails(); // Refresh user details
+    } catch (error) {
+      console.error("Error refreshing user details:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View
         style={{
           flex: 1,
