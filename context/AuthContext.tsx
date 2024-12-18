@@ -15,7 +15,6 @@ import {
   useState,
 } from "react";
 import { UserProfile } from "@/types";
-import { Alert } from "react-native";
 
 // Custom error handling type
 type AuthError = {
