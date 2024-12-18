@@ -109,7 +109,7 @@ const Subscription: React.FC = () => {
       setLoading(false);
     }
   };
-  // Interaction handlers
+
   const handlePlanSelect = (plan: "Pro" | "Deluxe") => {
     setSelectedPlan(plan);
     crownScale.value = withSpring(1.2);
