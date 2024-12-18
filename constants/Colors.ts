@@ -1,26 +1,32 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    textPrimary: "#333333", // Jet
+    textSecondary: "#999999", // Battleship Gray
+    background: "#FFFFFF", // White
+    surface: "#EEEEEE", // Antiflash White
+    primary: "#1E3A8A", // Marian Blue
+    secondary: "#E0F2FF", // Alice Blue
+    iconDefault: "#687076", // Neutral gray
+    iconActive: "#1E3A8A", // Marian Blue
+    tabIconDefault: "#687076", // Neutral gray
+    tabIconSelected: "#E0F2FF", // Alice Blue
+    border: "#CCCCCC", // Neutral gray for borders
+    inputBackground: "#FFFFFF", // White for inputs
+    placeholderText: "#999999", // Battleship Gray
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    textPrimary: "#ECEDEE", // Light gray for text
+    textSecondary: "#9BA1A6", // Neutral gray
+    background: "#151718", // Dark gray
+    surface: "#1E1E1E", // Slightly lighter dark gray
+    primary: "#FFFFFF", // White for primary elements
+    secondary: "#1E3A8A", // Marian Blue for accents
+    iconDefault: "#9BA1A6", // Neutral gray
+    iconActive: "#FFFFFF", // White for active icons
+    tabIconDefault: "#9BA1A6", // Neutral gray
+    tabIconSelected: "#FFFFFF", // White
+    border: "#333333", // Jet for borders
+    inputBackground: "#151718", // Dark gray for inputs
+    placeholderText: "#9BA1A6", // Neutral gray for placeholders
   },
 };
