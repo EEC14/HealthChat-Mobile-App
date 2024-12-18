@@ -27,3 +27,6 @@ export interface UserProfile {
   stripeCustomerId?: string;
   subscriptionId?: string;
 }
+
+export type PlanType = "workout" | "diet";
+export type StepType = "select" | "questionnaire" | "plan";
