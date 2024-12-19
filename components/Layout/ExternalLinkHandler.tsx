@@ -7,8 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   SafeAreaView,
-  Platform,
-  StatusBar,
+  Image,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { AntDesign } from "@expo/vector-icons";
@@ -45,6 +44,26 @@ const ExternalLinkHandler: React.FC<ExternalLinkHandlerProps> = ({
           {loading && (
             <ActivityIndicator style={styles.loader} color="#2575fc" />
           )}
+          <View
+            style={{
+              backgroundColor: "#1E3A8A",
+              borderRadius: 8,
+              width: 36,
+              height: 36,
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: 8,
+            }}
+          >
+            <Image
+              style={{
+                width: 26,
+                height: 26,
+                resizeMode: "contain",
+              }}
+              source={require("@/assets/images/icon.png")}
+            />
+          </View>
         </View>
         <WebView
           source={{ uri: url }}

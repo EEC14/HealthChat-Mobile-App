@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Animated,
   RefreshControl,
+  Pressable,
 } from "react-native";
 
 import { db } from "@/firebase";
@@ -22,6 +23,7 @@ import { Chat } from "@/types";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { FontAwesome } from "@expo/vector-icons";
+import ExternalLinkHandler from "@/components/Layout/ExternalLinkHandler";
 
 const SkeletonItem = ({ theme }: { theme: "light" | "dark" }) => {
   const fadeAnim = React.useRef(new Animated.Value(0.5)).current;
@@ -80,6 +82,9 @@ const SkeletonItem = ({ theme }: { theme: "light" | "dark" }) => {
 };
 
 const SharedChatsList = () => {
+  const [webviewVisible, setWebviewVisible] = useState(false);
+  const [webviewUrl, setWebviewUrl] = useState("");
+
   const { theme } = useTheme();
   const currentColors = Colors[theme];
 
@@ -303,74 +308,120 @@ const SharedChatsList = () => {
     </View>
   );
 
-  const renderChatItem = ({ item }: { item: Chat }) => (
-    <View
-      style={[
-        styles.chatItem,
-        {
-          backgroundColor: currentColors.surface,
-          borderColor: currentColors.border,
-        },
-      ]}
-    >
-      <View style={styles.chatHeader}>
-        <View style={styles.chatTitleContainer}>
-          <Text
-            style={[styles.chatTitle, { color: currentColors.textPrimary }]}
-          >
-            Shared Chat
-          </Text>
-          <Text
-            style={[
-              styles.chatSubtitle,
-              { color: currentColors.textSecondary },
-            ]}
-          >
-            Created on {new Date(item.createdAt?.toDate()).toLocaleDateString()}
-          </Text>
-        </View>
-        <View style={styles.voteSection}>
-          <View style={styles.voteInfo}>
-            <AntDesign name="like2" size={16} color={"green"} />
-            <Text
-              style={[styles.voteCount, { color: currentColors.textSecondary }]}
-            >
-              {item.upvotes}
-            </Text>
-          </View>
-          <View style={styles.voteInfo}>
-            <AntDesign name="dislike2" size={16} color={"red"} />
-            <Text
-              style={[styles.voteCount, { color: currentColors.textSecondary }]}
-            >
-              {item.downvotes}
-            </Text>
-          </View>
-        </View>
-      </View>
-      <Link
-        href={`https://curious-cranachan-ab9992.netlify.app/shared/${item.id}`}
-      >
-        <View
-          style={[
-            styles.viewChatButton,
-            { backgroundColor: currentColors.primary },
-          ]}
-        >
-          <Text
-            style={[styles.viewChatText, { color: currentColors.secondary }]}
-          >
-            View Full Chat
-          </Text>
-          <FontAwesome
-            name="external-link"
-            size={24}
-            color={currentColors.secondary}
+  function renderChatItem({
+    item,
+    webviewVisible,
+    setWebviewVisible,
+    webviewUrl,
+    setWebviewUrl,
+  }: {
+    item: Chat;
+    webviewVisible: boolean;
+    setWebviewVisible: React.Dispatch<React.SetStateAction<boolean>>;
+    webviewUrl: string;
+    setWebviewUrl: React.Dispatch<React.SetStateAction<string>>;
+  }) {
+    const handleOpenLink = (url: string) => {
+      setWebviewUrl(url);
+      setWebviewVisible(true);
+    };
+
+    const closeWebview = () => {
+      setWebviewVisible(false);
+      setWebviewUrl("");
+    };
+    return (
+      <>
+        <View>
+          <ExternalLinkHandler
+            visible={webviewVisible}
+            url={webviewUrl}
+            onClose={closeWebview}
           />
         </View>
-      </Link>
-    </View>
-  );
+        <View
+          style={[
+            styles.chatItem,
+            {
+              backgroundColor: currentColors.surface,
+              borderColor: currentColors.border,
+            },
+          ]}
+        >
+          <View style={styles.chatHeader}>
+            <View style={styles.chatTitleContainer}>
+              <Text
+                style={[styles.chatTitle, { color: currentColors.textPrimary }]}
+              >
+                Shared Chat
+              </Text>
+              <Text
+                style={[
+                  styles.chatSubtitle,
+                  { color: currentColors.textSecondary },
+                ]}
+              >
+                Created on{" "}
+                {new Date(item.createdAt?.toDate()).toLocaleDateString()}
+              </Text>
+            </View>
+            <View style={styles.voteSection}>
+              <View style={styles.voteInfo}>
+                <AntDesign name="like2" size={16} color={"green"} />
+                <Text
+                  style={[
+                    styles.voteCount,
+                    { color: currentColors.textSecondary },
+                  ]}
+                >
+                  {item.upvotes}
+                </Text>
+              </View>
+              <View style={styles.voteInfo}>
+                <AntDesign name="dislike2" size={16} color={"red"} />
+                <Text
+                  style={[
+                    styles.voteCount,
+                    { color: currentColors.textSecondary },
+                  ]}
+                >
+                  {item.downvotes}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <Pressable
+            onPress={() =>
+              handleOpenLink(
+                `https://healthchat-patient.esbhealthcare.com/shared/${item.id}`
+              )
+            }
+          >
+            <View
+              style={[
+                styles.viewChatButton,
+                { backgroundColor: currentColors.primary },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.viewChatText,
+                  { color: currentColors.secondary },
+                ]}
+              >
+                View Full Chat
+              </Text>
+              <FontAwesome
+                name="external-link"
+                size={24}
+                color={currentColors.secondary}
+              />
+            </View>
+          </Pressable>
+        </View>
+      </>
+    );
+  }
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -398,7 +449,15 @@ const SharedChatsList = () => {
       data={chats}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={renderHeader}
-      renderItem={renderChatItem}
+      renderItem={({ item }) =>
+        renderChatItem({
+          item,
+          webviewVisible,
+          setWebviewUrl,
+          webviewUrl,
+          setWebviewVisible,
+        })
+      }
       contentContainerStyle={[
         styles.listContainer,
         { backgroundColor: currentColors.background },
