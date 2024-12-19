@@ -47,7 +47,7 @@ const CompanyInfo = () => {
       marginRight: 8,
     },
     rightSection: {
-      backgroundColor: currentColors.surface,
+      backgroundColor: currentColors.background,
       borderRadius: 8,
       width: 36,
       height: 36,

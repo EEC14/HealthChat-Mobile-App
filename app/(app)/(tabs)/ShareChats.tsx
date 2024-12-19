@@ -80,7 +80,7 @@ const SkeletonItem = ({ theme }: { theme: "light" | "dark" }) => {
 };
 
 const SharedChatsList = () => {
-  const { theme } = useTheme(); // Get current theme from ThemeContext
+  const { theme } = useTheme();
   const currentColors = Colors[theme];
 
   const [refreshing, setRefreshing] = useState(false);
@@ -502,6 +502,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 64,
+    flex: 1,
     paddingHorizontal: 12,
   },
   errorContainer: {

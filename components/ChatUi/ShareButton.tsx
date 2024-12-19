@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons"; // Icons for the buttons
 import { Message } from "@/types";
 import { useAuthContext } from "@/context/AuthContext";
 import { saveChatToDatabase } from "@/firebase";
+import { useTheme } from "@/context/ThemeContext";
+import { Colors } from "@/constants/Colors";
 
 const ShareButton = ({ messages }: { messages: Message[] }) => {
   const { user } = useAuthContext();
@@ -86,9 +88,10 @@ const ShareButton = ({ messages }: { messages: Message[] }) => {
   return (
     <TouchableOpacity
       onPress={handleShare}
-      disabled={isSharing || messages.length === 0}
+      disabled={isSharing || messages.length <= 1}
       style={[
         styles.shareButton,
+        { backgroundColor: "#1E1E1E" },
         (isSharing || messages.length === 1) && styles.disabledButton,
       ]}
     >
@@ -103,7 +106,6 @@ const ShareButton = ({ messages }: { messages: Message[] }) => {
 
 const styles = StyleSheet.create({
   shareButton: {
-    backgroundColor: "#1e3a8a",
     padding: 10,
     borderRadius: 10,
     shadowColor: "#000",
@@ -112,7 +114,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   shareContainer: {
     width: "100%",

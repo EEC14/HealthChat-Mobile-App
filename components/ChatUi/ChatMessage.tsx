@@ -1,7 +1,8 @@
 import AntDesign from "@expo/vector-icons/AntDesign";
 import React from "react";
 import { View, Text, Image } from "react-native";
-
+import { useTheme } from "@/context/ThemeContext";
+import { Colors } from "@/constants/Colors";
 interface ChatMessageProps {
   message: {
     text: string;
@@ -11,6 +12,8 @@ interface ChatMessageProps {
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+  const { theme } = useTheme();
+  const currentColors = Colors[theme];
   return (
     <View
       style={{
@@ -28,7 +31,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       >
         <View
           style={{
-            backgroundColor: message.isBot ? "#dbeafe" : "#1e3a8a",
+            backgroundColor: message.isBot ? "#1e3a8a" : "#1e3a8a",
             padding: 8,
             borderRadius: 12,
             marginHorizontal: 5,
@@ -45,19 +48,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         </View>
         <View
           style={{
-            backgroundColor: message.isBot ? "white" : "#1e3a8a",
+            backgroundColor: message.isBot ? currentColors.surface : "#1e3a8a",
             padding: 12,
             borderRadius: 16,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
           }}
         >
           <Text
             style={{
-              color: message.isBot ? "#1f2937" : "white",
+              color: message.isBot ? currentColors.textPrimary : "white",
               fontSize: 16,
             }}
           >
@@ -65,7 +63,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           </Text>
           <Text
             style={{
-              color: message.isBot ? "#9ca3af" : "#93c5fd",
+              color: message.isBot ? currentColors.textSecondary : "#93c5fd",
               fontSize: 12,
               marginTop: 5,
             }}

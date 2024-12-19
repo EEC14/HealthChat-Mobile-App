@@ -16,7 +16,8 @@ import { Link, useRouter } from "expo-router";
 import { useAuthContext } from "@/context/AuthContext";
 import { MotiView } from "moti";
 import Octicons from "@expo/vector-icons/Octicons";
-
+import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/context/ThemeContext";
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -24,6 +25,8 @@ const signInSchema = z.object({
 
 type SignInFormData = z.infer<typeof signInSchema>;
 export default function SignIn() {
+  const { theme } = useTheme();
+  const currentColors = Colors[theme];
   const router = useRouter();
   const { login, isLoading, error, clearError } = useAuthContext();
   console.log(error);
@@ -47,15 +50,15 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="justify-center flex-1 px-4 "
-      style={{}}
+      className="justify-center flex-1 px-4"
+      style={{ backgroundColor: currentColors.background }}
     >
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ delay: 300 }}
         style={{
-          backgroundColor: "rgba(255,255,255,1)",
+          backgroundColor: currentColors.surface,
           borderRadius: 20,
           padding: 20,
           gap: 20,
@@ -67,17 +70,23 @@ export default function SignIn() {
         }}
       >
         <View className="items-center gap-2">
-          <AntDesign name="login" size={44} color="lightblue" />
-          <Text className="mt-2 text-2xl font-bold text-gray-800 dark:text-gray-100">
+          <AntDesign name="login" size={44} color={currentColors.textPrimary} />
+          <Text
+            className="mt-2 text-2xl font-bold"
+            style={{ color: currentColors.textPrimary }}
+          >
             Welcome Back
           </Text>
-          <Text className="text-center text-gray-600 dark:text-gray-300">
+          <Text
+            className="text-center "
+            style={{ color: currentColors.textSecondary }}
+          >
             Sign in to continue
           </Text>
         </View>
 
         {error && (
-          <View className="relative flex-row items-center px-4 py-3 mb-4 text-red-700 bg-red-100 border border-red-400 rounded">
+          <View className="relative flex-row items-center px-4 py-3 mb-4 text-red-700 bg-red-500 border border-red-400 rounded">
             <Text
               className="flex-1 text-red-900 dark:text-red-300"
               numberOfLines={2}
@@ -86,7 +95,7 @@ export default function SignIn() {
               {error}
             </Text>
             <TouchableOpacity onPress={() => clearError()} className="mr-2">
-              <Octicons name="x" size={20} color="black" />
+              <Octicons name="x" size={20} color={currentColors.textPrimary} />
             </TouchableOpacity>
           </View>
         )}
@@ -98,11 +107,16 @@ export default function SignIn() {
               control={control}
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 focus:border-[1px] focus:border-blue-500 ${
+                  style={{
+                    backgroundColor: currentColors.inputBackground,
+                    color: currentColors.textPrimary,
+                    // borderWidth: 1,
+                  }}
+                  className={`px-6 py-4 rounded-lg focus:border-[1px] border- focus:border-blue-500 ${
                     errors.email ? "border-[1px] border-red-500" : ""
                   }`}
                   placeholder="Email"
-                  placeholderTextColor="#a1a1aa"
+                  placeholderTextColor={currentColors.placeholderText}
                   value={value}
                   onChangeText={onChange}
                   keyboardType="email-address"
@@ -123,13 +137,11 @@ export default function SignIn() {
               control={control}
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  // onFocus={}
-                  // style={{
-                  //   borderStyle: "solid",
-                  //   borderWidth: 1,
-                  //   borderColor: errors.password ? "red" : "transparent",
-                  // }}
-                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 focus:border-[1px] focus:border-blue-500 ${
+                  style={{
+                    backgroundColor: currentColors.inputBackground,
+                    color: currentColors.textPrimary,
+                  }}
+                  className={`px-6 py-4 rounded-lg focus:border-[1px] focus:border-blue-500 ${
                     errors.password ? "border-[1px] border-red-500" : ""
                   }`}
                   placeholder="Password"
@@ -150,10 +162,8 @@ export default function SignIn() {
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
             disabled={!isValid || isLoading}
-            className={`py-4 rounded-lg items-center justify-center ${
-              isValid && !isLoading
-                ? "bg-blue-600 dark:bg-blue-500"
-                : "bg-gray-400 dark:bg-gray-600"
+            className={`py-4 rounded-lg items-center justify-center bg-[#1E3A8A] ${
+              (!isValid || isLoading) && "opacity-35"
             }`}
           >
             {isLoading ? (
@@ -168,7 +178,9 @@ export default function SignIn() {
 
         <View>
           <Link href="/SignUp" className="text-center">
-            <Text>Don't have an account? </Text>
+            <Text style={{ color: currentColors.textPrimary }}>
+              Don't have an account?{" "}
+            </Text>
             <Text className="text-center text-blue-600 dark:text-blue-400">
               Sign Up
             </Text>

@@ -1,3 +1,5 @@
+import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/context/ThemeContext";
 import Feather from "@expo/vector-icons/Feather";
 import React from "react";
 import {
@@ -21,6 +23,8 @@ export default function ChatInput({
   handleSubmit,
   isLoading,
 }: ChatInputProps) {
+  const { theme } = useTheme();
+  const currentColors = Colors[theme];
   return (
     <View
       style={{
@@ -28,7 +32,6 @@ export default function ChatInput({
         flex: 1,
         gap: 4,
         alignItems: "stretch",
-        backgroundColor: "white",
       }}
     >
       <TextInput
@@ -38,10 +41,11 @@ export default function ChatInput({
         placeholderTextColor="#9ca3af"
         style={{
           flex: 1,
-          backgroundColor: "#f3f4f7",
+          backgroundColor: currentColors.inputBackground,
           borderWidth: 1,
-          borderColor: "#e5e7eb",
+          borderColor: currentColors.border,
           borderRadius: 10,
+          color: currentColors.textPrimary,
           paddingHorizontal: 15,
           paddingVertical: 10,
           fontSize: 16,
@@ -51,7 +55,7 @@ export default function ChatInput({
         onPress={handleSubmit}
         disabled={!input.trim() || isLoading}
         style={{
-          backgroundColor: "#1e3a8a",
+          backgroundColor: "#1E3A8A",
           borderRadius: 10,
           justifyContent: "center",
           alignItems: "center",
@@ -60,7 +64,7 @@ export default function ChatInput({
         }}
       >
         {isLoading ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator color="white" size={22} />
         ) : (
           <Feather name="send" size={22} color="white" />
         )}

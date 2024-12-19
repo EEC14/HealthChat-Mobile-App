@@ -14,12 +14,12 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
     <TouchableOpacity
       onPress={() => router.replace("/Subscription")}
       style={{
+        marginTop: 6,
         backgroundColor: "#dbeafe",
         borderWidth: 1,
         borderColor: "#bfdbfe",
         borderRadius: 14,
         padding: 8,
-        marginBottom: 6,
         marginHorizontal: 10,
         flexDirection: "row",
         alignItems: "center",

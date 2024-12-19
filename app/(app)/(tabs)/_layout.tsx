@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { StatusBar } from "expo-status-bar";
 import { Tabs } from "expo-router";
@@ -32,7 +32,8 @@ export default function TabLayout() {
             styles.tabBar,
             {
               backgroundColor: currentColors.surface,
-              borderTopColor: currentColors.border,
+              borderTopWidth: 1,
+              borderColor: currentColors.border,
             },
           ],
           tabBarPosition: "bottom",
@@ -51,28 +52,18 @@ export default function TabLayout() {
             height: 2,
             backgroundColor: currentColors.primary,
           },
+          headerShadowVisible: false,
           headerShown: true,
-          headerStyle: [
-            styles.headerStyle,
-            {
-              backgroundColor: currentColors.background,
-              borderBottomColor: currentColors.border,
-            },
-          ],
+          headerStyle: {
+            backgroundColor: currentColors.surface,
+          },
           headerTitleStyle: [
             styles.headerTitleStyle,
             { color: currentColors.textPrimary },
           ],
           headerTitleAlign: "center",
           headerTintColor: currentColors.textPrimary,
-          headerBackground: () => (
-            <View
-              style={[
-                styles.headerBackground,
-                { backgroundColor: currentColors.background },
-              ]}
-            />
-          ),
+
           headerRight: () => <HeaderRight />,
           headerLeft: () => <CompanyInfo />,
         })}
@@ -135,25 +126,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 60,
-    borderTopWidth: 1,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: -2 },
-    shadowRadius: 10,
-    elevation: 5,
+    ...Platform.select({
+      android: {
+        height: 60,
+      },
+    }),
   },
   tabLabel: {
     fontSize: 12,
     fontWeight: "600",
-    marginBottom: 5,
-  },
-  headerStyle: {
-    shadowColor: "transparent",
-    elevation: 0,
-    borderBottomWidth: 1,
   },
   headerTitleStyle: {
     fontSize: 18,

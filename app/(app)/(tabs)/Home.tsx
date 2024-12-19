@@ -25,7 +25,12 @@ import ShareButton from "@/components/ChatUi/ShareButton";
 import { useAuthContext } from "@/context/AuthContext";
 import { Message } from "@/types";
 
+import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/context/ThemeContext";
+
 export default function Home() {
+  const { theme } = useTheme();
+  const currentColors = Colors[theme];
   const { user } = useAuthContext();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -45,7 +50,6 @@ export default function Home() {
 
   const loadRemainingMessages = useCallback(async () => {
     const remaining = await getRemainingMessages(user.isPro, user.isDeluxe);
-    console.log("Remaining messages:", remaining);
     setRemainingMessages(remaining);
   }, [user.isPro]);
 
@@ -115,13 +119,17 @@ export default function Home() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: currentColors.background }}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 20}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 36 : 26}
         style={{ flex: 1 }}
       >
-        <View style={{ flex: 1, paddingBottom: 66 }}>
+        <View
+          style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
+        >
           {!user.isPro && !user.isDeluxe && remainingMessages <= 20 && (
             <ChatLimit remainingMessages={remainingMessages} />
           )}
@@ -132,7 +140,9 @@ export default function Home() {
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => <ChatMessage message={item} />}
             ListHeaderComponent={
-              <Text style={[styles.card, { backgroundColor: "#fff8b0a3" }]}>
+              <Text
+                style={[styles.card, { backgroundColor: currentColors.warn }]}
+              >
                 <View style={styles.highlight}>
                   <Text style={{ fontSize: 12 }}>
                     ⚠️ For informational purposes only. Not a substitute for
@@ -149,13 +159,14 @@ export default function Home() {
           />
           <View
             style={{
+              backgroundColor: currentColors.background,
               padding: 10,
               gap: 4,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               borderTopWidth: 1,
-              borderTopColor: "#e5e7eb",
+              borderTopColor: currentColors.border,
             }}
           >
             <ShareButton messages={messages} />

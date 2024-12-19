@@ -12,6 +12,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 
 import { generatePlan, generatePlanQuestions } from "@/utils/OpenAi";
@@ -23,7 +24,15 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from "@expo/vector-icons/AntDesign";
 
+import { useAuthContext } from "@/context/AuthContext";
+
+import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/context/ThemeContext";
+
 const CarePlan: React.FC = () => {
+  const { user } = useAuthContext();
+  const { theme } = useTheme();
+  const currentColors = Colors[theme];
   const [step, setStep] = useState<StepType>("select");
   const [goals, setGoals] = useState("");
   const [planType, setPlanType] = useState<PlanType | null>(null);
@@ -72,7 +81,15 @@ const CarePlan: React.FC = () => {
   }, []);
 
   const renderHeader = () => (
-    <View style={styles.header}>
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: currentColors.surface,
+          borderBottomColor: currentColors.border,
+        },
+      ]}
+    >
       {step !== "select" && (
         <TouchableOpacity
           onPress={() => {
@@ -84,10 +101,14 @@ const CarePlan: React.FC = () => {
           }}
           style={styles.backButton}
         >
-          <AntDesign name="arrowleft" size={20} color="#000" />
+          <AntDesign
+            name="arrowleft"
+            size={20}
+            color={currentColors.textPrimary}
+          />
         </TouchableOpacity>
       )}
-      <Text style={styles.headerTitle}>
+      <Text style={[styles.headerTitle, { color: currentColors.textPrimary }]}>
         {step === "select" && "Choose a Plan"}
         {step === "questionnaire" &&
           `${planType === "workout" ? "Fitness" : "Diet"} Questions`}
@@ -103,11 +124,12 @@ const CarePlan: React.FC = () => {
               paddingVertical: 3,
               backgroundColor: "#c2e0ff",
               borderRadius: 4,
+              alignItems: "center",
             }}
             onPress={() => setIsResetModalVisible(true)}
           >
             <Text>Reset</Text>
-            <AntDesign name="reload1" size={20} color="#007BFF" />
+            <AntDesign name="reload1" size={17} color="#007BFF" />
           </TouchableOpacity>
         )}
       </View>
@@ -121,27 +143,64 @@ const CarePlan: React.FC = () => {
       animationType="slide"
       onRequestClose={() => setIsResetModalVisible(false)}
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.resetModalContent}>
-          <Text style={styles.resetModalTitle}>Reset Generator</Text>
-          <Text style={styles.resetModalSubtitle}>
+      <View style={[styles.modalContainer]}>
+        <View
+          style={[
+            styles.resetModalContent,
+            { backgroundColor: currentColors.surface },
+          ]}
+        >
+          <Text
+            style={[
+              styles.resetModalTitle,
+              { color: currentColors.textPrimary },
+            ]}
+          >
+            Reset Generator
+          </Text>
+          <Text
+            style={[
+              styles.resetModalSubtitle,
+              { color: currentColors.textSecondary },
+            ]}
+          >
             Are you sure you want to reset? All progress will be lost.
           </Text>
           <View style={styles.resetModalButtons}>
             <TouchableOpacity
-              style={styles.resetModalCancelButton}
+              style={[
+                styles.resetModalCancelButton,
+                { backgroundColor: currentColors.secondary },
+              ]}
               onPress={() => setIsResetModalVisible(false)}
             >
-              <Text style={styles.resetModalCancelButtonText}>Cancel</Text>
+              <Text
+                style={[
+                  styles.resetModalCancelButtonText,
+                  { color: currentColors.textPrimary },
+                ]}
+              >
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.resetModalConfirmButton}
+              style={[
+                styles.resetModalConfirmButton,
+                { backgroundColor: currentColors.primary },
+              ]}
               onPress={() => {
                 resetPlan();
                 setIsResetModalVisible(false);
               }}
             >
-              <Text style={styles.resetModalConfirmButtonText}>Reset</Text>
+              <Text
+                style={[
+                  styles.resetModalConfirmButtonText,
+                  { color: currentColors.background },
+                ]}
+              >
+                Reset
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -152,8 +211,13 @@ const CarePlan: React.FC = () => {
   const renderContent = () => {
     if (step === "select") {
       return (
-        <View style={styles.selectContainer}>
-          <View style={[styles.card, { backgroundColor: "#fff8b0a3" }]}>
+        <View
+          style={[
+            styles.selectContainer,
+            { backgroundColor: currentColors.background },
+          ]}
+        >
+          <View style={[styles.card, { backgroundColor: currentColors.warn }]}>
             <View style={styles.highlight}>
               <Text>
                 ⚠️ This plan is for informational purposes only. Consult with
@@ -167,13 +231,35 @@ const CarePlan: React.FC = () => {
               setPlanType("workout");
               setStep("questionnaire");
             }}
-            style={styles.card}
+            style={[
+              styles.card,
+              {
+                backgroundColor: currentColors.surface,
+                borderWidth: 1,
+                borderColor: currentColors.border,
+              },
+            ]}
           >
             <View style={styles.iconContainer}>
-              <MaterialCommunityIcons name="dumbbell" size={24} color="#000" />
+              <MaterialCommunityIcons
+                name="dumbbell"
+                size={24}
+                color={currentColors.textPrimary}
+              />
             </View>
-            <Text style={styles.cardTitle}>Workout Plan</Text>
-            <Text style={styles.cardSubtitle}>Customized exercise routine</Text>
+            <Text
+              style={[styles.cardTitle, { color: currentColors.textPrimary }]}
+            >
+              Workout Plan
+            </Text>
+            <Text
+              style={[
+                styles.cardSubtitle,
+                { color: currentColors.textSecondary },
+              ]}
+            >
+              Customized exercise routine
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -181,13 +267,35 @@ const CarePlan: React.FC = () => {
               setPlanType("diet");
               setStep("questionnaire");
             }}
-            style={styles.card}
+            style={[
+              styles.card,
+              {
+                backgroundColor: currentColors.surface,
+                borderWidth: 1,
+                borderColor: currentColors.border,
+              },
+            ]}
           >
             <View style={styles.iconContainer}>
-              <FontAwesome5 name="utensils" size={24} color="#000" />
+              <FontAwesome5
+                name="utensils"
+                size={24}
+                color={currentColors.textPrimary}
+              />
             </View>
-            <Text style={styles.cardTitle}>Diet Plan</Text>
-            <Text style={styles.cardSubtitle}>Personalized meal plan</Text>
+            <Text
+              style={[styles.cardTitle, { color: currentColors.textPrimary }]}
+            >
+              Diet Plan
+            </Text>
+            <Text
+              style={[
+                styles.cardSubtitle,
+                { color: currentColors.textSecondary },
+              ]}
+            >
+              Personalized meal plan
+            </Text>
           </TouchableOpacity>
         </View>
       );
@@ -195,40 +303,70 @@ const CarePlan: React.FC = () => {
 
     if (step === "questionnaire") {
       return (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContainer,
+            { backgroundColor: currentColors.background, flex: 1 },
+          ]}
+        >
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 80}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 80}
             style={{ flex: 1 }}
           >
             {questions.length === 0 ? (
-              <View style={styles.questionContainer}>
-                <Text style={styles.label}>
+              <View style={[styles.questionContainer]}>
+                <Text
+                  style={[styles.label, { color: currentColors.textPrimary }]}
+                >
                   What are your {planType === "workout" ? "fitness" : "dietary"}{" "}
                   goals?
                 </Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    { color: currentColors.textPrimary },
+                  ]}
+                  placeholderTextColor={currentColors.textSecondary}
                   placeholder={`Describe your ${planType} goals...`}
                   value={goals}
                   onChangeText={setGoals}
                   multiline
                 />
                 <TouchableOpacity
-                  style={[styles.button, goals.trim() ? {} : styles.disabled]}
+                  style={[
+                    styles.button,
+                    { backgroundColor: "#1E3A8A" },
+                    goals.trim() ? {} : styles.disabled,
+                  ]}
                   onPress={handleGoalsSubmit}
-                  disabled={!goals.trim()}
+                  disabled={!goals.trim() || isLoading}
                 >
-                  <Text style={styles.buttonText}>Continue</Text>
+                  {isLoading && (
+                    <ActivityIndicator color={currentColors.textPrimary} />
+                  )}
+                  <Text style={styles.buttonText}>
+                    {isLoading ? "Generating Questions..." : "Continue"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : (
               questions.map((question, index) => (
                 <View key={index} style={styles.questionContainer}>
-                  <Markdown style={markdownStyles}>{`${question}`}</Markdown>
+                  {/* <Markdown style={markdownStyles}>{`${question}`}</Markdown> */}
+                  <Text style={{ color: currentColors.textPrimary }}>
+                    {question}
+                  </Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      {
+                        color: currentColors.textPrimary,
+                        borderColor: currentColors.border,
+                      },
+                    ]}
                     placeholder="Your answer..."
+                    placeholderTextColor={currentColors.textSecondary}
                     value={answers[question] || ""}
                     onChangeText={(text) =>
                       setAnswers((prev) => ({ ...prev, [question]: text }))
@@ -242,13 +380,20 @@ const CarePlan: React.FC = () => {
               <TouchableOpacity
                 style={
                   questions.every((q) => answers[q]?.trim())
-                    ? styles.button
+                    ? [styles.button, { backgroundColor: "#1E3A8A" }]
                     : [styles.button, styles.disabled]
                 }
                 onPress={handleAnswersSubmit}
-                disabled={!questions.every((q) => answers[q]?.trim())}
+                disabled={
+                  !questions.every((q) => answers[q]?.trim()) || isLoading
+                }
               >
-                <Text style={styles.buttonText}>Generate Plan</Text>
+                {isLoading && (
+                  <ActivityIndicator color={currentColors.textPrimary} />
+                )}
+                <Text style={styles.buttonText}>
+                  {isLoading ? "Generating ..." : "Generate Plan"}
+                </Text>
               </TouchableOpacity>
             )}
           </KeyboardAvoidingView>
@@ -258,11 +403,23 @@ const CarePlan: React.FC = () => {
 
     if (step === "plan") {
       return (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.planTitle}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContainer,
+            { backgroundColor: currentColors.background },
+          ]}
+        >
+          <Text
+            style={[styles.planTitle, { color: currentColors.textPrimary }]}
+          >
             Your {planType === "workout" ? "Workout" : "Diet"} Plan
           </Text>
-          <View style={styles.planContainer}>
+          <View
+            style={[
+              styles.planContainer,
+              { backgroundColor: currentColors.surface },
+            ]}
+          >
             <Markdown style={markdownStyles}>{generatedPlan}</Markdown>
           </View>
           <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
@@ -286,13 +443,12 @@ const CarePlan: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   backButton: { marginRight: 16 },
   headerTitle: {
@@ -319,9 +475,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9f9f9",
     borderRadius: 10,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
   },
   iconContainer: { marginBottom: 8 },
   cardTitle: { fontSize: 16, fontWeight: "bold" },
@@ -345,12 +498,13 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   button: {
-    backgroundColor: "#007BFF",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 16,
     borderRadius: 8,
-    alignItems: "center",
   },
-  disabled: { backgroundColor: "#ccc" },
+  disabled: { opacity: 0.5 },
   buttonText: { color: "#fff", fontWeight: "bold" },
   questionContainer: { marginBottom: 10, gap: 6 },
   planTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 16 },
@@ -433,7 +587,6 @@ const markdownStyles = {
   body: {
     fontSize: 16,
     lineHeight: 18,
-    color: "#333",
     gap: 20,
   },
   h1: {

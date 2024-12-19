@@ -19,7 +19,8 @@ import { Link, useRouter } from "expo-router";
 import { useAuthContext } from "@/context/AuthContext";
 import { MotiView } from "moti";
 import Octicons from "@expo/vector-icons/Octicons";
-
+import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/context/ThemeContext";
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
@@ -37,6 +38,8 @@ const signUpSchema = z.object({
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
 export default function SignUp() {
+  const { theme } = useTheme();
+  const currentColors = Colors[theme];
   const { register, isLoading, error, clearError } = useAuthContext();
   const [termsModalVisible, setTermsModalVisible] = useState(false);
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
@@ -68,14 +71,15 @@ export default function SignUp() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="justify-center flex-1 px-4 bg-gray-100 dark:bg-gray-900"
+      style={{ backgroundColor: currentColors.background }}
+      className="justify-center flex-1 px-4"
     >
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ delay: 300 }}
         style={{
-          backgroundColor: "rgba(255,255,255,1)",
+          backgroundColor: currentColors.surface,
           borderRadius: 20,
           padding: 20,
           gap: 20,
@@ -88,17 +92,23 @@ export default function SignUp() {
         // className="w-full max-w-md gap-6 shadow-lg dark:bg-gray-800 rounded-xl"
       >
         <View className="items-center gap-2">
-          <AntDesign name="user" size={44} color="lightblue" />
-          <Text className="mt-2 text-2xl font-bold text-gray-800 dark:text-gray-100">
+          <AntDesign name="user" size={44} color={currentColors.textPrimary} />
+          <Text
+            className="mt-2 text-2xl font-bold"
+            style={{ color: currentColors.textPrimary }}
+          >
             Create Account
           </Text>
-          <Text className="text-center text-gray-600 dark:text-gray-300">
+          <Text
+            style={{ color: currentColors.textSecondary }}
+            className="text-center"
+          >
             Sign up to start using the app
           </Text>
         </View>
 
         {error && (
-          <View className="relative flex-row items-center px-4 py-3 mb-4 text-red-700 bg-red-100 border border-red-400 rounded">
+          <View className="relative flex-row items-center px-4 py-3 mb-4 text-red-700 bg-red-500 border border-red-400 rounded">
             <Text
               className="flex-1 text-red-900 dark:text-red-300"
               numberOfLines={2}
@@ -107,7 +117,7 @@ export default function SignUp() {
               {error}
             </Text>
             <TouchableOpacity onPress={() => clearError()} className="mr-2">
-              <Octicons name="x" size={20} color="black" />
+              <Octicons name="x" size={20} color={currentColors.textPrimary} />
             </TouchableOpacity>
           </View>
         )}
@@ -119,11 +129,15 @@ export default function SignUp() {
               control={control}
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 focus:border-[1px] focus:border-blue-500 ${
+                  style={{
+                    backgroundColor: currentColors.inputBackground,
+                    color: currentColors.textPrimary,
+                  }}
+                  className={`px-6 py-4 rounded-lg focus:border-[1px] focus:border-blue-500 ${
                     errors.email ? "border-[1px] border-red-500" : ""
                   }`}
                   placeholder="Email"
-                  placeholderTextColor="#a1a1aa"
+                  placeholderTextColor={currentColors.placeholderText}
                   value={value}
                   onChangeText={onChange}
                   keyboardType="email-address"
@@ -144,7 +158,11 @@ export default function SignUp() {
               control={control}
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  className={`px-6 py-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100 focus:border-[1px] focus:border-blue-500 ${
+                  style={{
+                    backgroundColor: currentColors.inputBackground,
+                    color: currentColors.textPrimary,
+                  }}
+                  className={`px-6 py-4 rounded-lg focus:border-[1px] focus:border-blue-500 ${
                     errors.password ? "border-[1px] border-red-500" : ""
                   }`}
                   placeholder="Password"
@@ -210,11 +228,9 @@ export default function SignUp() {
 
           <TouchableOpacity
             onPress={handleSubmit(onSubmit)}
-            disabled={!isValid || !termsAccepted || isLoading}
-            className={`py-4 rounded-lg items-center justify-center ${
-              isValid && termsAccepted && !isLoading
-                ? "bg-blue-600 dark:bg-blue-500"
-                : "bg-gray-400 dark:bg-gray-600"
+            disabled={!isValid || isLoading}
+            className={`py-4 rounded-lg items-center justify-center bg-[#1E3A8A] ${
+              (!isValid || isLoading) && "opacity-35"
             }`}
           >
             {isLoading ? (
