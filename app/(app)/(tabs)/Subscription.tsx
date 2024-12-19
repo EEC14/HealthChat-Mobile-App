@@ -268,7 +268,6 @@ const Subscription: React.FC = () => {
                     ) : (
                       <AntDesign name="arrowright" size={24} color="white" />
                     )}
-                    View{" "}
                   </TouchableOpacity>
                 </View>
               </MotiView>
