@@ -188,7 +188,7 @@ const Subscription: React.FC = () => {
               alignItems: "center",
             }}
           >
-            {user?.isPro || !user?.isDeluxe ? (
+            {user?.isPro || user?.isDeluxe ? (
               <MotiView
                 from={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
