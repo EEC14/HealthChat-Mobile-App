@@ -306,101 +306,105 @@ const CarePlan: React.FC = () => {
 
     if (step === "questionnaire") {
       return (
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContainer,
-            { backgroundColor: currentColors.background, flex: 1 },
-          ]}
+        <SafeAreaView
+          style={{ flex: 1, backgroundColor: currentColors.background }}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 80}
-            style={{ flex: 1 }}
-          >
-            {questions.length === 0 ? (
-              <View style={[styles.questionContainer]}>
-                <Text
-                  style={[styles.label, { color: currentColors.textPrimary }]}
-                >
-                  What are your {planType === "workout" ? "fitness" : "dietary"}{" "}
-                  goals?
-                </Text>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    { color: currentColors.textPrimary },
-                  ]}
-                  placeholderTextColor={currentColors.textSecondary}
-                  placeholder={`Describe your ${planType} goals...`}
-                  value={goals}
-                  onChangeText={setGoals}
-                  multiline
-                />
+          <ScrollView contentContainerStyle={[styles.scrollContainer]}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              // keyboardVerticalOffset={Platform.OS === "ios" ? 36 : -50}
+              style={{ flex: 1 }}
+            >
+              {questions.length === 0 ? (
+                <View style={[styles.questionContainer]}>
+                  <Text
+                    style={[styles.label, { color: currentColors.textPrimary }]}
+                  >
+                    What are your{" "}
+                    {planType === "workout" ? "fitness" : "dietary"} goals?
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      { color: currentColors.textPrimary },
+                    ]}
+                    placeholderTextColor={currentColors.textSecondary}
+                    placeholder={`Describe your ${planType} goals...`}
+                    value={goals}
+                    onChangeText={setGoals}
+                    multiline
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.button,
+                      { backgroundColor: "#1E3A8A" },
+                      goals.trim() ? {} : styles.disabled,
+                      isLoading && styles.disabled,
+                    ]}
+                    onPress={handleGoalsSubmit}
+                    disabled={!goals.trim() || isLoading}
+                  >
+                    {isLoading && (
+                      <ActivityIndicator color={currentColors.textPrimary} />
+                    )}
+                    <Text style={styles.buttonText}>
+                      {isLoading ? "Generating Questions..." : "Continue"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                questions.map((question, index) => (
+                  <View key={index} style={styles.questionContainer}>
+                    <Markdown
+                      style={getMarkdownStyles(currentColors)}
+                    >{`${question}`}</Markdown>
+                    {/* <Text style={{ color: currentColors.textPrimary }}>
+                      {question}
+                    </Text> */}
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        {
+                          color: currentColors.textPrimary,
+                          borderColor: currentColors.border,
+                        },
+                      ]}
+                      placeholder="Your answer..."
+                      placeholderTextColor={currentColors.textSecondary}
+                      value={answers[question] || ""}
+                      onChangeText={(text) =>
+                        setAnswers((prev) => ({ ...prev, [question]: text }))
+                      }
+                      multiline
+                    />
+                  </View>
+                ))
+              )}
+              {questions.length > 0 && (
                 <TouchableOpacity
                   style={[
                     styles.button,
                     { backgroundColor: "#1E3A8A" },
-                    goals.trim() ? {} : styles.disabled,
+                    !questions.every((q) => answers[q]?.trim()) &&
+                      styles.disabled,
+                    isLoading && styles.disabled,
                   ]}
-                  onPress={handleGoalsSubmit}
-                  disabled={!goals.trim() || isLoading}
+                  onPress={handleAnswersSubmit}
+                  disabled={
+                    !questions.every((q) => answers[q]?.trim()) || isLoading
+                  }
                 >
                   {isLoading && (
                     <ActivityIndicator color={currentColors.textPrimary} />
                   )}
                   <Text style={styles.buttonText}>
-                    {isLoading ? "Generating Questions..." : "Continue"}
+                    {isLoading ? "Generating ..." : "Generate Plan"}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            ) : (
-              questions.map((question, index) => (
-                <View key={index} style={styles.questionContainer}>
-                  {/* <Markdown style={markdownStyles}>{`${question}`}</Markdown> */}
-                  <Text style={{ color: currentColors.textPrimary }}>
-                    {question}
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      {
-                        color: currentColors.textPrimary,
-                        borderColor: currentColors.border,
-                      },
-                    ]}
-                    placeholder="Your answer..."
-                    placeholderTextColor={currentColors.textSecondary}
-                    value={answers[question] || ""}
-                    onChangeText={(text) =>
-                      setAnswers((prev) => ({ ...prev, [question]: text }))
-                    }
-                    multiline
-                  />
-                </View>
-              ))
-            )}
-            {questions.length > 0 && (
-              <TouchableOpacity
-                style={
-                  questions.every((q) => answers[q]?.trim())
-                    ? [styles.button, { backgroundColor: "#1E3A8A" }]
-                    : [styles.button, styles.disabled]
-                }
-                onPress={handleAnswersSubmit}
-                disabled={
-                  !questions.every((q) => answers[q]?.trim()) || isLoading
-                }
-              >
-                {isLoading && (
-                  <ActivityIndicator color={currentColors.textPrimary} />
-                )}
-                <Text style={styles.buttonText}>
-                  {isLoading ? "Generating ..." : "Generate Plan"}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </KeyboardAvoidingView>
-        </ScrollView>
+              )}
+            </KeyboardAvoidingView>
+          </ScrollView>
+        </SafeAreaView>
       );
     }
 
@@ -423,7 +427,9 @@ const CarePlan: React.FC = () => {
               { backgroundColor: currentColors.surface },
             ]}
           >
-            <Markdown style={markdownStyles}>{generatedPlan}</Markdown>
+            <Markdown style={getMarkdownStyles(currentColors)}>
+              {generatedPlan}
+            </Markdown>
           </View>
           <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
             <AntDesign name="arrowleft" size={16} color="#000" />
@@ -436,7 +442,7 @@ const CarePlan: React.FC = () => {
     return null;
   };
 
-  if (!user?.isDeluxe) {
+  if (user?.isDeluxe) {
     return (
       <View
         style={[
@@ -687,69 +693,200 @@ const styles = StyleSheet.create({
   },
 });
 
-const markdownStyles = {
-  body: {
-    fontSize: 16,
-    lineHeight: 18,
-    gap: 20,
-  },
-  h1: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#007BFF",
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  h2: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginTop: 16,
-    marginBottom: 12,
-    color: "#0056b3",
-  },
-  h3: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 12,
-    marginBottom: 8,
-    color: "#333",
-  },
+// const getMarkdownStyles = (colors) => ({
+//   body: {
+//     fontSize: 16,
+//     lineHeight: 18,
+//     gap: 20,
+//     color: colors.textPrimary,
+//   },
+//   hr: { padding: 0, backgroundColor: colors.textPrimary, margin: 0 },
+//   h1: {
+//     fontSize: 24,
+//     fontWeight: "bold",
+//     marginBottom: 16,
+//     color: colors.textPrimary,
+//     paddingBottom: 8,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#e0e0e0",
+//   },
+//   h2: {
+//     fontSize: 40,
+//     fontWeight: "bold",
+//     marginTop: 16,
+//     marginBottom: 12,
+//     color: colors.textPrimary,
+//   },
+//   h3: {
+//     fontSize: 58,
+//     fontWeight: "bold",
+//     marginTop: 12,
+//     marginBottom: 8,
+//     color: colors.textPrimary,
+//   },
+//   h4: {
+//     fontSize: 58,
+//     fontWeight: "bold",
+//     marginTop: 12,
+//     marginBottom: 8,
+//     color: colors.textPrimary,
+//   },
+//   h5: {
+//     fontSize: 58,
+//     fontWeight: "bold",
+//     marginTop: 12,
+//     marginBottom: 8,
+//     color: colors.textPrimary,
+//   },
+//   h6: {
+//     fontSize: 48,
+//     fontWeight: "bold",
+//     marginTop: 12,
+//     marginBottom: 8,
+//     color: colors.textPrimary,
+//   },
+//   p: {
+//     color: colors.textPrimary,
+//   },
 
-  listItemText: {
+//   listItemText: {
+//     fontSize: 16,
+//     lineHeight: 24,
+//     flex: 1,
+//     color: colors.textPrimary,
+//   },
+//   listItemBullet: {
+//     width: 6,
+//     height: 6,
+//     borderRadius: 3,
+//     backgroundColor: "#007BFF",
+//     marginRight: 8,
+//   },
+//   list: {
+//     marginLeft: 16,
+//     marginBottom: 12,
+//   },
+//   blockquote: {
+//     backgroundColor: "#f9f9f9",
+//     borderLeftWidth: 4,
+//     borderLeftColor: "#007BFF",
+//     paddingLeft: 12,
+//     paddingVertical: 8,
+//     marginVertical: 12,
+//   },
+//   code: {
+//     backgroundColor: "#f4f4f4",
+//     borderRadius: 4,
+//     padding: 8,
+//     fontFamily: "monospace",
+//     fontSize: 14,
+//     color: colors.textPrimary,
+//   },
+// });
+const getMarkdownStyles = (colors) => ({
+  body: {
+    color: colors.textSecondary,
     fontSize: 16,
     lineHeight: 24,
-    flex: 1,
-    color: "#333",
+    gap: 20,
   },
-  listItemBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#007BFF",
-    marginRight: 8,
-  },
-  list: {
-    marginLeft: 16,
+  hr: { backgroundColor: colors.textSecondary },
+  heading1: {
+    color: colors.textPrimary,
+    fontSize: 28,
+    fontWeight: "bold",
     marginBottom: 12,
   },
+  heading2: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  heading3: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  heading4: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "500",
+    marginBottom: 6,
+  },
+  paragraph: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  strong: {
+    color: colors.textPrimary,
+    // fontWeight: "bold",
+  },
+  emphasis: {
+    color: colors.textSecondary,
+    // fontStyle: "italic",
+  },
   blockquote: {
-    backgroundColor: "#f9f9f9",
+    color: colors.textSecondary,
+    fontStyle: "italic",
     borderLeftWidth: 4,
-    borderLeftColor: "#007BFF",
+    borderLeftColor: colors.primary,
     paddingLeft: 12,
-    paddingVertical: 8,
     marginVertical: 12,
   },
   code: {
-    backgroundColor: "#f4f4f4",
+    color: colors.secondary,
+    backgroundColor: colors.surface,
     borderRadius: 4,
-    padding: 8,
+    padding: 4,
     fontFamily: "monospace",
     fontSize: 14,
-    color: "#D32F2F",
   },
-};
+  a: {
+    color: colors.textPrimary,
+    // textDecorationLine: "underline",
+  },
+  listItem: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  listBullet: {
+    color: colors.textPrimary,
+    fontSize: 16,
+  },
+  listNumber: {
+    color: colors.textPrimary,
+    fontSize: 16,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  tableHeader: {
+    color: colors.textPrimary,
+    fontWeight: "bold",
+    backgroundColor: colors.secondary,
+    padding: 8,
+  },
+  tableRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    padding: 8,
+  },
+  tableCell: {
+    color: colors.textPrimary,
+    padding: 8,
+  },
+  horizontalRule: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginVertical: 12,
+  },
+});
 
 export default CarePlan;
