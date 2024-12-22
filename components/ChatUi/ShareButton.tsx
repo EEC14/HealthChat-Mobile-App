@@ -18,6 +18,8 @@ import { Colors } from "@/constants/Colors";
 
 const ShareButton = ({ messages }: { messages: Message[] }) => {
   const { user } = useAuthContext();
+  const { theme } = useTheme();
+  const currentColors = Colors[theme];
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -34,7 +36,7 @@ const ShareButton = ({ messages }: { messages: Message[] }) => {
 
     try {
       const chatId = await saveChatToDatabase(user.uid, messages);
-      const url = `https://yourapp.com/shared/${chatId}`; // Update with your app's URL
+      const url = `https://healthchat-patient.esbhealthcare.com/shared/${chatId}`; // Update with your app's URL
       setShareUrl(url);
     } catch (err) {
       setError("Failed to generate shareable link.");
@@ -69,8 +71,28 @@ const ShareButton = ({ messages }: { messages: Message[] }) => {
 
   if (shareUrl) {
     return (
-      <View style={styles.shareContainer}>
-        <TextInput value={shareUrl} editable={false} style={styles.input} />
+      <View
+        style={[
+          styles.shareContainer,
+          {
+            backgroundColor: currentColors.surface,
+            borderColor: currentColors.border,
+            borderWidth: 1,
+          },
+        ]}
+      >
+        <TextInput
+          value={shareUrl}
+          editable={false}
+          style={[
+            styles.input,
+            {
+              backgroundColor: currentColors.inputBackground,
+              color: currentColors.textPrimary,
+              borderColor: currentColors.border,
+            },
+          ]}
+        />
         <TouchableOpacity onPress={handleCopy} style={styles.iconButton}>
           <Ionicons
             name={copied ? "checkmark-circle" : "copy"}
@@ -88,7 +110,7 @@ const ShareButton = ({ messages }: { messages: Message[] }) => {
   return (
     <TouchableOpacity
       onPress={handleShare}
-      disabled={isSharing || messages.length <= 1}
+      disabled={isSharing || messages.length <= 2}
       style={[
         styles.shareButton,
         { backgroundColor: "#1E1E1E" },
@@ -119,11 +141,12 @@ const styles = StyleSheet.create({
   shareContainer: {
     width: "100%",
     position: "absolute",
-    bottom: 10,
+    bottom: 4,
     zIndex: 2,
     backgroundColor: "white",
-    padding: 6,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
@@ -134,11 +157,9 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 5,
+    borderRadius: 10,
     paddingHorizontal: 10,
-    backgroundColor: "#f9f9f9",
-    height: 40,
+    height: 42,
   },
   iconButton: {
     marginLeft: 10,
