@@ -1,11 +1,15 @@
+import { Colors } from "@/constants/Colors";
 import { AuthContextProvider, useAuthContext } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { Theme, ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { Slot, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, Image, Text, View } from "react-native";
 
 const MainLayout = () => {
-  const { isAuthenticated, isLoading } = useAuthContext();
+  const { theme } = useTheme();
+  const color = Colors[theme];
+  const { isAuthenticated } = useAuthContext();
   const segments = useSegments();
   const router = useRouter();
 
@@ -23,7 +27,13 @@ const MainLayout = () => {
     }
   }, [isAuthenticated]);
 
-  return <Slot />;
+  const themes: Theme[] = ["light", "dark"];
+  return (
+    <View style={{ flex: 1, backgroundColor: color.background }}>
+      <StatusBar style={themes.find((i) => i !== theme)} />
+      <Slot />
+    </View>
+  );
 };
 export default function RootLayout() {
   return (
@@ -39,7 +49,7 @@ const Loading = () => {
   return (
     <View className="items-center justify-center flex-1 bg-white">
       <Image
-        source={require("@/assets/images/icon.png")} //
+        source={require("@/assets/images/icon-app.png")} //
         style={{ width: 100, height: 100 }}
         className="mb-6"
       />

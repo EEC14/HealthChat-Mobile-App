@@ -19,10 +19,8 @@ export default function TabLayout() {
   const { theme } = useTheme();
   const currentColors = Colors[theme];
 
-  const themes: Theme[] = ["light", "dark"];
   return (
     <>
-      <StatusBar style={themes.find((i) => i !== theme)} />
       <Tabs
         screenOptions={({ route }) => ({
           tabBarActiveTintColor: currentColors.primary,
@@ -85,15 +83,15 @@ export default function TabLayout() {
         <Tabs.Screen
           name="CarePlan"
           options={{
-            title: "Care Plan",
-            tabBarLabel: "Care Plan",
+            title: "Care Plans",
+            tabBarLabel: "Care Plans",
           }}
         />
         <Tabs.Screen
           name="Subscription"
           options={{
-            title: "Subscription",
-            tabBarLabel: "Subscription",
+            title: "Profile",
+            tabBarLabel: "Profile",
           }}
         />
       </Tabs>
