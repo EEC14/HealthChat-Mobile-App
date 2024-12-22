@@ -7,12 +7,9 @@ import {
   Linking,
   ActivityIndicator,
   Pressable,
-  ImageBackground,
   ScrollView,
   RefreshControl,
-  Modal,
   StyleSheet,
-  SafeAreaView,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -23,8 +20,6 @@ import Animated, {
 import { MotiView, MotiText } from "moti";
 import AnimatedLottieView from "lottie-react-native";
 
-import { WebView } from "react-native-webview";
-
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -33,22 +28,9 @@ import { Plans } from "@/constants/Plans";
 import ExternalLinkHandler from "@/components/Layout/ExternalLinkHandler";
 import { useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
+import { MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
+import { Link } from "expo-router";
 
-// Grain effect component
-const GrainBackground = () => (
-  <ImageBackground
-    source={require("@/assets/images/grain-texture.png")}
-    style={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      opacity: 0.13,
-      zIndex: -1,
-    }}
-  />
-);
 const Subscription: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const currentColors = Colors[theme];
@@ -56,7 +38,7 @@ const Subscription: React.FC = () => {
   const [webviewUrl, setWebviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { user, fetchUserDetails } = useAuthContext();
+  const { user, fetchUserDetails, logout } = useAuthContext();
 
   const [selectedPlan, setSelectedPlan] = useState<"Pro" | "Deluxe">("Pro");
   const handleOpenLink = (url: string) => {
@@ -165,7 +147,11 @@ const Subscription: React.FC = () => {
         />
       </View>
       <ScrollView
-        style={{ flex: 1, backgroundColor: currentColors.background }}
+        style={{
+          padding: 16,
+          flex: 1,
+          backgroundColor: currentColors.background,
+        }}
         contentContainerStyle={{ flexGrow: 1 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -174,298 +160,385 @@ const Subscription: React.FC = () => {
         <View
           style={{
             flex: 1,
-            backgroundColor: "transparent",
-            paddingBottom: 90,
-            paddingTop: 40,
+            justifyContent: "flex-start",
+            gap: 20,
+            paddingBottom: 100,
           }}
         >
-          <View
-            style={{
-              paddingHorizontal: 10,
-              flex: 1,
-              alignSelf: "center",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            {user?.isPro || user?.isDeluxe ? (
-              <MotiView
-                from={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring" }}
-                style={{ alignItems: "center", gap: 30 }}
+          <View style={{ gap: 4 }}>
+            <Text
+              style={{
+                fontWeight: "900",
+                fontSize: 16,
+                color: currentColors.textPrimary,
+              }}
+            >
+              Account:
+            </Text>
+            <View
+              style={[
+                styles.infoBox,
+                { backgroundColor: currentColors.surface },
+              ]}
+            >
+              <AntDesign
+                name="user"
+                size={16}
+                color={currentColors.iconDefault}
+              />
+              <Text
+                style={[styles.emailText, { color: currentColors.textPrimary }]}
               >
-                <View style={{ alignItems: "center", gap: 2 }}>
-                  <Animated.View style={animatedCrownStyle}>
-                    <FontAwesome6 name="crown" size={64} color="gold" />
-                  </Animated.View>
-                  <MotiText
-                    from={{ translateY: 20, opacity: 0 }}
-                    animate={{ translateY: 0, opacity: 1 }}
-                    transition={{ delay: 200 }}
+                {user?.email}
+              </Text>
+            </View>
+          </View>
+          {user?.isPro || user?.isDeluxe ? (
+            <MotiView
+              from={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring" }}
+              style={{ alignItems: "center", gap: 30 }}
+            >
+              <View style={{ alignItems: "center", gap: 2 }}>
+                <Animated.View style={animatedCrownStyle}>
+                  <FontAwesome6 name="crown" size={64} color="gold" />
+                </Animated.View>
+                <MotiText
+                  from={{ translateY: 20, opacity: 0 }}
+                  animate={{ translateY: 0, opacity: 1 }}
+                  transition={{ delay: 200 }}
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    color: currentColors.textPrimary,
+                    marginTop: 10,
+                  }}
+                >
+                  You're a {user.isPro ? "Pro" : "Deluxe"} Member!
+                </MotiText>
+                <MotiText
+                  from={{ translateY: 20, opacity: 0 }}
+                  animate={{ translateY: 0, opacity: 1 }}
+                  transition={{ delay: 300 }}
+                  style={{ color: currentColors.textSecondary }}
+                >
+                  Enjoy unlimited access to all premium features
+                </MotiText>
+              </View>
+              <View
+                style={{
+                  backgroundColor: currentColors.surface,
+                  borderRadius: 20,
+                  padding: 20,
+                  width: "100%",
+                  gap: 30,
+                }}
+              >
+                <View style={{ gap: 4, alignItems: "center" }}>
+                  <AntDesign
+                    name="setting"
+                    size={56}
+                    color={currentColors.textPrimary}
+                  />
+                  <View>
+                    <Text
+                      className="text-lg font-semibold text-center"
+                      style={{ color: currentColors.textPrimary }}
+                    >
+                      Manage Your Plan
+                    </Text>
+                    <Text
+                      className="text-sm text-center"
+                      style={{ color: currentColors.textSecondary }}
+                    >
+                      Easily upgrade, downgrade, or cancel your subscription.
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  disabled={loading}
+                  onPress={handleManageBilling}
+                  className="flex-row items-center justify-center gap-2 py-4 bg-[#1E3A8A] rounded-lg"
+                >
+                  <Text className="text-lg font-medium text-white ">
+                    {loading ? "Loading" : "Go to Dashboard"}
+                  </Text>
+                  {loading ? (
+                    <ActivityIndicator
+                      animating={loading}
+                      size="small"
+                      color="#fff"
+                    />
+                  ) : (
+                    <AntDesign name="arrowright" size={24} color="white" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </MotiView>
+          ) : (
+            <View style={{ alignSelf: "stretch" }}>
+              {/* Lottie Animation */}
+              <View
+                style={{
+                  alignItems: "center",
+                  position: "absolute",
+                  height: "120%",
+                  width: "100%",
+                  top: -240,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  justifyContent: "center",
+                  backgroundColor: "transparent",
+                  zIndex: -1,
+                }}
+              >
+                <AnimatedLottieView
+                  ref={lottieRef}
+                  source={require("@/assets/subscription-animation.json")}
+                  autoPlay={true}
+                  loop={false}
+                  style={{ width: 300, height: 1000 }}
+                />
+              </View>
+              <MotiText
+                from={{ opacity: 0, translateY: -20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                style={{
+                  fontSize: 28,
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color: currentColors.textPrimary,
+                  marginBottom: 2,
+                }}
+              >
+                Upgrade Your Plan
+              </MotiText>
+              <MotiText
+                from={{ opacity: 0, translateY: -20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                style={{
+                  fontSize: 14,
+                  textAlign: "center",
+                  color: currentColors.textSecondary,
+                  marginBottom: 20,
+                }}
+              >
+                Choose the plan that best fits your wellness journey.
+              </MotiText>
+              {/* Plan Selection */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  marginBottom: 20,
+                }}
+              >
+                {Object.keys(Plans).map((plan) => (
+                  <Pressable
+                    key={plan}
+                    onPress={() => handlePlanSelect(plan as "Pro" | "Deluxe")}
                     style={{
-                      fontSize: 24,
-                      fontWeight: "bold",
-                      color: currentColors.textPrimary,
-                      marginTop: 10,
+                      paddingHorizontal: 20,
+                      paddingVertical: 10,
+                      marginHorizontal: 5,
+                      borderRadius: 20,
+                      backgroundColor:
+                        selectedPlan === plan
+                          ? "#1E3A8A"
+                          : currentColors.surface,
                     }}
                   >
-                    You're a {user.isPro ? "Pro" : "Deluxe"} Member!
-                  </MotiText>
-                  <MotiText
-                    from={{ translateY: 20, opacity: 0 }}
-                    animate={{ translateY: 0, opacity: 1 }}
-                    transition={{ delay: 300 }}
-                    style={{ color: currentColors.textSecondary }}
-                  >
-                    Enjoy unlimited access to all premium features
-                  </MotiText>
-                </View>
-
-                <View
-                  style={{
-                    backgroundColor: currentColors.surface,
-                    borderRadius: 20,
-                    padding: 20,
-                    gap: 30,
-                  }}
-                >
-                  <View className="flex-col items-center gap-2">
-                    <AntDesign
-                      name="setting"
-                      size={56}
-                      color={currentColors.textPrimary}
-                    />
-                    <View>
-                      <Text
-                        className="text-lg font-semibold"
-                        style={{ color: currentColors.textPrimary }}
-                      >
-                        Manage Your Plan
-                      </Text>
-                      <Text
-                        className="text-sm "
-                        style={{ color: currentColors.textSecondary }}
-                      >
-                        Easily upgrade, downgrade, or cancel your subscription.
-                      </Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity
-                    disabled={loading}
-                    onPress={handleManageBilling}
-                    className="flex-row items-center justify-center gap-2 py-4 bg-blue-600 rounded-lg"
-                  >
-                    <Text className="text-lg font-medium text-white ">
-                      {loading ? "Loading" : "Go to Dashboard"}
+                    <Text
+                      style={{
+                        color:
+                          selectedPlan === plan
+                            ? "white"
+                            : currentColors.textPrimary,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {plan}
                     </Text>
-                    {loading ? (
-                      <ActivityIndicator
-                        animating={loading}
-                        size="small"
-                        color="#fff"
-                      />
-                    ) : (
-                      <AntDesign name="arrowright" size={24} color="white" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </MotiView>
-            ) : (
-              <View style={{ width: "100%", paddingHorizontal: 20 }}>
-                <MotiText
-                  from={{ opacity: 0, translateY: -20 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  style={{
-                    fontSize: 28,
-                    fontWeight: "bold",
-                    textAlign: "center",
-                    color: currentColors.textPrimary,
-                    marginBottom: 2,
-                  }}
-                >
-                  Upgrade Your Plan
-                </MotiText>
-                <MotiText
-                  from={{ opacity: 0, translateY: -20 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  style={{
-                    fontSize: 14,
-                    textAlign: "center",
-                    color: currentColors.textSecondary,
-                    marginBottom: 20,
-                  }}
-                >
-                  Choose the plan that best fits your wellness journey.
-                </MotiText>
-                {/* Plan Selection */}
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Subscription Details */}
+              <MotiView
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: 300 }}
+                style={{
+                  alignSelf: "stretch",
+                  backgroundColor: currentColors.surface,
+                  borderRadius: 20,
+                  padding: 20,
+                }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
                     justifyContent: "center",
-                    marginBottom: 20,
+                    marginBottom: 15,
                   }}
                 >
-                  {Object.keys(Plans).map((plan) => (
-                    <Pressable
-                      key={plan}
-                      onPress={() => handlePlanSelect(plan as "Pro" | "Deluxe")}
-                      style={{
-                        paddingHorizontal: 20,
-                        paddingVertical: 10,
-                        marginHorizontal: 5,
-                        borderRadius: 20,
-                        backgroundColor:
-                          selectedPlan === plan
-                            ? "#1E3A8A"
-                            : currentColors.surface,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            selectedPlan === plan
-                              ? "white"
-                              : currentColors.textPrimary,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {plan}
-                      </Text>
-                    </Pressable>
-                  ))}
+                  <Text
+                    style={{
+                      fontSize: 36,
+                      fontWeight: "bold",
+                      color: currentColors.textPrimary,
+                    }}
+                  >
+                    ${Plans[selectedPlan].price}
+                  </Text>
+                  <Text
+                    style={{
+                      alignSelf: "flex-end",
+                      color: currentColors.textPrimary,
+                      marginLeft: 5,
+                    }}
+                  >
+                    /month
+                  </Text>
                 </View>
 
-                {/* Lottie Animation */}
-                <View
-                  style={{
-                    alignItems: "center",
-                    marginBottom: 20,
-                    position: "absolute",
-                    height: 800,
-                    width: 400,
-                    top: "0%",
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    justifyContent: "center",
-                    backgroundColor: "transparent",
-                    zIndex: -1,
-                  }}
-                >
-                  <AnimatedLottieView
-                    ref={lottieRef}
-                    source={require("@/assets/subscription-animation.json")}
-                    autoPlay={true}
-                    loop={false}
-                    style={{ width: 300, height: 1000 }}
-                  />
-                </View>
-
-                {/* Subscription Details */}
-                <MotiView
-                  from={{ opacity: 0, translateY: 20 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  transition={{ delay: 300 }}
-                  style={{
-                    backgroundColor: currentColors.surface,
-                    borderRadius: 20,
-                    padding: 20,
-                  }}
-                >
-                  <View
+                {Plans[selectedPlan].features.map((feature, index) => (
+                  <MotiView
+                    key={index}
+                    from={{ opacity: 0, translateX: -20 }}
+                    animate={{ opacity: 1, translateX: 0 }}
+                    transition={{ delay: 400 + index * 100 }}
                     style={{
                       flexDirection: "row",
-                      justifyContent: "center",
-                      marginBottom: 15,
+                      alignItems: "center",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <MaterialIcons
+                      name="check"
+                      size={24}
+                      color={currentColors.textPrimary}
+                      style={{ marginRight: 10 }}
+                    />
+                    <Text style={{ color: currentColors.textPrimary }}>
+                      {feature}
+                    </Text>
+                  </MotiView>
+                ))}
+
+                {user ? (
+                  <TouchableOpacity
+                    onPress={handleSubscribe}
+                    style={{
+                      backgroundColor: "#1E3A8A",
+                      borderRadius: 25,
+                      paddingVertical: 15,
+                      alignItems: "center",
+                      marginTop: 15,
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: 36,
+                        color: "white",
                         fontWeight: "bold",
-                        color: currentColors.textPrimary,
+                        fontSize: 18,
                       }}
                     >
-                      ${Plans[selectedPlan].price}
+                      {loading ? "Processing..." : "Subscribe Now"}
                     </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Link
+                    href="/(app)/(auth)/Signin"
+                    style={{
+                      backgroundColor: currentColors.background,
+                      padding: 15,
+                      borderRadius: 15,
+                    }}
+                  >
                     <Text
                       style={{
-                        alignSelf: "flex-end",
                         color: currentColors.textPrimary,
-                        marginLeft: 5,
+                        textAlign: "center",
                       }}
                     >
-                      /month
+                      Please log in to upgrade your plan
                     </Text>
-                  </View>
+                  </Link>
+                )}
+              </MotiView>
+            </View>
+          )}
 
-                  {Plans[selectedPlan].features.map((feature, index) => (
-                    <MotiView
-                      key={index}
-                      from={{ opacity: 0, translateX: -20 }}
-                      animate={{ opacity: 1, translateX: 0 }}
-                      transition={{ delay: 400 + index * 100 }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <MaterialIcons
-                        name="check"
-                        size={24}
-                        color={currentColors.textPrimary}
-                        style={{ marginRight: 10 }}
-                      />
-                      <Text style={{ color: currentColors.textPrimary }}>
-                        {feature}
-                      </Text>
-                    </MotiView>
-                  ))}
-
-                  {user ? (
-                    <TouchableOpacity
-                      onPress={handleSubscribe}
-                      style={{
-                        backgroundColor: "#1E3A8A",
-                        borderRadius: 25,
-                        paddingVertical: 15,
-                        alignItems: "center",
-                        marginTop: 15,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "white",
-                          fontWeight: "bold",
-                          fontSize: 18,
-                        }}
-                      >
-                        {loading ? "Processing..." : "Subscribe Now"}
-                      </Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View
-                      style={{
-                        backgroundColor: currentColors.surface,
-                        padding: 15,
-                        borderRadius: 15,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: currentColors.textPrimary,
-                          textAlign: "center",
-                        }}
-                      >
-                        Please log in to upgrade your plan
-                      </Text>
-                    </View>
-                  )}
-                </MotiView>
-              </View>
-            )}
+          <View style={{ gap: 4 }}>
+            <Text
+              style={{
+                fontWeight: "900",
+                fontSize: 16,
+                color: currentColors.textPrimary,
+              }}
+            >
+              Theme Preference:
+            </Text>
+            <Pressable
+              onPress={toggleTheme}
+              style={[
+                styles.themeToggle,
+                { backgroundColor: currentColors.surface },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={
+                  theme === "light"
+                    ? "moon-waning-crescent"
+                    : "white-balance-sunny"
+                }
+                size={26}
+                color={
+                  theme === "light" ? currentColors.textPrimary : "#FFD700"
+                }
+              />
+              <Text
+                style={{
+                  color: currentColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: "600",
+                }}
+              >
+                {theme === "dark" ? "Dark Mode" : "Light Mode"}
+              </Text>
+            </Pressable>
+          </View>
+          <View style={{ gap: 4 }}>
+            <Text
+              style={{
+                fontWeight: "900",
+                fontSize: 16,
+                color: currentColors.textPrimary,
+              }}
+            >
+              Log out:
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.infoBox,
+                { backgroundColor: currentColors.textPrimary },
+              ]}
+              onPress={logout}
+            >
+              <AntDesign
+                name="logout"
+                size={18}
+                color={currentColors.background}
+              />
+              <Text
+                style={[styles.logoutText, { color: currentColors.background }]}
+              >
+                Log Out
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -524,6 +597,10 @@ const styles = StyleSheet.create({
   webview: {
     flex: 1,
   },
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-start",
+  },
   loaderContainer: {
     position: "absolute",
     top: 0,
@@ -533,6 +610,46 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
+  },
+  infoBox: {
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 30,
+    paddingVertical: 20,
+    width: "100%",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  emailText: {
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  logoutButton: {
+    paddingVertical: 20,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    gap: 6,
+    flexDirection: "row-reverse",
+
+    width: "100%",
+    alignItems: "center",
+  },
+  logoutText: {
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  modelHeader: {
+    padding: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  themeToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 20,
+    borderRadius: 10,
   },
 });
 export default Subscription;
