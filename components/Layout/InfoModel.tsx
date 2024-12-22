@@ -38,7 +38,7 @@ const CompanyInfo = () => {
       marginRight: 8,
     },
     logoContainer: {
-      backgroundColor: "#1E3A8AC1",
+      backgroundColor: "#1E3A8A",
       borderRadius: 8,
       width: 86,
       height: 86,
@@ -155,12 +155,9 @@ const CompanyInfo = () => {
           <View style={styles.logoSmall}>
             <Image
               style={styles.logo}
-              source={require("@/assets/images/icon.png")}
+              source={require("@/assets/images/icon-app.png")}
             />
           </View>
-        </View>
-        <View style={styles.rightSection}>
-          <Text style={styles.tag}>AI</Text>
         </View>
       </Pressable>
       <Modal
@@ -188,7 +185,7 @@ const CompanyInfo = () => {
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View style={styles.logoContainer}>
                   <Image
-                    source={require("@/assets/images/icon.png")}
+                    source={require("@/assets/images/icon-app.png")}
                     style={styles.logoLarge}
                   />
                 </View>

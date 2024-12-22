@@ -61,7 +61,7 @@ const ExternalLinkHandler: React.FC<ExternalLinkHandlerProps> = ({
                 height: 26,
                 resizeMode: "contain",
               }}
-              source={require("@/assets/images/icon.png")}
+              source={require("@/assets/images/icon-app.png")}
             />
           </View>
         </View>

@@ -40,7 +40,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           {message.isBot ? (
             <Image
               style={{ width: 16, height: 16 }}
-              source={require("@/assets/images/icon.png")}
+              source={require("@/assets/images/icon-app.png")}
             />
           ) : (
             <AntDesign name="user" size={16} color="white" />
