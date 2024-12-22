@@ -28,6 +28,9 @@ import { useAuthContext } from "@/context/AuthContext";
 
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
+import { MotiText, MotiView } from "moti";
+import { Link } from "expo-router";
+import { FontAwesome6 } from "@expo/vector-icons";
 
 const CarePlan: React.FC = () => {
   const { user } = useAuthContext();
@@ -433,6 +436,64 @@ const CarePlan: React.FC = () => {
     return null;
   };
 
+  if (!user?.isDeluxe) {
+    return (
+      <View
+        style={[
+          styles.restrictedContainer,
+          { backgroundColor: currentColors.background },
+        ]}
+      >
+        <FontAwesome6 name="crown" size={64} color="gold" />
+        <MotiText
+          style={[styles.restrictedTitle, { color: currentColors.textPrimary }]}
+        >
+          Premium Care Plans
+        </MotiText>
+        <Text
+          style={[
+            styles.restrictedSubtitle,
+            { color: currentColors.textSecondary },
+          ]}
+        >
+          Upgrade to{" "}
+          <Text
+            style={{ fontWeight: "bold", color: currentColors.textPrimary }}
+          >
+            Deluxe
+          </Text>{" "}
+          to access personalized health and fitness plans
+        </Text>
+
+        <View style={styles.infoBox}>
+          <AntDesign
+            name="infocirlceo"
+            size={24}
+            color={currentColors.textSecondary}
+          />
+          <Text
+            style={[styles.infoText, { color: currentColors.textSecondary }]}
+          >
+            Get unlimited access to AI-powered health and fitness planning tools
+          </Text>
+        </View>
+
+        <Link
+          href="/(app)/(tabs)/Subscription"
+          style={{
+            backgroundColor: "#1E3A8A",
+            borderRadius: 12,
+            alignSelf: "stretch",
+          }}
+        >
+          <View style={styles.upgradeButton}>
+            <Text style={styles.upgradeButtonText}>Upgrade to Deluxe</Text>
+            <AntDesign name="arrowright" size={20} color="white" />
+          </View>
+        </Link>
+      </View>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       {renderHeader()}
@@ -443,6 +504,49 @@ const CarePlan: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  upgradeButton: {
+    flex: 1,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+    gap: 18,
+  },
+  upgradeButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  restrictedContainer: {
+    flex: 1,
+    padding: 24,
+    alignItems: "center",
+    gap: 16,
+  },
+  restrictedTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    marginTop: 16,
+  },
+  restrictedSubtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+    backgroundColor: "rgba(0, 123, 255, 0.1)",
+    borderRadius: 12,
+    marginVertical: 16,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+  },
   container: { flex: 1 },
   header: {
     flexDirection: "row",
