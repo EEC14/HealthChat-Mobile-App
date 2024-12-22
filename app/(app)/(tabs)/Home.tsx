@@ -27,8 +27,10 @@ import { Message } from "@/types";
 
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "expo-router";
 
 export default function Home() {
+  const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const { user } = useAuthContext();
@@ -46,7 +48,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  if (!user) return;
+  if (!user) {
+    router.replace("/(app)/(auth)/Signin");
+    return;
+  }
 
   const loadRemainingMessages = useCallback(async () => {
     const remaining = await getRemainingMessages(user.isPro, user.isDeluxe);
