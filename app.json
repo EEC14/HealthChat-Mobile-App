@@ -2,19 +2,32 @@
   "expo": {
     "name": "HealthChat",
     "slug": "HealthChat",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#000"
+    },
     "scheme": "HealthChat",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shebl.HealthChat"
     },
     "android": {
+      "versionCode": 2,
+      "splash": {
+        "foregroundImage": "./assets/images/splash-icon.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#000"
+      },
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/favicon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#000"
       },
       "package": "com.shebl.HealthChat"
     },
@@ -28,10 +41,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/favicon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#000"
         }
       ]
     ],
