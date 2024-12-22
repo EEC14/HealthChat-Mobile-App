@@ -15,6 +15,7 @@ import {
   useState,
 } from "react";
 import { UserProfile } from "@/types";
+import { useRouter } from "expo-router";
 
 // Custom error handling type
 type AuthError = {
@@ -41,6 +42,7 @@ export const AuthContextProvider = ({
 }: {
   children: ReactElement;
 }) => {
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(
     undefined
@@ -147,6 +149,7 @@ export const AuthContextProvider = ({
     setIsLoading(true);
     try {
       await logoutUser();
+      router.replace("/(app)/(auth)/Signin");
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
