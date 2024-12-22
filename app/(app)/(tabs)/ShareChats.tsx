@@ -308,37 +308,9 @@ const SharedChatsList = () => {
     </View>
   );
 
-  function renderChatItem({
-    item,
-    webviewVisible,
-    setWebviewVisible,
-    webviewUrl,
-    setWebviewUrl,
-  }: {
-    item: Chat;
-    webviewVisible: boolean;
-    setWebviewVisible: React.Dispatch<React.SetStateAction<boolean>>;
-    webviewUrl: string;
-    setWebviewUrl: React.Dispatch<React.SetStateAction<string>>;
-  }) {
-    const handleOpenLink = (url: string) => {
-      setWebviewUrl(url);
-      setWebviewVisible(true);
-    };
-
-    const closeWebview = () => {
-      setWebviewVisible(false);
-      setWebviewUrl("");
-    };
+  function renderChatItem({ item }: { item: Chat }) {
     return (
       <>
-        <View>
-          <ExternalLinkHandler
-            visible={webviewVisible}
-            url={webviewUrl}
-            onClose={closeWebview}
-          />
-        </View>
         <View
           style={[
             styles.chatItem,
@@ -436,54 +408,69 @@ const SharedChatsList = () => {
     }
   };
 
+  const handleOpenLink = (url: string) => {
+    setWebviewUrl(url);
+    setWebviewVisible(true);
+  };
+
+  const closeWebview = () => {
+    setWebviewVisible(false);
+    setWebviewUrl("");
+  };
+
   return (
-    <FlatList
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[currentColors.primary]}
-          tintColor={currentColors.primary}
+    <View style={{ flex: 1, backgroundColor: currentColors.background }}>
+      <View>
+        <ExternalLinkHandler
+          visible={webviewVisible}
+          url={webviewUrl}
+          onClose={closeWebview}
         />
-      }
-      data={chats}
-      keyExtractor={(item) => item.id}
-      ListHeaderComponent={renderHeader}
-      renderItem={({ item }) =>
-        renderChatItem({
-          item,
-          webviewVisible,
-          setWebviewUrl,
-          webviewUrl,
-          setWebviewVisible,
-        })
-      }
-      contentContainerStyle={[
-        styles.listContainer,
-        { backgroundColor: currentColors.background },
-      ]}
-      showsVerticalScrollIndicator={false}
-      ListEmptyComponent={
-        <View style={styles.emptyStateContainer}>
-          <Text
-            style={[
-              styles.emptyStateTitle,
-              { color: currentColors.textPrimary },
-            ]}
-          >
-            No Shared Chats Yet
-          </Text>
-          <Text
-            style={[
-              styles.emptyStateSubtitle,
-              { color: currentColors.textSecondary },
-            ]}
-          >
-            Share your interesting conversations to see them here
-          </Text>
-        </View>
-      }
-    />
+      </View>
+      <FlatList
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[currentColors.primary]}
+            tintColor={currentColors.primary}
+          />
+        }
+        data={chats}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
+        renderItem={({ item }) =>
+          renderChatItem({
+            item,
+          })
+        }
+        contentContainerStyle={[
+          styles.listContainer,
+          { backgroundColor: currentColors.background },
+        ]}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyStateContainer}>
+            <Text
+              style={[
+                styles.emptyStateTitle,
+                { color: currentColors.textPrimary },
+              ]}
+            >
+              No Shared Chats Yet
+            </Text>
+            <Text
+              style={[
+                styles.emptyStateSubtitle,
+                { color: currentColors.textSecondary },
+              ]}
+            >
+              Share your interesting conversations to see them here
+            </Text>
+          </View>
+        }
+      />
+    </View>
   );
 };
 
@@ -561,7 +548,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 64,
-    flex: 1,
     paddingHorizontal: 12,
   },
   errorContainer: {
