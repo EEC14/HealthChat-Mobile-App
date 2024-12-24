@@ -18,7 +18,7 @@ import {
 import { generatePlan, generatePlanQuestions } from "@/utils/OpenAi";
 
 import Markdown from "react-native-markdown-display";
-import { PlanType, StepType } from "@/types";
+import { ColorsType, PlanType, StepType } from "@/types";
 
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
@@ -27,7 +27,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { useAuthContext } from "@/context/AuthContext";
 
 import { Colors } from "@/constants/Colors";
-import { useTheme } from "@/context/ThemeContext";
+import { Theme, useTheme } from "@/context/ThemeContext";
 import { MotiText, MotiView } from "moti";
 import { Link } from "expo-router";
 import { FontAwesome6 } from "@expo/vector-icons";
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
 //     color: colors.textPrimary,
 //   },
 // });
-const getMarkdownStyles = (colors) => ({
+const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   body: {
     color: colors.textSecondary,
     fontSize: 16,

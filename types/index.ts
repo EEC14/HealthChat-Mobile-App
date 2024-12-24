@@ -1,5 +1,5 @@
+import { Colors } from "@/constants/Colors";
 import { Timestamp } from "firebase/firestore";
-export type PlanType = "workout" | "diet";
 
 export type Message = {
   id: number;
@@ -30,3 +30,5 @@ export interface UserProfile {
 
 export type PlanType = "workout" | "diet";
 export type StepType = "select" | "questionnaire" | "plan";
+
+export type ColorsType = typeof Colors;
