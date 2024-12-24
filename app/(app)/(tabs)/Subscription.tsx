@@ -19,6 +19,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { MotiView, MotiText } from "moti";
 import AnimatedLottieView from "lottie-react-native";
+import LottieView from "lottie-react-native";
 
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -52,9 +53,8 @@ const Subscription: React.FC = () => {
   };
 
   const crownScale = useSharedValue(1);
-  const lottieRef = useRef(null);
+  const lottieRef = useRef<LottieView>(null);
 
-  // Animated styles
   const animatedCrownStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -103,7 +103,7 @@ const Subscription: React.FC = () => {
     crownScale.value = withSpring(1.2);
     setTimeout(() => {
       if (lottieRef.current) {
-        lottieRef.current?.play();
+        lottieRef.current.play();
       }
     }, 0);
   };
