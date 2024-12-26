@@ -8,6 +8,7 @@ import {
   Platform,
   SafeAreaView,
   StyleSheet,
+  Button,
 } from "react-native";
 
 import {
@@ -28,8 +29,20 @@ import { Message } from "@/types";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
-
+import { useNotification } from "@/context/NotificationContext";
+import {
+  scheduledNotifications,
+  sendPushNotification,
+} from "@/utils/Notifications";
 export default function Home() {
+  const {
+    notification,
+    expoPushToken,
+    error: notificationError,
+  } = useNotification();
+  if (notificationError) {
+    console.error("Error fetching notification:", notificationError);
+  }
   const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
@@ -132,6 +145,41 @@ export default function Home() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 36 : 26}
         style={{ flex: 1 }}
       >
+        <View
+          style={{
+            alignItems: "center",
+            justifyContent: "space-around",
+          }}
+        >
+          <Text style={{ color: currentColors.textPrimary }}>
+            Your Expo push token: {expoPushToken}
+          </Text>
+          <View style={{ alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: currentColors.textPrimary }}>
+              Title: {notification && notification.request.content.title}{" "}
+            </Text>
+            <Text style={{ color: currentColors.textPrimary }}>
+              Body: {notification && notification.request.content.body}
+            </Text>
+            <Text style={{ color: currentColors.textPrimary }}>
+              Data:{" "}
+              {notification &&
+                JSON.stringify(notification.request.content.data)}
+            </Text>
+          </View>
+          <Button
+            title="Press to Send Notification"
+            onPress={async () => {
+              await sendPushNotification(expoPushToken!);
+            }}
+          />
+          <Button
+            title="scheduled Notifications"
+            onPress={async () => {
+              await scheduledNotifications();
+            }}
+          />
+        </View>
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >
