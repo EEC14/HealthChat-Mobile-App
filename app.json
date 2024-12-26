@@ -29,6 +29,7 @@
         "resizeMode": "cover",
         "backgroundColor": "#000"
       },
+      "googleServicesFile": "./google-services.json",
       "package": "com.shebl.HealthChat"
     },
     "web": {
@@ -44,6 +45,26 @@
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "cover",
           "backgroundColor": "#000"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ffffff",
+          "userInterfaceStyle": "automatic",
+          "permissions": ["alert", "badge", "notification"],
+          "permissionsAlwaysAsk": {
+            "alert": true,
+            "badge": true,
+            "sound": true,
+            "provisional": true
+          },
+          "sound": true,
+          "sounds": ["./assets/sounds/notification1.wav"],
+          "androidMode": "default",
+          "androidChannelId": "default",
+          "androidChannelName": "default"
         }
       ]
     ],

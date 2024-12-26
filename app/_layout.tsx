@@ -5,6 +5,16 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, Image, Text, View } from "react-native";
+import * as Notifications from "expo-notifications";
+import { NotificationProvider } from "@/context/NotificationContext";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const MainLayout = () => {
   const { theme } = useTheme();
@@ -37,11 +47,13 @@ const MainLayout = () => {
 };
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AuthContextProvider>
-        <MainLayout />
-      </AuthContextProvider>
-    </ThemeProvider>
+    <AuthContextProvider>
+      <NotificationProvider>
+        <ThemeProvider>
+          <MainLayout />
+        </ThemeProvider>
+      </NotificationProvider>
+    </AuthContextProvider>
   );
 }
 
