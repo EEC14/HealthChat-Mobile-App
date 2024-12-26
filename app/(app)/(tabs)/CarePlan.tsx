@@ -442,7 +442,7 @@ const CarePlan: React.FC = () => {
     return null;
   };
 
-  if (user?.isDeluxe) {
+  if (!user?.isDeluxe) {
     return (
       <View
         style={[
