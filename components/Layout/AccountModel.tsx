@@ -68,7 +68,7 @@ const HeaderRight = React.memo(({}: {}) => {
               Profile
             </Text>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Octicons name="x" size={24} color={currentColors.iconDefault} />
+              <Octicons name="x" size={24} color={currentColors.textPrimary} />
             </TouchableOpacity>
           </View>
 
