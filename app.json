@@ -10,27 +10,24 @@
       "resizeMode": "cover",
       "backgroundColor": "#000"
     },
-    "scheme": "HealthChat",
+    "scheme": "healthchat",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shebl.HealthChat"
+      "bundleIdentifier": "com.healthchatdev.HealthChat"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "versionCode": 2,
       "splash": {
-        "foregroundImage": "./assets/images/splash-icon.png",
-        "resizeMode": "cover",
-        "backgroundColor": "#000"
+        "foregroundImage": "./assets/images/splash-icon.png"
       },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "resizeMode": "cover",
         "backgroundColor": "#000"
       },
-      "googleServicesFile": "./google-services.json",
-      "package": "com.shebl.HealthChat"
+      "package": "com.healthchatdev.HealthChat"
     },
     "web": {
       "bundler": "metro",
@@ -50,8 +47,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
-          "color": "#ffffff",
+          "icon": "./assets/images/icon-app.png",
           "userInterfaceStyle": "automatic",
           "permissions": ["alert", "badge", "notification"],
           "permissionsAlwaysAsk": {
@@ -61,7 +57,10 @@
             "provisional": true
           },
           "sound": true,
-          "sounds": ["./assets/sounds/notification1.wav"],
+          "sounds": [
+            "./assets/sounds/notification1.wav",
+            "./assets/sounds/notification1.wav"
+          ],
           "androidMode": "default",
           "androidChannelId": "default",
           "androidChannelName": "default"
@@ -76,8 +75,15 @@
         "origin": false
       },
       "eas": {
-        "projectId": "72fd329a-362e-4f69-86e7-43ed282749fa"
+        "projectId": "f7838caa-f9c6-4831-b8b9-939bb08bdd7a"
       }
+    },
+    "owner": "healthchat-dev",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f7838caa-f9c6-4831-b8b9-939bb08bdd7a"
     }
   }
 }
