@@ -146,7 +146,7 @@ export default function Home() {
         style={{ flex: 1 }}
       >
         {/* testing push notifications */}
-        <View
+        {/* <View
           style={{
             alignItems: "center",
             justifyContent: "space-around",
@@ -180,7 +180,7 @@ export default function Home() {
               await scheduledNotifications();
             }}
           />
-        </View>
+        </View> */}
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >
