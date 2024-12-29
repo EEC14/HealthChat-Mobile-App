@@ -42,6 +42,7 @@ app-example
 # firebase keys
 serviceAccountKey.json
 google-services.json
+playstore.json
 
 # builds folders for ios android
 /ios

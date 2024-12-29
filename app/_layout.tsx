@@ -10,6 +10,8 @@ import { NotificationProvider } from "@/context/NotificationContext";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: "notification1.wav",
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,

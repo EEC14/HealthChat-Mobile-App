@@ -8,8 +8,10 @@ export async function registerForPushNotificationsAsync() {
   if (Platform.OS === "android") {
     // console.log("android");
     await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
       importance: Notifications.AndroidImportance.MAX,
+      sound: "notification1.wav",
+      name: "default",
+      showBadge: true,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: "#FF231F7C",
     });
