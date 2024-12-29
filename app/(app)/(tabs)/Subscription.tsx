@@ -31,8 +31,16 @@ import { useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
 import { MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { usePurchases } from "@/context/PurchaseContext";
+import Paywall from "react-native-purchases-ui";
 
 const Subscription: React.FC = () => {
+  const { currentOffering, customerInfo, handlePurchase, restorePurchases } =
+    usePurchases();
+
+  // console.log("currentOffering", currentOffering);
+
+  console.log();
   const { theme, toggleTheme } = useTheme();
   const currentColors = Colors[theme];
   const [webviewVisible, setWebviewVisible] = useState(false);
@@ -72,23 +80,24 @@ const Subscription: React.FC = () => {
   const handleManageBilling = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        "https://healthchat-patient.esbhealthcare.com/.netlify/functions/billingportal",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            customerId: user?.stripeCustomerId,
-          }),
-        }
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      handleOpenLink(data.url);
+      // await precentCus;
+      // const response = await fetch(
+      //   "https://healthchat-patient.esbhealthcare.com/.netlify/functions/billingportal",
+      //   {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify({
+      //       customerId: user?.stripeCustomerId,
+      //     }),
+      //   }
+      // );
+      // if (!response.ok) {
+      //   throw new Error(`HTTP error! status: ${response.status}`);
+      // }
+      // const data = await response.json();
+      // handleOpenLink(data.url);
       // Linking.openURL(data.url);
     } catch (error) {
       console.error("There was an error!", error);
@@ -111,13 +120,17 @@ const Subscription: React.FC = () => {
     try {
       setLoading(true);
       if (!user) return;
-      const link = `${Plans[selectedPlan]?.link}?prefilled_email=${user.email}`;
-      if (!link) throw new Error("Plan link is undefined");
-      const supported = await Linking.canOpenURL(link);
-      if (!supported) throw new Error("Cannot open the URL");
-      // console.log("Opened link:", link);
-      handleOpenLink(link);
-      // Linking.openURL(link);
+      Paywall.presentPaywall({
+        displayCloseButton: true,
+        offering: currentOffering![selectedPlan.toLowerCase()],
+      });
+      // const link = `${Plans[selectedPlan]?.link}?prefilled_email=${user.email}`;
+      // if (!link) throw new Error("Plan link is undefined");
+      // const supported = await Linking.canOpenURL(link);
+      // if (!supported) throw new Error("Cannot open the URL");
+      // // console.log("Opened link:", link);
+      // handleOpenLink(link);
+      // // Linking.openURL(link);
     } catch (error) {
       console.error("Subscribe error:", error);
       alert("Failed to subscribe. Please try again.");

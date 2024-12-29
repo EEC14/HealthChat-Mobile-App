@@ -29,20 +29,7 @@ import { Message } from "@/types";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
-import { useNotification } from "@/context/NotificationContext";
-import {
-  scheduledNotifications,
-  sendPushNotification,
-} from "@/utils/Notifications";
 export default function Home() {
-  const {
-    notification,
-    expoPushToken,
-    error: notificationError,
-  } = useNotification();
-  if (notificationError) {
-    console.error("Error fetching notification:", notificationError);
-  }
   const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
