@@ -20,9 +20,16 @@
   },
   "submit": {
     "production": {
+
       "android": {
         "serviceAccountKeyPath": "./serviceAccountKey.json",
         "track": "internal"
+},
+      "ios": {
+        "appleId": "eric141423@gmail.com",
+        "ascAppId": "6739962453",
+        "appleTeamId": "P96M2P3U58"
+
       }
     }
   }
