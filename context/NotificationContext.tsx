@@ -41,22 +41,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
 }) => {
   const { user } = useAuthContext();
-  // console.log("user id", user?.uid);
   const router = useRouter();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] =
     useState<Notifications.Notification | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
-  const notificationListener = useRef<Subscription>();
-  const responseListener = useRef<Subscription>();
+  const notificationListener = useRef<{
+    remove(): void;
+  }>();
+  const responseListener = useRef<{
+    remove(): void;
+  }>();
 
   useEffect(() => {
     let isAmount = true;
     registerForPushNotificationsAsync().then(
       async (token) => {
         if (user?.uid) {
-          console.log("token", token);
+          // console.log("token", token);
           await updateUserProfile(user?.uid, { expoPushToken: token });
         }
         setExpoPushToken(token);

@@ -49,11 +49,7 @@
         {
           "icon": "./assets/images/icon-app.png",
           "userInterfaceStyle": "automatic",
-          "permissions": [
-            "alert",
-            "badge",
-            "notification"
-          ],
+          "permissions": ["alert", "badge", "notification"],
           "permissionsAlwaysAsk": {
             "alert": true,
             "badge": true,
@@ -61,9 +57,7 @@
             "provisional": true
           },
           "sound": true,
-          "sounds": [
-            "./assets/sounds/notification1.wav"
-          ],
+          "sounds": ["./assets/sounds/notification1.wav"],
           "androidMode": "default",
           "androidChannelId": "default",
           "androidChannelName": "Default Channel"

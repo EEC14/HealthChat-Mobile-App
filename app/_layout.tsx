@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, Image, Text, View } from "react-native";
 import * as Notifications from "expo-notifications";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { PurchaseProvider } from "@/context/PurchaseContext";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -47,14 +48,17 @@ const MainLayout = () => {
     </View>
   );
 };
+
 export default function RootLayout() {
   return (
     <AuthContextProvider>
-      <NotificationProvider>
-        <ThemeProvider>
-          <MainLayout />
-        </ThemeProvider>
-      </NotificationProvider>
+      <PurchaseProvider>
+        <NotificationProvider>
+          <ThemeProvider>
+            <MainLayout />
+          </ThemeProvider>
+        </NotificationProvider>
+      </PurchaseProvider>
     </AuthContextProvider>
   );
 }
