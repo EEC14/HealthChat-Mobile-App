@@ -41,14 +41,9 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
           apiKey: process.env.EXPO_PUBLIC_RC_IOS!,
         });
       }
-
-      // Get initial offerings
       try {
         const offerings = await Purchases.getOfferings();
-        // console.log(`Purchases offerings: ${JSON.stringify(offerings)}`);
         setCurrentOffering(offerings.all);
-
-        // Get customer info
         const customerInfo = await Purchases.getCustomerInfo();
         updatePurchaseStatus(customerInfo);
       } catch (error) {
@@ -57,28 +52,22 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsLoading(false);
       }
     };
-
     initPurchases();
-  }, []);
 
-  // Set up purchase listener
-  useEffect(() => {
-    const customerInfoUpdateListener = Purchases.addCustomerInfoUpdateListener(
-      (info) => {
-        updatePurchaseStatus(info);
-        handlePurchaseNotification(info);
-      }
-    );
-
-    // return () => {
-    //   customerInfoUpdateListener.remove();
-    // };
+    Purchases.addCustomerInfoUpdateListener((info) => {
+      updatePurchaseStatus(info);
+      handlePurchaseNotification(info);
+    });
   }, []);
 
   const updatePurchaseStatus = (customerInfo: CustomerInfo) => {
     setCustomerInfo(customerInfo);
-    const entitlements = customerInfo.entitlements.active;
-    // console.log("Entitlements:", entitlements);
+    if (customerInfo.entitlements.active["pro"] !== undefined) {
+      console.log("Purchase successful:", customerInfo);
+    }
+    if (customerInfo.entitlements.active["delxce"] === undefined) {
+      console.log("Purchase failed:", customerInfo);
+    }
   };
 
   const handlePurchaseNotification = async (info: CustomerInfo) => {
@@ -116,6 +105,7 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
       const { customerInfo } = await Purchases.purchasePackage(
         packageToPurchase
       );
+      console.log("Purchase successful:", customerInfo);
       updatePurchaseStatus(customerInfo);
     } catch (error: any) {
       if (!error.userCancelled) {
