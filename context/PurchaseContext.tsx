@@ -5,7 +5,9 @@ import Purchases, {
   CustomerInfo,
 } from "react-native-purchases";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
+import { updateUserProfile } from "@/firebase";
+import { useAuthContext } from "./AuthContext";
 
 interface PurchaseContextType {
   isLoading: boolean;
@@ -22,6 +24,8 @@ const PurchaseContext = createContext<PurchaseContextType | undefined>(
 export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const { user } = useAuthContext();
+
   const [isLoading, setIsLoading] = useState(true);
   const [currentOffering, setCurrentOffering] = useState<{
     [key: string]: PurchasesOffering;
@@ -60,16 +64,30 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, []);
 
-  const updatePurchaseStatus = (customerInfo: CustomerInfo) => {
+  // update and handle customer info and db access level
+  const updatePurchaseStatus = async (customerInfo: CustomerInfo) => {
     setCustomerInfo(customerInfo);
     if (customerInfo.entitlements.active["pro"] !== undefined) {
       console.log("Purchase successful:", customerInfo);
+      if (user?.uid) {
+        try {
+          console.log("Updating user profile for UID:", user?.uid);
+          await updateUserProfile(user?.uid, { isPro: true });
+        } catch (error) {}
+      }
     }
-    if (customerInfo.entitlements.active["delxce"] === undefined) {
-      console.log("Purchase failed:", customerInfo);
+    if (customerInfo.entitlements.active["delxce"] !== undefined) {
+      console.log("Purchase successful:", customerInfo);
+      if (user?.uid) {
+        try {
+          console.log("Updating user profile for UID:", user?.uid);
+          await updateUserProfile(user?.uid, { isDeluxe: true });
+        } catch (error) {}
+      }
     }
   };
 
+  // send push notifications for this device
   const handlePurchaseNotification = async (info: CustomerInfo) => {
     const previousEntitlements = customerInfo?.entitlements.active || {};
     const newEntitlements = info.entitlements.active;
@@ -99,6 +117,7 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // custom handlePurchase function
   const handlePurchase = async (packageToPurchase: PurchasesPackage) => {
     try {
       setIsLoading(true);
@@ -120,6 +139,28 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setIsLoading(true);
       const customerInfo = await Purchases.restorePurchases();
+      if (customerInfo.activeSubscriptions.length > 0) {
+        Alert.alert("Purchase Restored!", "Your purchase has been restored.");
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Purchase Restored!",
+            body: `Your purchase has been restored. Enjoy your premium features.`,
+          },
+          trigger: null,
+        });
+      } else {
+        Alert.alert(
+          "No Active Subscriptions",
+          "You don't have any active subscriptions."
+        );
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "No Active Subscriptions",
+            body: `You don't have any active subscriptions. Purchase a plan to enjoy premium features.`,
+          },
+          trigger: null,
+        });
+      }
       updatePurchaseStatus(customerInfo);
     } catch (error) {
       console.error("Restore error:", error);
