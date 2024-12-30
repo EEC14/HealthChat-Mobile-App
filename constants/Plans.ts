@@ -5,10 +5,8 @@ export const Plans = {
     name: "Pro",
     price: 30,
     features: [
-      "Unlimited health consultations",
-      "Priority response time",
-      "Detailed health insights",
-      "Personalized wellness plans",
+      "Unlimited chatbot access",
+      "Daily health tips",
     ],
   },
   Deluxe: {
@@ -18,9 +16,8 @@ export const Plans = {
     price: 45,
     features: [
       "All Pro features",
-      "Access to specialist knowledge base",
-      "Exclusive wellness webinars",
-      "VIP customer support",
+      "Workout plans generator",
+      "Diet plans generator",
     ],
   },
 };
