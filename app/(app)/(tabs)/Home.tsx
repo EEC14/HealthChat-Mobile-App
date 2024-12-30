@@ -145,7 +145,8 @@ export default function Home() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 36 : 26}
         style={{ flex: 1 }}
       >
-        <View
+        {/* testing push notifications */}
+        {/* <View
           style={{
             alignItems: "center",
             justifyContent: "space-around",
@@ -179,7 +180,7 @@ export default function Home() {
               await scheduledNotifications();
             }}
           />
-        </View>
+        </View> */}
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >

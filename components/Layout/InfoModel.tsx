@@ -170,7 +170,7 @@ const CompanyInfo = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>About HealthChat</Text>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Octicons name="x" size={24} color={currentColors.iconDefault} />
+              <Octicons name="x" size={24} color={currentColors.textPrimary} />
             </TouchableOpacity>
           </View>
           <View style={styles.modalContent}>

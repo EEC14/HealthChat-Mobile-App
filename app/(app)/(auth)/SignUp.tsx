@@ -20,8 +20,8 @@ import { useAuthContext } from "@/context/AuthContext";
 import { MotiView } from "moti";
 import Octicons from "@expo/vector-icons/Octicons";
 import { Colors } from "@/constants/Colors";
-import { Theme, useTheme } from "@/context/ThemeContext";
-import { StatusBar } from "expo-status-bar";
+import { useTheme } from "@/context/ThemeContext";
+
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
