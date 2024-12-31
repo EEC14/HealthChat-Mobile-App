@@ -34,35 +34,41 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const initPurchases = async () => {
-      if (Platform.OS === "android") {
-        console.log("Configuring RevenueCat for Android");
-        console.log(process.env.EXPO_PUBLIC_RC_ANDROID);
-        await Purchases.configure({
-          apiKey: process.env.EXPO_PUBLIC_RC_ANDROID!,
-        });
-      } else {
-        await Purchases.configure({
-          apiKey: process.env.EXPO_PUBLIC_RC_IOS!,
-        });
-      }
-      try {
-        const offerings = await Purchases.getOfferings();
-        setCurrentOffering(offerings.all);
-        const customerInfo = await Purchases.getCustomerInfo();
-        updatePurchaseStatus(customerInfo);
-      } catch (error) {
-        console.error("Error initializing purchases:", error);
-      } finally {
-        setIsLoading(false);
-      }
+    if (Platform.OS === "android") {
+    console.log("Configuring RevenueCat for Android");
+    console.log(process.env.EXPO_PUBLIC_RC_ANDROID);
+    Purchases.configure({
+    apiKey: process.env.EXPO_PUBLIC_RC_ANDROID!,
+    });
+    } else {
+    console.log("Configuring RevenueCat for iOS");
+    console.log(process.env.EXPO_PUBLIC_RC_IOS);
+    Purchases.configure({
+    apiKey: process.env.EXPO_PUBLIC_RC_IOS!,
+    });
+    }
+    try {
+    const offerings = await Purchases.getOfferings();
+    console.log("Offerings:", offerings);
+    setCurrentOffering(offerings.all);
+    const customerInfo = await Purchases.getCustomerInfo();
+    updatePurchaseStatus(customerInfo);
+    } catch (error) {
+    console.error("Error initializing purchases:", error);
+    } finally {
+    setIsLoading(false);
+    }
     };
     initPurchases();
-
+    
+    
+    
     Purchases.addCustomerInfoUpdateListener((info) => {
-      updatePurchaseStatus(info);
-      handlePurchaseNotification(info);
+    updatePurchaseStatus(info);
+    handlePurchaseNotification(info);
     });
   }, []);
+
 
   // update and handle customer info and db access level
   const updatePurchaseStatus = async (customerInfo: CustomerInfo) => {
