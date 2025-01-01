@@ -1,26 +1,24 @@
 export const Plans = {
   Pro: {
-    link: "https://buy.stripe.com/test_fZeaGr7qd2Ac6Dm8ww",
-    priceId: "price_1QQ7K2GuEHc4ZQvQ0nDFn6HL",
+    link: "https://buy.stripe.com/test_fZeaGr7qd2Ac6Dm8ww", //stripe link
+    priceId: "price_1QQ7K2GuEHc4ZQvQ0nDFn6HL", //stripe price id
     name: "Pro",
     price: 30,
     features: [
       "Unlimited health consultations",
-      "Priority response time",
-      "Detailed health insights",
-      "Personalized wellness plans",
+      "Daily health tips (Notifications)",
     ],
   },
   Deluxe: {
-    link: "https://buy.stripe.com/test_7sIcOz8uh0s43ra5km",
-    priceId: "price_1QTm7zGuEHc4ZQvQhrkqDkrQ",
+    link: "https://buy.stripe.com/test_7sIcOz8uh0s43ra5km", //stripe link
+    priceId: "price_1QTm7zGuEHc4ZQvQhrkqDkrQ", //stripe price id
     name: "Deluxe",
     price: 45,
     features: [
-      "All Pro features",
-      "Access to specialist knowledge base",
-      "Exclusive wellness webinars",
-      "VIP customer support",
+      "Unlimited health consultations",
+      "Daily health tips (Notifications)",
+      "Workout plan generator",
+      "Diet plan generator",
     ],
   },
 };
