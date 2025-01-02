@@ -25,7 +25,7 @@
       },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#fff"
+        "backgroundColor": "#000"
       },
       "package": "com.healthchatdev.HealthChat"
     },

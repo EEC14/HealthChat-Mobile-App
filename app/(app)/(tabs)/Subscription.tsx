@@ -10,6 +10,7 @@ import {
   ScrollView,
   RefreshControl,
   StyleSheet,
+  Platform,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -20,7 +21,11 @@ import Animated, {
 import { MotiView, MotiText } from "moti";
 import AnimatedLottieView from "lottie-react-native";
 import LottieView from "lottie-react-native";
-
+import Purchases, {
+  PurchasesOffering,
+  PurchasesPackage,
+  CustomerInfo,
+} from "react-native-purchases";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -37,10 +42,6 @@ import Paywall from "react-native-purchases-ui";
 const Subscription: React.FC = () => {
   const { currentOffering, customerInfo, handlePurchase, restorePurchases } =
     usePurchases();
-
-  // console.log("currentOffering", currentOffering);
-
-  console.log();
   const { theme, toggleTheme } = useTheme();
   const currentColors = Colors[theme];
   const [webviewVisible, setWebviewVisible] = useState(false);
@@ -80,6 +81,19 @@ const Subscription: React.FC = () => {
   const handleManageBilling = async () => {
     try {
       setLoading(true);
+      if (Platform.OS === "ios") {
+        const link = `https://apps.apple.com/account/subscriptions`;
+        if (!link) throw new Error("Plan link is undefined");
+        const supported = await Linking.canOpenURL(link);
+        if (!supported) throw new Error("Cannot open the URL");
+        handleOpenLink(link);
+      } else if (Platform.OS === "android") {
+        const link = `https://play.google.com/store/account/subscriptions`;
+        if (!link) throw new Error("Plan link is undefined");
+        const supported = await Linking.canOpenURL(link);
+        if (!supported) throw new Error("Cannot open the URL");
+        handleOpenLink(link);
+      }
       // await precentCus;
       // const response = await fetch(
       //   "https://healthchat-patient.esbhealthcare.com/.netlify/functions/billingportal",
@@ -116,13 +130,15 @@ const Subscription: React.FC = () => {
       }
     }, 0);
   };
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (plan?: "Pro" | "Deluxe") => {
     try {
       setLoading(true);
       if (!user) return;
       Paywall.presentPaywall({
         displayCloseButton: true,
-        offering: currentOffering![selectedPlan.toLowerCase()],
+        offering: plan
+          ? currentOffering![plan.toLowerCase()]
+          : currentOffering![selectedPlan.toLowerCase()],
       });
       // const link = `${Plans[selectedPlan]?.link}?prefilled_email=${user.email}`;
       // if (!link) throw new Error("Plan link is undefined");
@@ -138,7 +154,6 @@ const Subscription: React.FC = () => {
       setLoading(false);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -236,7 +251,8 @@ const Subscription: React.FC = () => {
                   transition={{ delay: 300 }}
                   style={{ color: currentColors.textSecondary }}
                 >
-                  Enjoy unlimited access to all premium features
+                  Enjoy unlimited access to all {user.isPro ? "Pro" : "Deluxe"}{" "}
+                  features
                 </MotiText>
               </View>
               <View
@@ -265,7 +281,7 @@ const Subscription: React.FC = () => {
                       className="text-sm text-center"
                       style={{ color: currentColors.textSecondary }}
                     >
-                      Easily upgrade, downgrade, or cancel your subscription.
+                      Easily upgrade, downgrade, or cancel your subscription. If you subscribed on the web app, please manage your subscription there.
                     </Text>
                   </View>
                 </View>
@@ -287,6 +303,91 @@ const Subscription: React.FC = () => {
                     <AntDesign name="arrowright" size={24} color="white" />
                   )}
                 </TouchableOpacity>
+                <View>
+                  <Text
+                    className="text-lg font-semibold text-center"
+                    style={{ color: currentColors.textPrimary }}
+                  >
+                    {user.isPro ? "Upgrade" : "Downgrade"} To{" "}
+                    {user.isPro ? "Deluxe" : "Pro"}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "center",
+                      marginBottom: 15,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 36,
+                        fontWeight: "bold",
+                        color: currentColors.textPrimary,
+                      }}
+                    >
+                      ${Plans[user?.isPro ? "Deluxe" : "Pro"].price}
+                    </Text>
+                    <Text
+                      style={{
+                        alignSelf: "flex-end",
+                        color: currentColors.textPrimary,
+                        marginLeft: 5,
+                      }}
+                    >
+                      /month
+                    </Text>
+                  </View>
+                  {Plans[user?.isPro ? "Deluxe" : "Pro"].features.map(
+                    (feature, index) => (
+                      <MotiView
+                        key={index}
+                        from={{ opacity: 0, translateX: -20 }}
+                        animate={{ opacity: 1, translateX: 0 }}
+                        transition={{ delay: 400 + index * 100 }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginBottom: 10,
+                        }}
+                      >
+                        <MaterialIcons
+                          name="check"
+                          size={24}
+                          color={currentColors.textPrimary}
+                          style={{ marginRight: 10 }}
+                        />
+                        <Text style={{ color: currentColors.textPrimary }}>
+                          {feature}
+                        </Text>
+                      </MotiView>
+                    )
+                  )}
+                  <TouchableOpacity
+                    disabled={loading}
+                    onPress={() =>
+                      handleSubscribe(user?.isPro ? "Deluxe" : "Pro")
+                    }
+                    className="flex-row items-center justify-center gap-2 py-4 bg-[#1E3A8A] rounded-lg"
+                  >
+                    <Text className="text-lg font-medium text-white ">
+                      {loading
+                        ? "Loading"
+                        : user.isPro
+                        ? "Upgrade"
+                        : "Downgrade"}{" "}
+                      To {user.isPro ? "Deluxe" : "Pro"}
+                    </Text>
+                    {loading ? (
+                      <ActivityIndicator
+                        animating={loading}
+                        size="small"
+                        color="#fff"
+                      />
+                    ) : (
+                      <AntDesign name="arrowright" size={24} color="white" />
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
             </MotiView>
           ) : (
@@ -443,7 +544,7 @@ const Subscription: React.FC = () => {
 
                 {user ? (
                   <TouchableOpacity
-                    onPress={handleSubscribe}
+                  onPress={() => handleSubscribe()}
                     style={{
                       backgroundColor: "#1E3A8A",
                       borderRadius: 25,

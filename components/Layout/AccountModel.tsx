@@ -159,7 +159,7 @@ const HeaderRight = React.memo(({}: {}) => {
                         className="text-sm"
                         style={{ color: currentColors.textSecondary }}
                       >
-                        Easily upgrade, downgrade, or cancel your subscription.
+                        Easily upgrade, downgrade, or cancel your subscription. If you subscribed in the web app, please manage your subscription there.
                       </Text>
                     </View>
                   </View>
@@ -177,7 +177,7 @@ const HeaderRight = React.memo(({}: {}) => {
                     }}
                   >
                     <Text style={{ color: "white", fontWeight: "bold" }}>
-                      Go Profile
+                      Profile
                     </Text>
                     <AntDesign name="arrowright" size={24} color="white" />
                   </TouchableOpacity>
