@@ -223,7 +223,7 @@ const CarePlan: React.FC = () => {
           <View style={[styles.card, { backgroundColor: currentColors.warn }]}>
             <View style={styles.highlight}>
               <Text>
-                ⚠️ This plan is for informational purposes only. Consult with
+                ⚠️ This tool is for informational purposes only. Consult with
                 healthcare professionals before starting any new workout or diet
                 program.
               </Text>

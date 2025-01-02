@@ -9,7 +9,7 @@ const openai = new OpenAI({
 const SYSTEM_PROMPT = `You are HealthChat, a specialized AI health assistant focused exclusively on health and healthcare-related topics. 
 
 Your responsibilities:
-1. ONLY answer questions related to health, medical information, wellness, and healthcare
+1. ONLY answer questions related to health, medical information, wellness, healthcare and the related fields.
 2. For any question not related to health or healthcare, respond with: "Sorry, I can only answer your healthcare concerns."
 3. When answering health questions:
    - Provide accurate, evidence-based health information
@@ -132,7 +132,7 @@ export async function generatePlanQuestions(
 
     return questions;
   } catch (error) {
-    console.error("OpenAI API Error:", error);
+    console.error("API Error:", error);
     throw new Error("Failed to generate questions");
   }
 }
@@ -143,7 +143,7 @@ export async function generatePlan(
   answers: Record<string, string>
 ): Promise<string> {
   if (!process.env.EXPO_PUBLIC_OPENAI_API_KEY) {
-    throw new Error("OpenAI API key is not configured");
+    throw new Error("API key is not configured");
   }
 
   const questionsAndAnswers = Object.entries(answers)
@@ -153,7 +153,7 @@ export async function generatePlan(
   const prompt =
     type === "workout"
       ? "You are a certified fitness trainer. Create a detailed workout plan based on the user's goals and answers. Include exercise descriptions, sets, reps, and weekly schedule."
-      : "You are a certified nutritionist. Create a detailed meal plan based on the user's goals and answers. Include meal suggestions, portions, and nutritional guidance.";
+      : "You are a certified nutritionist. Create a detailed meal plan based on the user's goals and answers. Include meal suggestions, portions, and nutritional guidance. You can also include a weekly schedule if you deem it necessary";
 
   try {
     const completion = await openai.chat.completions.create({

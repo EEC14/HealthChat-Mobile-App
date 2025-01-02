@@ -264,7 +264,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-          Total Shared Chats
+          Shared Chats
         </Text>
       </View>
       <View
@@ -283,7 +283,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-          Total Upvotes
+        Upvotes
         </Text>
       </View>
       <View
