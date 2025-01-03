@@ -311,98 +311,98 @@ const CarePlan: React.FC = () => {
           style={{ flex: 1, backgroundColor: currentColors.background }}
         >
           <ScrollView contentContainerStyle={[styles.scrollContainer]}>
-            <KeyboardAvoidingView
+            {/* <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
-              // keyboardVerticalOffset={Platform.OS === "ios" ? 36 : -50}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 36 : -50}
               style={{ flex: 1 }}
-            >
-              {questions.length === 0 ? (
-                <View style={[styles.questionContainer]}>
-                  <Text
-                    style={[styles.label, { color: currentColors.textPrimary }]}
-                  >
-                    What are your{" "}
-                    {planType === "workout" ? "fitness" : "dietary"} goals?
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      { color: currentColors.textPrimary },
-                    ]}
-                    placeholderTextColor={currentColors.textSecondary}
-                    placeholder={`Describe your ${planType} goals...`}
-                    value={goals}
-                    onChangeText={setGoals}
-                    multiline
-                  />
-                  <TouchableOpacity
-                    style={[
-                      styles.button,
-                      { backgroundColor: "#1E3A8A" },
-                      goals.trim() ? {} : styles.disabled,
-                      isLoading && styles.disabled,
-                    ]}
-                    onPress={handleGoalsSubmit}
-                    disabled={!goals.trim() || isLoading}
-                  >
-                    {isLoading && (
-                      <ActivityIndicator color={currentColors.textPrimary} />
-                    )}
-                    <Text style={styles.buttonText}>
-                      {isLoading ? "Generating Questions..." : "Continue"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                questions.map((question, index) => (
-                  <View key={index} style={styles.questionContainer}>
-                    <Markdown
-                      style={getMarkdownStyles(currentColors)}
-                    >{`${question}`}</Markdown>
-                    {question.includes("?") && (
-                      <TextInput
-                        style={[
-                          styles.textInput,
-                          {
-                            color: currentColors.textPrimary,
-                            borderColor: currentColors.border,
-                          },
-                        ]}
-                        placeholder="Your answer..."
-                        placeholderTextColor={currentColors.textSecondary}
-                        value={answers[question] || ""}
-                        onChangeText={(text) =>
-                          setAnswers((prev) => ({ ...prev, [question]: text }))
-                        }
-                        multiline
-                      />
-                    )}
-                  </View>
-                ))
-              )}
-              {questions.length > 0 && (
+            > */}
+            {questions.length === 0 ? (
+              <View style={[styles.questionContainer]}>
+                <Text
+                  style={[styles.label, { color: currentColors.textPrimary }]}
+                >
+                  What are your {planType === "workout" ? "fitness" : "dietary"}{" "}
+                  goals?
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    { color: currentColors.textPrimary },
+                  ]}
+                  placeholderTextColor={currentColors.textSecondary}
+                  placeholder={`Describe your ${planType} goals...`}
+                  value={goals}
+                  onChangeText={setGoals}
+                  multiline
+                />
                 <TouchableOpacity
                   style={[
                     styles.button,
                     { backgroundColor: "#1E3A8A" },
-                    !questions.every((q) => answers[q]?.trim()) &&
-                      styles.disabled,
+                    goals.trim() ? {} : styles.disabled,
                     isLoading && styles.disabled,
                   ]}
-                  onPress={handleAnswersSubmit}
-                  disabled={
-                    !questions.every((q) => answers[q]?.trim()) || isLoading
-                  }
+                  onPress={handleGoalsSubmit}
+                  disabled={!goals.trim() || isLoading}
                 >
                   {isLoading && (
                     <ActivityIndicator color={currentColors.textPrimary} />
                   )}
                   <Text style={styles.buttonText}>
-                    {isLoading ? "Generating ..." : "Generate Plan"}
+                    {isLoading ? "Generating Questions..." : "Continue"}
                   </Text>
                 </TouchableOpacity>
-              )}
-            </KeyboardAvoidingView>
+              </View>
+            ) : (
+              questions.map((question, index) => (
+                <View key={index} style={styles.questionContainer}>
+                  <Markdown
+                    style={getMarkdownStyles(currentColors)}
+                  >{`${question}`}</Markdown>
+                  {question.includes("?") && (
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        {
+                          color: currentColors.textPrimary,
+                          borderColor: currentColors.border,
+                        },
+                      ]}
+                      placeholder="Your answer..."
+                      placeholderTextColor={currentColors.textSecondary}
+                      value={answers[question] || ""}
+                      onChangeText={(text) =>
+                        setAnswers((prev) => ({ ...prev, [question]: text }))
+                      }
+                      multiline
+                    />
+                  )}
+                </View>
+              ))
+            )}
+            {questions.length > 0 && (
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  { backgroundColor: "#1E3A8A" },
+                  !questions.every((q) => answers[q]?.trim()) &&
+                    styles.disabled,
+                  isLoading && styles.disabled,
+                ]}
+                onPress={handleAnswersSubmit}
+                disabled={
+                  !questions.every((q) => answers[q]?.trim()) || isLoading
+                }
+              >
+                {isLoading && (
+                  <ActivityIndicator color={currentColors.textPrimary} />
+                )}
+                <Text style={styles.buttonText}>
+                  {isLoading ? "Generating ..." : "Generate Plan"}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {/* </KeyboardAvoidingView> */}
           </ScrollView>
         </SafeAreaView>
       );
