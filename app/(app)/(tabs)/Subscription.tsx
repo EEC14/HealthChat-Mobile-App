@@ -174,6 +174,10 @@ const Subscription: React.FC = () => {
       setRefreshing(false);
     }
   };
+  const handleProfileWeb = () => {
+    Linking.openURL("https://healthchat-patient.esbhealthcare.com/profile");
+  };
+
 
   return (
     <>
@@ -636,6 +640,35 @@ const Subscription: React.FC = () => {
                 {theme === "dark" ? "Dark Mode" : "Light Mode"}
               </Text>
             </Pressable>
+          </View>  
+          <View style={{ gap: 4 }}>
+            <Text
+              style={{
+                fontWeight: "900",
+                fontSize: 16,
+                color: currentColors.textPrimary,
+              }}
+            >
+              Manage your e-mail
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.infoBox,
+                { backgroundColor: currentColors.textPrimary },
+              ]}
+              onPress={handleProfileWeb}
+            >
+              <AntDesign
+                name="logout"
+                size={18}
+                color={currentColors.background}
+              />
+              <Text
+                style={[styles.logoutText, { color: currentColors.background }]}
+              >
+                Change your email
+              </Text>
+            </TouchableOpacity>
           </View>
           <View style={{ gap: 4 }}>
             <Text
