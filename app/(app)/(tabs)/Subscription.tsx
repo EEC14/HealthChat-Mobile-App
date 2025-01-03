@@ -21,11 +21,7 @@ import Animated, {
 import { MotiView, MotiText } from "moti";
 import AnimatedLottieView from "lottie-react-native";
 import LottieView from "lottie-react-native";
-import Purchases, {
-  PurchasesOffering,
-  PurchasesPackage,
-  CustomerInfo,
-} from "react-native-purchases";
+
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -37,11 +33,10 @@ import { Colors } from "@/constants/Colors";
 import { MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { usePurchases } from "@/context/PurchaseContext";
-import Paywall from "react-native-purchases-ui";
+import Paywall, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
 const Subscription: React.FC = () => {
-  const { currentOffering, customerInfo, handlePurchase, restorePurchases } =
-    usePurchases();
+  const { currentOffering, handlePurchase } = usePurchases();
   const { theme, toggleTheme } = useTheme();
   const currentColors = Colors[theme];
   const [webviewVisible, setWebviewVisible] = useState(false);
@@ -49,7 +44,7 @@ const Subscription: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user, fetchUserDetails, logout } = useAuthContext();
-
+  // console.log("user", user);
   const [selectedPlan, setSelectedPlan] = useState<"Pro" | "Deluxe">("Pro");
   const handleOpenLink = (url: string) => {
     setWebviewUrl(url);
@@ -134,12 +129,27 @@ const Subscription: React.FC = () => {
     try {
       setLoading(true);
       if (!user) return;
-      Paywall.presentPaywall({
+      const result: PAYWALL_RESULT = await Paywall.presentPaywall({
         displayCloseButton: true,
         offering: plan
           ? currentOffering![plan.toLowerCase()]
           : currentOffering![selectedPlan.toLowerCase()],
       });
+      if (result === PAYWALL_RESULT.PURCHASED) {
+        await handlePurchase(
+          currentOffering![selectedPlan.toLowerCase()].availablePackages[0]
+        );
+        alert("Purchased successfully");
+      } else if (result === PAYWALL_RESULT.CANCELLED) {
+        alert("Purchase cancelled");
+      } else if (result === PAYWALL_RESULT.ERROR) {
+        alert("Error occurred during purchase");
+      }
+      // const { url } = await handlePurchase(
+      //   currentOffering![selectedPlan.toLowerCase()]
+      // );
+      // if (!url) throw new Error("Purchase URL is undefined");
+      // const supported = await Linking.canOpenURL(url);
       // const link = `${Plans[selectedPlan]?.link}?prefilled_email=${user.email}`;
       // if (!link) throw new Error("Plan link is undefined");
       // const supported = await Linking.canOpenURL(link);
@@ -157,7 +167,7 @@ const Subscription: React.FC = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetchUserDetails(); // Refresh user details
+      await fetchUserDetails();
     } catch (error) {
       console.error("Error refreshing user details:", error);
     } finally {
@@ -255,6 +265,7 @@ const Subscription: React.FC = () => {
                   features
                 </MotiText>
               </View>
+
               <View
                 style={{
                   backgroundColor: currentColors.surface,
@@ -281,7 +292,7 @@ const Subscription: React.FC = () => {
                       className="text-sm text-center"
                       style={{ color: currentColors.textSecondary }}
                     >
-                      Easily upgrade, downgrade, or cancel your subscription. If you subscribed on the web app, please manage your subscription there.
+                      Easily upgrade, downgrade, or cancel your subscription.
                     </Text>
                   </View>
                 </View>
@@ -303,7 +314,7 @@ const Subscription: React.FC = () => {
                     <AntDesign name="arrowright" size={24} color="white" />
                   )}
                 </TouchableOpacity>
-                <View>
+                {/* <View>
                   <Text
                     className="text-lg font-semibold text-center"
                     style={{ color: currentColors.textPrimary }}
@@ -337,6 +348,7 @@ const Subscription: React.FC = () => {
                       /month
                     </Text>
                   </View>
+
                   {Plans[user?.isPro ? "Deluxe" : "Pro"].features.map(
                     (feature, index) => (
                       <MotiView
@@ -387,7 +399,7 @@ const Subscription: React.FC = () => {
                       <AntDesign name="arrowright" size={24} color="white" />
                     )}
                   </TouchableOpacity>
-                </View>
+                </View> */}
               </View>
             </MotiView>
           ) : (
@@ -544,7 +556,7 @@ const Subscription: React.FC = () => {
 
                 {user ? (
                   <TouchableOpacity
-                  onPress={() => handleSubscribe()}
+                    onPress={() => handleSubscribe()}
                     style={{
                       backgroundColor: "#1E3A8A",
                       borderRadius: 25,

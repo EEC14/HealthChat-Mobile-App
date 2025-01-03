@@ -145,6 +145,9 @@ const CompanyInfo = () => {
     Linking.openURL("https://www.esbhealthcare.com");
   };
 
+  const handleReadDocs = () => {
+    Linking.openURL("https://esb-healthcare.gitbook.io/healthchat-patient/");
+  };
   return (
     <>
       <Pressable
@@ -203,8 +206,8 @@ const CompanyInfo = () => {
               </View>
 
               <Text style={styles.companyDescription}>
-                HealthChat - Your AI Health Assistant. Providing intelligent
-                healthcare solutions to simplify your life.
+                HealthChat - Your AI Health Assistant. 
+                Providing intelligent healthcare solutions to simplify your life.
               </Text>
             </View>
             <View style={{ width: "100%", gap: 10 }}>
@@ -220,7 +223,13 @@ const CompanyInfo = () => {
               >
                 <Text style={styles.actionButtonText}>Visit Our Website</Text>
               </TouchableOpacity>
-              <Text style={styles.footerText}>© 2024 ESB Healthcare Ltd</Text>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleReadDocs}
+              >
+                <Text style={styles.actionButtonText}>Read the docs</Text>
+              </TouchableOpacity>
+              <Text style={styles.footerText}>© 2025 ESB Healthcare Ltd</Text>
             </View>
           </View>
         </View>

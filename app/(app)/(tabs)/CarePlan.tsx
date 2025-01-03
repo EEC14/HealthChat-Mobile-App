@@ -358,25 +358,24 @@ const CarePlan: React.FC = () => {
                     <Markdown
                       style={getMarkdownStyles(currentColors)}
                     >{`${question}`}</Markdown>
-                    {/* <Text style={{ color: currentColors.textPrimary }}>
-                      {question}
-                    </Text> */}
-                    <TextInput
-                      style={[
-                        styles.textInput,
-                        {
-                          color: currentColors.textPrimary,
-                          borderColor: currentColors.border,
-                        },
-                      ]}
-                      placeholder="Your answer..."
-                      placeholderTextColor={currentColors.textSecondary}
-                      value={answers[question] || ""}
-                      onChangeText={(text) =>
-                        setAnswers((prev) => ({ ...prev, [question]: text }))
-                      }
-                      multiline
-                    />
+                    {question.includes("?") && (
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          {
+                            color: currentColors.textPrimary,
+                            borderColor: currentColors.border,
+                          },
+                        ]}
+                        placeholder="Your answer..."
+                        placeholderTextColor={currentColors.textSecondary}
+                        value={answers[question] || ""}
+                        onChangeText={(text) =>
+                          setAnswers((prev) => ({ ...prev, [question]: text }))
+                        }
+                        multiline
+                      />
+                    )}
                   </View>
                 ))
               )}

@@ -6,7 +6,7 @@ import Purchases, {
 } from "react-native-purchases";
 import * as Notifications from "expo-notifications";
 import { Alert, Platform } from "react-native";
-import { updateUserProfile, getUserProfile } from "@/firebase";
+import { updateUserProfile } from "@/firebase";
 import { useAuthContext } from "./AuthContext";
 
 interface PurchaseContextType {
@@ -15,6 +15,8 @@ interface PurchaseContextType {
   customerInfo: CustomerInfo | null;
   handlePurchase: (packageToPurchase: PurchasesPackage) => Promise<void>;
   restorePurchases: () => Promise<void>;
+  // handlePurchaseNotification: (info: CustomerInfo) => Promise<void>;
+  // handlePurchaseSwitch: (packageToPurchase: PurchasesPackage) => Promise<void>;
 }
 
 const PurchaseContext = createContext<PurchaseContextType | undefined>(
@@ -25,6 +27,7 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user } = useAuthContext();
+
   const [isLoading, setIsLoading] = useState(true);
   const [currentOffering, setCurrentOffering] = useState<{
     [key: string]: PurchasesOffering;
@@ -33,74 +36,89 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const initPurchases = async () => {
-    if (Platform.OS === "android") {
-    console.log("Configuring RevenueCat for Android");
-    console.log(process.env.EXPO_PUBLIC_RC_ANDROID);
-    Purchases.configure({
-    apiKey: process.env.EXPO_PUBLIC_RC_ANDROID!,
-    });
-    } else {
-    console.log("Configuring RevenueCat for iOS");
-    console.log(process.env.EXPO_PUBLIC_RC_IOS);
-    Purchases.configure({
-    apiKey: process.env.EXPO_PUBLIC_RC_IOS!,
-    });
-    }
-    try {
-    const offerings = await Purchases.getOfferings();
-    setCurrentOffering(offerings.all);
-    // console.log("offerings:", offerings);
-    } catch (error) {
-    console.error("Error initializing purchases:", error);
-    } finally {
-    setIsLoading(false);
-    }
+      if (Platform.OS === "android") {
+        Purchases.configure({
+          apiKey: process.env.EXPO_PUBLIC_RC_ANDROID!,
+        });
+      } else {
+        Purchases.configure({
+          apiKey: process.env.EXPO_PUBLIC_RC_IOS!,
+        });
+      }
+      try {
+        const offerings = await Purchases.getOfferings();
+        setCurrentOffering(offerings.all);
+      } catch (error) {
+        console.error("Error initializing purchases:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     initPurchases();
-    }, []);
-    
-    
-    
-    // listen for customer info updates and update the purchase status
-    useEffect(() => {
-    if (user) {
-    Purchases.addCustomerInfoUpdateListener((info) => {
-    console.log("Customer info updated", info);
-    updatePurchaseStatus(info);
-    handlePurchaseNotification(info);
-    });
-    }
-    }, [user]);
+  }, []);
 
-  // update and handle customer info and db access level
+  // listen for customer info updates and update the purchase status
+  // useEffect(() => {
+  //   if (user) {
+  //     Purchases.addCustomerInfoUpdateListener((info) => {
+  //       console.log("addCustomerInfoUpdateListener");
+  //       updatePurchaseStatus(info);
+  //       handlePurchaseNotification(info);
+  //     });
+  //   }
+  //   return () => {
+  //     Purchases.removeCustomerInfoUpdateListener((info) => {});
+  //   };
+  // }, [user]);
+
   const updatePurchaseStatus = async (customerInfo: CustomerInfo) => {
-    console.log(user?.uid);
-    console.log("Customer info updated in DB", customerInfo);
+    console.log(
+      "Customer info updated in DB",
+      customerInfo.entitlements.active
+    );
     setCustomerInfo(customerInfo);
-    if (customerInfo.entitlements.active["pro"] !== undefined) {
-      console.log("Purchase successful:", customerInfo);
-      if (user?.uid) {
-        try {
-          console.log("Updating user profile for UID:", user?.uid);
-          await updateUserProfile(user?.uid, { isPro: true });
-        } catch (error) {}
-      }
-    }
-    if (customerInfo.entitlements.active["deluxe"] !== undefined) {
-      console.log("Purchase successful:", customerInfo);
-      if (user?.uid) {
-        try {
-          console.log("Updating user profile for UID:", user?.uid);
-          await updateUserProfile(user?.uid, { isDeluxe: true });
-        } catch (error) {}
+
+    const isPro = !!customerInfo.entitlements.active["pro"];
+    const isDeluxe = !!customerInfo.entitlements.active["deluxe"];
+
+    if (user?.uid) {
+      try {
+        await updateUserProfile(user?.uid, {
+          isPro,
+          isDeluxe,
+        });
+        console.log(
+          "Purchase successful: updated in DB",
+          "isPro:",
+          isPro,
+          "isDeluxe:",
+          isDeluxe
+        );
+      } catch (error) {
+        console.error("Error updating Firebase:", error);
       }
     }
   };
 
+  // custom handlePurchase function
+  const handlePurchase = async (packageToPurchase: PurchasesPackage) => {
+    try {
+      setIsLoading(true);
+      const { customerInfo } = await Purchases.purchasePackage(
+        packageToPurchase
+      );
+      updatePurchaseStatus(customerInfo);
+      handlePurchaseNotification(customerInfo);
+    } catch (error: any) {
+      if (!error.userCancelled) {
+        console.error("Purchase error:", error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // send push notifications for this device
   const handlePurchaseNotification = async (info: CustomerInfo) => {
-    console.log(user?.uid);
-    console.log("Handling purchase notification");
     const previousEntitlements = customerInfo?.entitlements.active || {};
     const newEntitlements = info.entitlements.active;
     for (const entitlement in newEntitlements) {
@@ -128,25 +146,6 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
   };
-
-  // custom handlePurchase function
-  const handlePurchase = async (packageToPurchase: PurchasesPackage) => {
-    try {
-      setIsLoading(true);
-      const { customerInfo } = await Purchases.purchasePackage(
-        packageToPurchase
-      );
-      console.log("Purchase successful:", customerInfo);
-      updatePurchaseStatus(customerInfo);
-    } catch (error: any) {
-      if (!error.userCancelled) {
-        console.error("Purchase error:", error);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const restorePurchases = async () => {
     try {
       setIsLoading(true);
@@ -189,6 +188,8 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
         customerInfo,
         handlePurchase,
         restorePurchases,
+        // handlePurchaseNotification,
+        // handlePurchaseSwitch,
       }}
     >
       {children}
