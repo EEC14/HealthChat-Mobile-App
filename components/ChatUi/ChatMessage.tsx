@@ -1,8 +1,11 @@
+import * as Speech from 'expo-speech';
 import AntDesign from "@expo/vector-icons/AntDesign";
-import React from "react";
-import { View, Text, Image } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
+
 interface ChatMessageProps {
   message: {
     text: string;
@@ -14,6 +17,32 @@ interface ChatMessageProps {
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const { theme } = useTheme();
   const currentColors = Colors[theme];
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const handleSpeak = async () => {
+    const isSpeechInProgress = await Speech.isSpeakingAsync();
+    
+    if (isSpeechInProgress) {
+      await Speech.stop();
+      setIsSpeaking(false);
+    } else {
+      setIsSpeaking(true);
+      
+      try {
+        await Speech.speak(message.text, {
+          language: 'en',
+          rate: 0.9,
+          pitch: 1.0,
+          onDone: () => setIsSpeaking(false),
+          onError: () => setIsSpeaking(false),
+        });
+      } catch (error) {
+        console.error('Speech error:', error);
+        setIsSpeaking(false);
+      }
+    }
+  };
+
   return (
     <View
       style={{
@@ -53,14 +82,27 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             borderRadius: 16,
           }}
         >
-          <Text
-            style={{
-              color: message.isBot ? currentColors.textPrimary : "white",
-              fontSize: 16,
-            }}
-          >
-            {message.text}
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Text
+              style={{
+                color: message.isBot ? currentColors.textPrimary : "white",
+                fontSize: 16,
+                flex: 1,
+                marginRight: message.isBot ? 8 : 0,
+              }}
+            >
+              {message.text}
+            </Text>
+            {message.isBot && (
+              <TouchableOpacity onPress={handleSpeak} style={{ padding: 4 }}>
+                <Feather
+                  name={isSpeaking ? "pause" : "volume-2"}
+                  size={20}
+                  color={currentColors.textPrimary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
           <Text
             style={{
               color: message.isBot ? currentColors.textSecondary : "#93c5fd",

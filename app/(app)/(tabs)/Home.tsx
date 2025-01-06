@@ -29,6 +29,7 @@ import { Message } from "@/types";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
+import * as Speech from 'expo-speech';
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -48,6 +49,13 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
+
+  
   if (!user) {
     router.replace("/(app)/(auth)/Signin");
     return;

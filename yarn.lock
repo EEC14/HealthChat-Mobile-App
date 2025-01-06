@@ -2321,7 +2321,7 @@
 
 "@revenuecat/purchases-typescript-internal@13.14.0":
   version "13.14.0"
-  resolved "https://registry.yarnpkg.com/@revenuecat/purchases-typescript-internal/-/purchases-typescript-internal-13.14.0.tgz#7baa3848c2b34819c0eac725c81e18c78051cbb2"
+  resolved "https://registry.npmjs.org/@revenuecat/purchases-typescript-internal/-/purchases-typescript-internal-13.14.0.tgz"
   integrity sha512-PVB3mfqElRwewyufdd3WEbLj7fyGQ36fAGMC6nRdA86H9tZI8TwH3db1BBCX49SK5QrDaaOF7E3VHXXe0/zB5w==
 
 "@segment/loosely-validate-event@^2.0.0":
@@ -2723,7 +2723,7 @@ application-config-path@^0.1.0:
 
 arg@4.1.0:
   version "4.1.0"
-  resolved "https://registry.yarnpkg.com/arg/-/arg-4.1.0.tgz#583c518199419e0037abb74062c37f8519e575f0"
+  resolved "https://registry.npmjs.org/arg/-/arg-4.1.0.tgz"
   integrity sha512-ZWc51jO3qegGkVh8Hwpv636EkbesNV5ZNQPCtRa+0qytRYPEs9IYT9qITY9buezqUH5uqyzlWLcufrzU2rffdg==
 
 arg@^5.0.2:
@@ -4044,7 +4044,7 @@ expo-device@^7.0.1:
 
 expo-eas-client@~0.13.0:
   version "0.13.1"
-  resolved "https://registry.yarnpkg.com/expo-eas-client/-/expo-eas-client-0.13.1.tgz#ebca627f3f58a54906394eb3f5d22f41a1822618"
+  resolved "https://registry.npmjs.org/expo-eas-client/-/expo-eas-client-0.13.1.tgz"
   integrity sha512-IyeDiM6YSJG0c45kbuEo0qt76z0KTEZtisEFEtle+b+vfn9I3N+r3jbPscaI4yS3P6gpuoDyHv81YDVC6Dmkhw==
 
 expo-file-system@~18.0.5:
@@ -4150,6 +4150,11 @@ expo-router@4.0.11:
     semver "~7.6.3"
     server-only "^0.0.1"
 
+expo-speech@~13.0.0:
+  version "13.0.0"
+  resolved "https://registry.yarnpkg.com/expo-speech/-/expo-speech-13.0.0.tgz#a37d7091bd6d10b1fd446e361891d6559cac33d1"
+  integrity sha512-LscUm2vnRyW6ej8PP8/5E80ivix8PP3hnagOcb/7TGFyDIFVIXy1zyEjT/1kTkpT0FzN2ha+qxtLzQyQvHQcJA==
+
 expo-splash-screen@~0.29.18:
   version "0.29.18"
   resolved "https://registry.npmjs.org/expo-splash-screen/-/expo-splash-screen-0.29.18.tgz"
@@ -4164,7 +4169,7 @@ expo-status-bar@~2.0.0:
 
 expo-structured-headers@~4.0.0:
   version "4.0.0"
-  resolved "https://registry.yarnpkg.com/expo-structured-headers/-/expo-structured-headers-4.0.0.tgz#85537ae6daec61ebfb214ede4107c8841c6e16d0"
+  resolved "https://registry.npmjs.org/expo-structured-headers/-/expo-structured-headers-4.0.0.tgz"
   integrity sha512-uPiwZjWq3AdFGgY52+I2nGPrNa6izxAglymPXHUZLekZW290GqIUOk7MBNDD4sg4JwUbSi3gdxEurpEvuq+FSg==
 
 expo-symbols@~0.2.0:
@@ -4189,7 +4194,7 @@ expo-updates-interface@~1.0.0:
 
 expo-updates@~0.26.10:
   version "0.26.10"
-  resolved "https://registry.yarnpkg.com/expo-updates/-/expo-updates-0.26.10.tgz#b39c77841b609b34e0e4e239f37e8d5e4da3c5e5"
+  resolved "https://registry.npmjs.org/expo-updates/-/expo-updates-0.26.10.tgz"
   integrity sha512-ETGUaSZRL7x72RH6MbZWRpyU9GFzCixIPNUT0kf/hcD07ojyHlW5hcwgc5ve565THSvhgiumz3yImKLbKBv2JA==
   dependencies:
     "@expo/code-signing-certificates" "0.0.5"
@@ -7143,7 +7148,7 @@ react-native-markdown-display@^7.0.2:
 
 react-native-purchases-ui@^8.5.0:
   version "8.5.0"
-  resolved "https://registry.yarnpkg.com/react-native-purchases-ui/-/react-native-purchases-ui-8.5.0.tgz#0d1bde661310c7c17d6abd47f0dd95416adccfbb"
+  resolved "https://registry.npmjs.org/react-native-purchases-ui/-/react-native-purchases-ui-8.5.0.tgz"
   integrity sha512-KgVLcs4E58lKtTO6elstpmtSCAgpFPEQyUYKzzPbY5sxIjYwXYZJwd5xUPJ09vW5PO/vmdHxyDCAOm/bhyNxZg==
   dependencies:
     "@revenuecat/purchases-typescript-internal" "13.14.0"
@@ -7151,7 +7156,7 @@ react-native-purchases-ui@^8.5.0:
 
 react-native-purchases@8.5.0, react-native-purchases@^8.5.0:
   version "8.5.0"
-  resolved "https://registry.yarnpkg.com/react-native-purchases/-/react-native-purchases-8.5.0.tgz#62eca81463ea5031d756e888733e3307880d5119"
+  resolved "https://registry.npmjs.org/react-native-purchases/-/react-native-purchases-8.5.0.tgz"
   integrity sha512-Qu8P+ZNKH9e9mRnwD7lsdlgrN4HPy79fStSe9GDvVD89922jO0isdUz2m1d2vLAxR2Yawq+O0ggi0uUhA1NzUg==
   dependencies:
     "@revenuecat/purchases-typescript-internal" "13.14.0"

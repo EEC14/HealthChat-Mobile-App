@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from "react";
-
 import {
   View,
   Text,
@@ -10,25 +9,21 @@ import {
   StyleSheet,
   SafeAreaView,
   Modal,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  KeyboardAvoidingView
 } from "react-native";
 
 import { generatePlan, generatePlanQuestions } from "@/utils/OpenAi";
-
 import Markdown from "react-native-markdown-display";
 import { ColorsType, PlanType, StepType } from "@/types";
-
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from "@expo/vector-icons/AntDesign";
-
 import { useAuthContext } from "@/context/AuthContext";
-
 import { Colors } from "@/constants/Colors";
 import { Theme, useTheme } from "@/context/ThemeContext";
-import { MotiText, MotiView } from "moti";
+import { MotiText } from "moti";
 import { Link } from "expo-router";
 import { FontAwesome6 } from "@expo/vector-icons";
 
@@ -52,7 +47,6 @@ const CarePlan: React.FC = () => {
       const generatedQuestions = await generatePlanQuestions(planType!, goals);
 
       setQuestions(generatedQuestions);
-      console.log("Generated Questions:", generatedQuestions);
       setStep("questionnaire");
     } catch (error) {
       Alert.alert("Error", "Failed to generate questions. Please try again.");
@@ -115,7 +109,7 @@ const CarePlan: React.FC = () => {
       <Text style={[styles.headerTitle, { color: currentColors.textPrimary }]}>
         {step === "select" && "Choose a Plan"}
         {step === "questionnaire" &&
-          `${planType === "workout" ? "Fitness" : "Diet"} Questions`}
+          `${planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Questions`}
         {step === "plan" && "Your Personalized Plan"}
       </Text>
       <View style={styles.headerActions}>
@@ -224,7 +218,7 @@ const CarePlan: React.FC = () => {
           <View style={[styles.card, { backgroundColor: currentColors.warn }]}>
             <View style={styles.highlight}>
               <Text>
-                ⚠️ This plan is for informational purposes only. Consult with
+                ⚠️ This tool is for informational purposes only. Consult with
                 healthcare professionals before starting any new workout or diet
                 program.
               </Text>
@@ -301,6 +295,42 @@ const CarePlan: React.FC = () => {
               Personalized meal plan
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              setPlanType("meditation");
+              setStep("questionnaire");
+            }}
+            style={[
+              styles.card,
+              {
+                backgroundColor: currentColors.surface,
+                borderWidth: 1,
+                borderColor: currentColors.border,
+              },
+            ]}
+          >
+            <View style={styles.iconContainer}>
+              <FontAwesome5
+                name="om"
+                size={24}
+                color={currentColors.textPrimary}
+              />
+            </View>
+            <Text
+              style={[styles.cardTitle, { color: currentColors.textPrimary }]}
+            >
+              Meditation Plan
+            </Text>
+            <Text
+              style={[
+                styles.cardSubtitle,
+                { color: currentColors.textSecondary },
+              ]}
+            >
+              Personalized meditation routine
+            </Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -311,98 +341,98 @@ const CarePlan: React.FC = () => {
           style={{ flex: 1, backgroundColor: currentColors.background }}
         >
           <ScrollView contentContainerStyle={[styles.scrollContainer]}>
-            {/* <KeyboardAvoidingView
+            <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 36 : -50}
+              // keyboardVerticalOffset={Platform.OS === "ios" ? 36 : -50}
               style={{ flex: 1 }}
-            > */}
-            {questions.length === 0 ? (
-              <View style={[styles.questionContainer]}>
-                <Text
-                  style={[styles.label, { color: currentColors.textPrimary }]}
-                >
-                  What are your {planType === "workout" ? "fitness" : "dietary"}{" "}
-                  goals?
-                </Text>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    { color: currentColors.textPrimary },
-                  ]}
-                  placeholderTextColor={currentColors.textSecondary}
-                  placeholder={`Describe your ${planType} goals...`}
-                  value={goals}
-                  onChangeText={setGoals}
-                  multiline
-                />
+            >
+              {questions.length === 0 ? (
+                <View style={[styles.questionContainer]}>
+                  <Text
+                    style={[styles.label, { color: currentColors.textPrimary }]}
+                  >
+                    What are your{" "}
+                    {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} goals?
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      { color: currentColors.textPrimary },
+                    ]}
+                    placeholderTextColor={currentColors.textSecondary}
+                    placeholder={`Describe your ${planType} goals...`}
+                    value={goals}
+                    onChangeText={setGoals}
+                    multiline
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.button,
+                      { backgroundColor: "#1E3A8A" },
+                      goals.trim() ? {} : styles.disabled,
+                      isLoading && styles.disabled,
+                    ]}
+                    onPress={handleGoalsSubmit}
+                    disabled={!goals.trim() || isLoading}
+                  >
+                    {isLoading && (
+                      <ActivityIndicator color={currentColors.textPrimary} />
+                    )}
+                    <Text style={styles.buttonText}>
+                      {isLoading ? "Generating Questions..." : "Continue"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                questions.map((question, index) => (
+                  <View key={index} style={styles.questionContainer}>
+                    <Markdown
+                      style={getMarkdownStyles(currentColors)}
+                    >{`${question}`}</Markdown>
+                    {question.includes("?") && (
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          {
+                            color: currentColors.textPrimary,
+                            borderColor: currentColors.border,
+                          },
+                        ]}
+                        placeholder="Your answer..."
+                        placeholderTextColor={currentColors.textSecondary}
+                        value={answers[question] || ""}
+                        onChangeText={(text) =>
+                          setAnswers((prev) => ({ ...prev, [question]: text }))
+                        }
+                        multiline
+                      />
+                    )}
+                  </View>
+                ))
+              )}
+              {questions.length > 0 && (
                 <TouchableOpacity
                   style={[
                     styles.button,
                     { backgroundColor: "#1E3A8A" },
-                    goals.trim() ? {} : styles.disabled,
+                    !questions.every((q) => answers[q]?.trim()) &&
+                      styles.disabled,
                     isLoading && styles.disabled,
                   ]}
-                  onPress={handleGoalsSubmit}
-                  disabled={!goals.trim() || isLoading}
+                  onPress={handleAnswersSubmit}
+                  disabled={
+                    !questions.every((q) => answers[q]?.trim()) || isLoading
+                  }
                 >
                   {isLoading && (
                     <ActivityIndicator color={currentColors.textPrimary} />
                   )}
                   <Text style={styles.buttonText}>
-                    {isLoading ? "Generating Questions..." : "Continue"}
+                    {isLoading ? "Generating ..." : "Generate Plan"}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            ) : (
-              questions.map((question, index) => (
-                <View key={index} style={styles.questionContainer}>
-                  <Markdown
-                    style={getMarkdownStyles(currentColors)}
-                  >{`${question}`}</Markdown>
-                  {question.includes("?") && (
-                    <TextInput
-                      style={[
-                        styles.textInput,
-                        {
-                          color: currentColors.textPrimary,
-                          borderColor: currentColors.border,
-                        },
-                      ]}
-                      placeholder="Your answer..."
-                      placeholderTextColor={currentColors.textSecondary}
-                      value={answers[question] || ""}
-                      onChangeText={(text) =>
-                        setAnswers((prev) => ({ ...prev, [question]: text }))
-                      }
-                      multiline
-                    />
-                  )}
-                </View>
-              ))
-            )}
-            {questions.length > 0 && (
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  { backgroundColor: "#1E3A8A" },
-                  !questions.every((q) => answers[q]?.trim()) &&
-                    styles.disabled,
-                  isLoading && styles.disabled,
-                ]}
-                onPress={handleAnswersSubmit}
-                disabled={
-                  !questions.every((q) => answers[q]?.trim()) || isLoading
-                }
-              >
-                {isLoading && (
-                  <ActivityIndicator color={currentColors.textPrimary} />
-                )}
-                <Text style={styles.buttonText}>
-                  {isLoading ? "Generating ..." : "Generate Plan"}
-                </Text>
-              </TouchableOpacity>
-            )}
-            {/* </KeyboardAvoidingView> */}
+              )}
+            </KeyboardAvoidingView>
           </ScrollView>
         </SafeAreaView>
       );
@@ -419,7 +449,7 @@ const CarePlan: React.FC = () => {
           <Text
             style={[styles.planTitle, { color: currentColors.textPrimary }]}
           >
-            Your {planType === "workout" ? "Workout" : "Diet"} Plan
+            Your {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Plan
           </Text>
           <View
             style={[
@@ -889,4 +919,4 @@ const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   },
 });
 
-export default CarePlan;
+export default CarePlan ;
