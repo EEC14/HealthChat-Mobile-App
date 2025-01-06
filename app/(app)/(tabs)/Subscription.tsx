@@ -21,7 +21,10 @@ import Animated, {
 import { MotiView, MotiText } from "moti";
 import AnimatedLottieView from "lottie-react-native";
 import LottieView from "lottie-react-native";
-
+import { Alert } from 'react-native';
+import { deleteUser } from 'firebase/auth';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { auth, db } from '@/firebase';
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -115,7 +118,49 @@ const Subscription: React.FC = () => {
       setLoading(false);
     }
   };
-
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const currentUser = auth.currentUser;
+              
+              if (!currentUser) {
+                throw new Error('No user found');
+              }
+  
+              // Delete user data from Firestore
+              await deleteDoc(doc(db, "users", currentUser.uid));
+  
+              // Delete user from Authentication
+              await deleteUser(currentUser);
+  
+              // Call logout to clean up the app state
+              await logout();
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete account. Please try again later."
+              );
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
   const handlePlanSelect = (plan: "Pro" | "Deluxe") => {
     setSelectedPlan(plan);
     crownScale.value = withSpring(1.2);
@@ -667,6 +712,36 @@ const Subscription: React.FC = () => {
                 style={[styles.logoutText, { color: currentColors.background }]}
               >
                 Change your email
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ gap: 4 }}>
+            <Text
+              style={{
+                fontWeight: "900",
+                fontSize: 16,
+                color: currentColors.textPrimary,
+              }}
+            >
+              Delete account:
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.infoBox,
+                { backgroundColor: '#DC2626' } // Red background for danger action
+              ]}
+              onPress={handleDeleteAccount}
+              disabled={loading}
+            >
+              <MaterialCommunityIcons
+                name="delete-alert"
+                size={18}
+                color="white"
+              />
+              <Text
+                style={[styles.logoutText, { color: 'white' }]}
+              >
+                {loading ? "Processing..." : "Delete Account"}
               </Text>
             </TouchableOpacity>
           </View>
