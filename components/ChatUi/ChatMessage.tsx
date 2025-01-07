@@ -1,8 +1,8 @@
 import * as Speech from 'expo-speech';
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import React, { useState } from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, TouchableOpacity, Platform, Alert } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
 
@@ -19,29 +19,58 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const currentColors = Colors[theme];
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const handleSpeak = async () => {
-    const isSpeechInProgress = await Speech.isSpeakingAsync();
-    
-    if (isSpeechInProgress) {
-      await Speech.stop();
-      setIsSpeaking(false);
-    } else {
-      setIsSpeaking(true);
-      
+  useEffect(() => {
+    const checkSpeech = async () => {
       try {
-        await Speech.speak(message.text, {
-          language: 'en',
-          rate: 0.9,
-          pitch: 1.0,
-          onDone: () => setIsSpeaking(false),
-          onError: () => setIsSpeaking(false),
-        });
+        const voices = await Speech.getAvailableVoicesAsync();
+        console.log('Available voices:', voices);
       } catch (error) {
-        console.error('Speech error:', error);
-        setIsSpeaking(false);
+        console.error('Error checking voices:', error);
       }
+    };
+  
+    checkSpeech();
+  }, []);
+
+  const handleSpeak = async () => {
+    try {
+      const isSpeechInProgress = await Speech.isSpeakingAsync();
+      
+      if (isSpeechInProgress) {
+        await Speech.stop();
+        setIsSpeaking(false);
+      } else {
+        setIsSpeaking(true);
+        
+        await Speech.speak(message.text, {
+          language: 'en-US',
+          pitch: 1.0,
+          rate: 1.0,
+          onStart: () => console.log('Started speaking'),
+          onDone: () => {
+            setIsSpeaking(false);
+            console.log('Done speaking');
+          },
+          onError: (error) => {
+            setIsSpeaking(false);
+            Alert.alert(
+              "Speech Error",
+              "If you can't hear anything, please check if your device is on silent mode. Text-to-speech requires sound to be enabled."
+            );
+            console.error('Speech error:', error);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Speech error:', error);
+      setIsSpeaking(false);
+      Alert.alert(
+        "Speech Error",
+        "If you can't hear anything, please check if your device is on silent mode. Text-to-speech requires sound to be enabled."
+      );
     }
   };
+ 
 
   return (
     <View

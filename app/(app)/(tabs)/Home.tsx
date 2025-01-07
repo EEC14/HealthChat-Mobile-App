@@ -30,7 +30,7 @@ import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
-export default function Home() {
+function Home() {
   const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
@@ -140,42 +140,6 @@ export default function Home() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 36 : 26}
         style={{ flex: 1 }}
       >
-        {/* testing push notifications */}
-        {/* <View
-          style={{
-            alignItems: "center",
-            justifyContent: "space-around",
-          }}
-        >
-          <Text style={{ color: currentColors.textPrimary }}>
-            Your Expo push token: {expoPushToken}
-          </Text>
-          <View style={{ alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: currentColors.textPrimary }}>
-              Title: {notification && notification.request.content.title}{" "}
-            </Text>
-            <Text style={{ color: currentColors.textPrimary }}>
-              Body: {notification && notification.request.content.body}
-            </Text>
-            <Text style={{ color: currentColors.textPrimary }}>
-              Data:{" "}
-              {notification &&
-                JSON.stringify(notification.request.content.data)}
-            </Text>
-          </View>
-          <Button
-            title="Press to Send Notification"
-            onPress={async () => {
-              await sendPushNotification(expoPushToken!);
-            }}
-          />
-          <Button
-            title="scheduled Notifications"
-            onPress={async () => {
-              await scheduledNotifications();
-            }}
-          />
-        </View> */}
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >
@@ -253,3 +217,5 @@ const styles = StyleSheet.create({
     color: "rgb(161 98 7)",
   },
 });
+
+export default Home;
