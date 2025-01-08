@@ -37,6 +37,11 @@ import { MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { usePurchases } from "@/context/PurchaseContext";
 import Paywall, { PAYWALL_RESULT } from "react-native-purchases-ui";
+import Purchases, {
+  PurchasesOffering,
+  PurchasesPackage,
+  CustomerInfo,
+} from "react-native-purchases";
 
 const Subscription: React.FC = () => {
   const { currentOffering, handlePurchase } = usePurchases();
@@ -222,7 +227,13 @@ const Subscription: React.FC = () => {
   const handleProfileWeb = () => {
     Linking.openURL("https://healthchat-patient.esbhealthcare.com/profile");
   };
+  const openTerms = () => {
+    Linking.openURL('https://healthchat-patient.esbhealthcare.com/terms');
+  };
 
+  const openPrivacy = () => {
+    Linking.openURL('https://healthchat-patient.esbhealthcare.com/privacy');
+  };
 
   return (
     <>
@@ -646,7 +657,37 @@ const Subscription: React.FC = () => {
               </MotiView>
             </View>
           )}
-
+          <View>
+            <TouchableOpacity
+                    disabled={loading}
+                    onPress={async () => {
+                      try {
+                        setLoading(true);
+                        await Purchases.restorePurchases();
+                        alert("Purchases restored successfully!");
+                      } catch (error) {
+                        console.error("Error restoring purchases:", error);
+                        alert("Failed to restore purchases. Please try again.");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="flex-row items-center justify-center gap-2 py-4 bg-[#1E3A8A] rounded-lg"
+            >
+                    <Text className="text-lg font-medium text-white">
+                      {loading ? "Loading" : "Restore Purchases"}
+                    </Text>
+                    {loading ? (
+                      <ActivityIndicator
+                        animating={loading}
+                        size="small"
+                        color="#fff"
+                      />
+                    ) : (
+                      <AntDesign name="reload1" size={24} color="white" />
+                    )}                    
+            </TouchableOpacity>
+          </View>
           <View style={{ gap: 4 }}>
             <Text
               style={{
@@ -771,6 +812,36 @@ const Subscription: React.FC = () => {
                 style={[styles.logoutText, { color: currentColors.background }]}
               >
                 Log Out
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ gap: 4 }}>
+            <TouchableOpacity
+              style={[
+                styles.infoBox,
+                { backgroundColor: currentColors.textPrimary },
+              ]}
+              onPress={openTerms}
+            >
+              <Text
+                style={[styles.logoutText, { color: currentColors.background }]}
+              >
+                Terms of service
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ gap: 4 }}>
+            <TouchableOpacity
+              style={[
+                styles.infoBox,
+                { backgroundColor: currentColors.textPrimary },
+              ]}
+              onPress={openPrivacy}
+            >
+              <Text
+                style={[styles.logoutText, { color: currentColors.background }]}
+              >
+                Privacy Policy
               </Text>
             </TouchableOpacity>
           </View>
