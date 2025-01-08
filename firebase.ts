@@ -39,7 +39,7 @@ export const db = getFirestore(app);
 
 export const userRef = collection(db, "users");
 export const chatRef = collection(db, "chats");
-
+window.db = db;
 export const loginUser = async (email: string, password: string) => {
   const userCredential = await signInWithEmailAndPassword(
     auth,

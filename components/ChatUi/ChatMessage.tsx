@@ -23,7 +23,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     const checkSpeech = async () => {
       try {
         const voices = await Speech.getAvailableVoicesAsync();
-        console.log('Available voices:', voices);
+        //console.log('Available voices:', voices);
       } catch (error) {
         console.error('Error checking voices:', error);
       }
@@ -49,7 +49,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           onStart: () => console.log('Started speaking'),
           onDone: () => {
             setIsSpeaking(false);
-            console.log('Done speaking');
+            //console.log('Done speaking');
           },
           onError: (error) => {
             setIsSpeaking(false);

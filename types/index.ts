@@ -29,7 +29,7 @@ export interface UserProfile {
   expoPushToken?: string;
 }
 
-export type PlanType = "workout" | "diet";
-export type StepType = "select" | "questionnaire" | "plan";
+export type PlanType = "workout" | "diet" | "meditation";
+export type StepType = "select" | "profile" | "questionnaire" | "plan";
 
 export type ColorsType = typeof Colors;

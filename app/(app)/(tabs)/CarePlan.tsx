@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -26,6 +26,23 @@ import { Theme, useTheme } from "@/context/ThemeContext";
 import { MotiText } from "moti";
 import { Link } from "expo-router";
 import { FontAwesome6 } from "@expo/vector-icons";
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
+interface HealthProfile {
+  name: string;
+  weight: string;
+  height: string;
+  activityLevel: typeof activityLevels[number]['value'] | '';
+  conditions: string;
+}
+
+const activityLevels = [
+  { value: 'sedentary', label: 'Sedentary (little or no exercise)' },
+  { value: 'light', label: 'Lightly active (1-3 days/week)' },
+  { value: 'moderate', label: 'Moderately active (3-5 days/week)' },
+  { value: 'very', label: 'Very active (6-7 days/week)' },
+  { value: 'extra', label: 'Extra active (very active + physical job)' }
+] as const;
 
 const CarePlan: React.FC = () => {
   const { user } = useAuthContext();
@@ -39,6 +56,54 @@ const CarePlan: React.FC = () => {
   const [generatedPlan, setGeneratedPlan] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
+  const [profile, setProfile] = useState<HealthProfile>({
+    name: '',
+    weight: '',
+    height: '',
+    activityLevel: '',
+    conditions: ''
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.uid) return;
+      try {
+        const docRef = doc(window.db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data() as HealthProfile;
+          setProfile({
+            name: data.name || '',
+            weight: data.weight || '',
+            height: data.height || '',
+            activityLevel: data.activityLevel || '',
+            conditions: data.conditions || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+  
+    fetchProfile();
+  }, [user?.uid]);
+
+  const handleProfileSubmit = async () => {
+    if (!user?.uid) return;
+    setIsLoading(true);
+    try {
+      const docRef = doc(window.db, 'User', user.uid);
+      await setDoc(docRef, {
+        ...profile,
+        updatedAt: new Date()
+      }, { merge: true });
+      setStep("questionnaire");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save profile data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGoalsSubmit = async () => {
     if (!goals.trim()) return;
@@ -67,6 +132,11 @@ const CarePlan: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePlanSelect = (type: PlanType) => {
+    setPlanType(type);
+    setStep("profile"); // Go to profile step first
   };
 
   const resetPlan = useCallback(() => {
@@ -107,10 +177,11 @@ const CarePlan: React.FC = () => {
         </TouchableOpacity>
       )}
       <Text style={[styles.headerTitle, { color: currentColors.textPrimary }]}>
-        {step === "select" && "Choose a Plan"}
-        {step === "questionnaire" &&
-          `${planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Questions`}
-        {step === "plan" && "Your Personalized Plan"}
+          {step === "select" && "Choose a Plan"}
+          {step === "profile" && "Health Profile"}
+          {step === "questionnaire" &&
+            `${planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Questions`}
+          {step === "plan" && "Your Personalized Plan"}
       </Text>
       <View style={styles.headerActions}>
         {step !== "select" && (
@@ -131,6 +202,7 @@ const CarePlan: React.FC = () => {
           </TouchableOpacity>
         )}
       </View>
+
     </View>
   );
 
@@ -227,7 +299,7 @@ const CarePlan: React.FC = () => {
           <TouchableOpacity
             onPress={() => {
               setPlanType("workout");
-              setStep("questionnaire");
+              setStep("profile");
             }}
             style={[
               styles.card,
@@ -263,7 +335,7 @@ const CarePlan: React.FC = () => {
           <TouchableOpacity
             onPress={() => {
               setPlanType("diet");
-              setStep("questionnaire");
+              setStep("profile");
             }}
             style={[
               styles.card,
@@ -299,7 +371,7 @@ const CarePlan: React.FC = () => {
           <TouchableOpacity
             onPress={() => {
               setPlanType("meditation");
-              setStep("questionnaire");
+              setStep("profile");
             }}
             style={[
               styles.card,
@@ -332,6 +404,124 @@ const CarePlan: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
+      );
+    }
+
+    if (step === "profile") {
+      return (
+        <ScrollView
+          style={{ flex: 1, backgroundColor: currentColors.background }}
+          contentContainerStyle={styles.scrollContainer}
+        >
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Name
+            </Text>
+            <TextInput
+              style={[styles.textInput, { color: currentColors.textPrimary }]}
+              value={profile.name}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, name: text }))}
+              placeholder="Enter your name"
+              placeholderTextColor={currentColors.textSecondary}
+            />
+          </View>
+    
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Weight (kg)
+            </Text>
+            <TextInput
+              style={[styles.textInput, { color: currentColors.textPrimary }]}
+              value={profile.weight}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, weight: text }))}
+              placeholder="Enter your weight"
+              placeholderTextColor={currentColors.textSecondary}
+              keyboardType="numeric"
+            />
+          </View>
+    
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Height (cm)
+            </Text>
+            <TextInput
+              style={[styles.textInput, { color: currentColors.textPrimary }]}
+              value={profile.height}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, height: text }))}
+              placeholder="Enter your height"
+              placeholderTextColor={currentColors.textSecondary}
+              keyboardType="numeric"
+            />
+          </View>
+    
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Activity Level
+            </Text>
+            {activityLevels.map((level) => (
+              <TouchableOpacity
+                key={level.value}
+                style={[
+                  { 
+                    backgroundColor: profile.activityLevel === level.value 
+                      ? '#1E3A8A' 
+                      : currentColors.surface
+                  }
+                ]}
+                onPress={() => setProfile(prev => ({ ...prev, activityLevel: level.value }))}
+              >
+                <Text
+                  style={[
+                    { 
+                      color: profile.activityLevel === level.value
+                        ? 'white'
+                        : currentColors.textPrimary
+                    }
+                  ]}
+                >
+                  {level.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+    
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Medical Conditions (optional)
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                { 
+                  color: currentColors.textPrimary,
+                  height: 100
+                }
+              ]}
+              value={profile.conditions}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, conditions: text }))}
+              placeholder="List any relevant medical conditions"
+              placeholderTextColor={currentColors.textSecondary}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+    
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { backgroundColor: "#1E3A8A" },
+              (!profile.name || !profile.weight || !profile.height || !profile.activityLevel) && styles.disabled,
+              isLoading && styles.disabled
+            ]}
+            onPress={handleProfileSubmit}
+            disabled={!profile.name || !profile.weight || !profile.height || !profile.activityLevel || isLoading}
+          >
+            {isLoading && <ActivityIndicator color={currentColors.textPrimary} />}
+            <Text style={styles.buttonText}>
+              {isLoading ? "Saving..." : "Continue"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       );
     }
 
@@ -722,97 +912,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
-// const getMarkdownStyles = (colors) => ({
-//   body: {
-//     fontSize: 16,
-//     lineHeight: 18,
-//     gap: 20,
-//     color: colors.textPrimary,
-//   },
-//   hr: { padding: 0, backgroundColor: colors.textPrimary, margin: 0 },
-//   h1: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     marginBottom: 16,
-//     color: colors.textPrimary,
-//     paddingBottom: 8,
-//     borderBottomWidth: 1,
-//     borderBottomColor: "#e0e0e0",
-//   },
-//   h2: {
-//     fontSize: 40,
-//     fontWeight: "bold",
-//     marginTop: 16,
-//     marginBottom: 12,
-//     color: colors.textPrimary,
-//   },
-//   h3: {
-//     fontSize: 58,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   h4: {
-//     fontSize: 58,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   h5: {
-//     fontSize: 58,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   h6: {
-//     fontSize: 48,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   p: {
-//     color: colors.textPrimary,
-//   },
-
-//   listItemText: {
-//     fontSize: 16,
-//     lineHeight: 24,
-//     flex: 1,
-//     color: colors.textPrimary,
-//   },
-//   listItemBullet: {
-//     width: 6,
-//     height: 6,
-//     borderRadius: 3,
-//     backgroundColor: "#007BFF",
-//     marginRight: 8,
-//   },
-//   list: {
-//     marginLeft: 16,
-//     marginBottom: 12,
-//   },
-//   blockquote: {
-//     backgroundColor: "#f9f9f9",
-//     borderLeftWidth: 4,
-//     borderLeftColor: "#007BFF",
-//     paddingLeft: 12,
-//     paddingVertical: 8,
-//     marginVertical: 12,
-//   },
-//   code: {
-//     backgroundColor: "#f4f4f4",
-//     borderRadius: 4,
-//     padding: 8,
-//     fontFamily: "monospace",
-//     fontSize: 14,
-//     color: colors.textPrimary,
-//   },
-// });
 const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   body: {
     color: colors.textSecondary,
