@@ -19,6 +19,7 @@ import Octicons from "@expo/vector-icons/Octicons";
 import { Colors } from "@/constants/Colors";
 import { Theme, useTheme } from "@/context/ThemeContext";
 import { StatusBar } from "expo-status-bar";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -184,7 +185,13 @@ export default function SignIn() {
               )}
             </TouchableOpacity>
           </View>
+          <View className="my-4 flex-row items-center">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text className="mx-4 text-gray-500">or</Text>
+            <View className="flex-1 h-px bg-gray-300" />
+          </View>
 
+          <GoogleAuthButton />
           <View>
             <Link href="/SignUp" className="text-center">
               <Text style={{ color: currentColors.textPrimary }}>

@@ -33,6 +33,9 @@ type AuthContextType = {
   logout: () => Promise<void>;
   clearError: () => void;
   fetchUserDetails: () => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
+  setUser: (user: UserProfile | null) => void;
+  setIsAuthenticated: (value: boolean) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -159,6 +162,21 @@ export const AuthContextProvider = ({
     }
   };
 
+  const signInWithGoogle = async (): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // The actual sign in happens in the GoogleAuthButton component
+      // This is just a placeholder for additional logic you might want to add
+      return true;
+    } catch (error) {
+      handleAuthError(error as AuthError);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -191,6 +209,9 @@ export const AuthContextProvider = ({
         error,
         clearError,
         fetchUserDetails,
+        signInWithGoogle,
+        setUser,
+        setIsAuthenticated,
       }}
     >
       {children}

@@ -21,7 +21,7 @@ import { MotiView } from "moti";
 import Octicons from "@expo/vector-icons/Octicons";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
-
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
@@ -254,7 +254,13 @@ export default function SignUp() {
               )}
             </TouchableOpacity>
           </View>
+          <View className="my-4 flex-row items-center">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text className="mx-4 text-gray-500">or</Text>
+            <View className="flex-1 h-px bg-gray-300" />
+          </View>
 
+          <GoogleAuthButton />
           <View className="mt-4">
             <Link href="/Signin" className="text-center">
               <Text className="text-center text-blue-600 dark:text-blue-400">

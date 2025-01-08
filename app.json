@@ -15,10 +15,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.healthchatdev.HealthChat"
+      "bundleIdentifier": "com.healthchatdev.HealthChat",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "703134724815-he6bcu5nm6jlfpatdrv2aofse4ocqlhq.apps.googleusercontent.com"
+        }
+      }
     },
     "android": {
       "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleSignIn": {
+          "apiKey": "703134724815-49j2l06g01m5ijuhgamlga8mmeg518um.apps.googleusercontent.com"
+        }
+      },
       "versionCode": 2,
       "splash": {
         "foregroundImage": "./assets/images/splash-icon.png",
