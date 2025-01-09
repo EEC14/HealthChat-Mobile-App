@@ -108,7 +108,11 @@ interface HealthProfile {
   weight: string;
   height: string;
   activityLevel: string;
-  conditions: string;
+  medicalConditions: string;
+  medications: string;
+  allergies: string;
+  previousTreatments: string;
+  age: string;
 }
 
 export async function generatePlanQuestions(
@@ -119,12 +123,17 @@ export async function generatePlanQuestions(
   if (!process.env.EXPO_PUBLIC_OPENAI_API_KEY) {
     throw new Error("API key is not configured");
   }
-  const profileInfo = `
-    User Profile:
-    - Height: ${profile.height}cm
-    - Weight: ${profile.weight}kg
-    - Activity Level: ${profile.activityLevel}
-    ${profile.conditions ? `- Medical Conditions: ${profile.conditions}` : ''}`;
+    const profileInfo = `
+    Patient Information:
+    - Name: ${profile.name}
+    - Age: ${profile.age}
+    - Height: ${profile.height}
+    - Weight: ${profile.weight}
+    - Medical Conditions: ${profile.medicalConditions}
+    - Current Medications: ${profile.medications}
+    - Allergies: ${profile.allergies}
+    - Previous Treatments: ${profile.previousTreatments}
+    `;
   
     const prompts = {
       workout: `You are a certified fitness trainer. Given the following user profile:\n${profileInfo}\n\nGenerate 5 relevant questions to create a personalized workout plan. Questions should cover fitness level, schedule, equipment access, and any limitations. Consider the user's activity level and any medical conditions when formulating questions. DO NOT put examples in questions and end every question with a question mark.`,
@@ -172,11 +181,16 @@ export async function generatePlan(
     .join("\n\n");
 
     const profileInfo = `
-    User Profile:
-    - Height: ${profile.height}cm
-    - Weight: ${profile.weight}kg
-    - Activity Level: ${profile.activityLevel}
-    ${profile.conditions ? `- Medical Conditions: ${profile.conditions}` : ''}`;
+    Patient Information:
+    - Name: ${profile.name}
+    - Age: ${profile.age}
+    - Height: ${profile.height}
+    - Weight: ${profile.weight}
+    - Medical Conditions: ${profile.medicalConditions}
+    - Current Medications: ${profile.medications}
+    - Allergies: ${profile.allergies}
+    - Previous Treatments: ${profile.previousTreatments}
+    `;
 
     const prompts = {
       workout: `You are a certified fitness trainer. Create a detailed workout plan based on the user's profile, goals, and answers. Include exercise descriptions, sets, reps, and weekly schedule. The plan should be specifically tailored to their physical characteristics and any medical conditions.\n\nUser Profile:\n${profileInfo}`,

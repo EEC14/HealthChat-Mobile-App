@@ -33,7 +33,11 @@ interface HealthProfile {
   weight: string;
   height: string;
   activityLevel: typeof activityLevels[number]['value'] | '';
-  conditions: string;
+  medicalConditions: string;
+  medications: string;
+  allergies: string;
+  previousTreatments: string;
+  age: string;
 }
 
 const activityLevels = [
@@ -61,7 +65,11 @@ const CarePlan: React.FC = () => {
     weight: '',
     height: '',
     activityLevel: '',
-    conditions: ''
+    medicalConditions: '',
+    medications: '',
+    allergies: '',
+    previousTreatments: '',
+    age: '',
   });
 
   useEffect(() => {
@@ -77,7 +85,11 @@ const CarePlan: React.FC = () => {
             weight: data.weight || '',
             height: data.height || '',
             activityLevel: data.activityLevel || '',
-            conditions: data.conditions || ''
+            medicalConditions: data.medicalConditions || '',
+            medications: data.medications || '',
+            allergies: data.allergies || '',
+            previousTreatments: data.previousTreatments || '',
+            age: data.age || '',
           });
         }
       } catch (error) {
@@ -109,7 +121,7 @@ const CarePlan: React.FC = () => {
     if (!goals.trim()) return;
     setIsLoading(true);
     try {
-      const generatedQuestions = await generatePlanQuestions(planType!, goals);
+      const generatedQuestions = await generatePlanQuestions(planType!, goals, profile);
 
       setQuestions(generatedQuestions);
       setStep("questionnaire");
@@ -124,7 +136,7 @@ const CarePlan: React.FC = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const plan = await generatePlan(planType!, goals, answers);
+      const plan = await generatePlan(planType!, goals, profile, answers);
       setGeneratedPlan(plan);
       setStep("plan");
     } catch (error) {
@@ -497,7 +509,87 @@ const CarePlan: React.FC = () => {
                   height: 100
                 }
               ]}
-              value={profile.conditions}
+              value={profile.medicalConditions}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, conditions: text }))}
+              placeholder="List any relevant medical conditions"
+              placeholderTextColor={currentColors.textSecondary}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Medications
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                { 
+                  color: currentColors.textPrimary,
+                  height: 100
+                }
+              ]}
+              value={profile.medications}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, conditions: text }))}
+              placeholder="List any relevant medical conditions"
+              placeholderTextColor={currentColors.textSecondary}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Allergies
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                { 
+                  color: currentColors.textPrimary,
+                  height: 100
+                }
+              ]}
+              value={profile.allergies}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, conditions: text }))}
+              placeholder="List any relevant medical conditions"
+              placeholderTextColor={currentColors.textSecondary}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Age
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                { 
+                  color: currentColors.textPrimary,
+                  height: 100
+                }
+              ]}
+              value={profile.age}
+              onChangeText={(text) => setProfile(prev => ({ ...prev, conditions: text }))}
+              placeholder="List any relevant medical conditions"
+              placeholderTextColor={currentColors.textSecondary}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+          <View style={styles.questionContainer}>
+            <Text style={[styles.label, { color: currentColors.textPrimary }]}>
+              Previous Treatments
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                { 
+                  color: currentColors.textPrimary,
+                  height: 100
+                }
+              ]}
+              value={profile.previousTreatments}
               onChangeText={(text) => setProfile(prev => ({ ...prev, conditions: text }))}
               placeholder="List any relevant medical conditions"
               placeholderTextColor={currentColors.textSecondary}
