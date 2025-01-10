@@ -53,7 +53,7 @@ const Subscription: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { user, fetchUserDetails, logout } = useAuthContext();
   // console.log("user", user);
-  const [selectedPlan, setSelectedPlan] = useState<"Pro" | "Deluxe">("Pro");
+  const [selectedPlan, setSelectedPlan] = useState<"pro" | "deluxe" | "ProYearly" | "DeluxeYearly">("pro");
   const handleOpenLink = (url: string) => {
     setWebviewUrl(url);
     setWebviewVisible(true);
@@ -97,25 +97,6 @@ const Subscription: React.FC = () => {
         if (!supported) throw new Error("Cannot open the URL");
         handleOpenLink(link);
       }
-      // await precentCus;
-      // const response = await fetch(
-      //   "https://healthchat-patient.esbhealthcare.com/.netlify/functions/billingportal",
-      //   {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify({
-      //       customerId: user?.stripeCustomerId,
-      //     }),
-      //   }
-      // );
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      // const data = await response.json();
-      // handleOpenLink(data.url);
-      // Linking.openURL(data.url);
     } catch (error) {
       console.error("There was an error!", error);
       alert("Failed to redirect to the billing portal.");
@@ -166,7 +147,7 @@ const Subscription: React.FC = () => {
       ]
     );
   };
-  const handlePlanSelect = (plan: "Pro" | "Deluxe") => {
+  const handlePlanSelect = (plan: "pro" | "deluxe" | "ProYearly" | "DeluxeYearly") => {
     setSelectedPlan(plan);
     crownScale.value = withSpring(1.2);
     setTimeout(() => {
@@ -175,7 +156,7 @@ const Subscription: React.FC = () => {
       }
     }, 0);
   };
-  const handleSubscribe = async (plan?: "Pro" | "Deluxe") => {
+  const handleSubscribe = async (plan?: "pro" | "deluxe" | "ProYearly" | "DeluxeYearly") => {
     try {
       setLoading(true);
       if (!user) return;
@@ -195,18 +176,6 @@ const Subscription: React.FC = () => {
       } else if (result === PAYWALL_RESULT.ERROR) {
         alert("Error occurred during purchase");
       }
-      // const { url } = await handlePurchase(
-      //   currentOffering![selectedPlan.toLowerCase()]
-      // );
-      // if (!url) throw new Error("Purchase URL is undefined");
-      // const supported = await Linking.canOpenURL(url);
-      // const link = `${Plans[selectedPlan]?.link}?prefilled_email=${user.email}`;
-      // if (!link) throw new Error("Plan link is undefined");
-      // const supported = await Linking.canOpenURL(link);
-      // if (!supported) throw new Error("Cannot open the URL");
-      // // console.log("Opened link:", link);
-      // handleOpenLink(link);
-      // // Linking.openURL(link);
     } catch (error) {
       console.error("Subscribe error:", error);
       alert("Failed to subscribe. Please try again.");
@@ -374,92 +343,6 @@ const Subscription: React.FC = () => {
                     <AntDesign name="arrowright" size={24} color="white" />
                   )}
                 </TouchableOpacity>
-                {/* <View>
-                  <Text
-                    className="text-lg font-semibold text-center"
-                    style={{ color: currentColors.textPrimary }}
-                  >
-                    {user.isPro ? "Upgrade" : "Downgrade"} To{" "}
-                    {user.isPro ? "Deluxe" : "Pro"}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "center",
-                      marginBottom: 15,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 36,
-                        fontWeight: "bold",
-                        color: currentColors.textPrimary,
-                      }}
-                    >
-                      ${Plans[user?.isPro ? "Deluxe" : "Pro"].price}
-                    </Text>
-                    <Text
-                      style={{
-                        alignSelf: "flex-end",
-                        color: currentColors.textPrimary,
-                        marginLeft: 5,
-                      }}
-                    >
-                      /month
-                    </Text>
-                  </View>
-
-                  {Plans[user?.isPro ? "Deluxe" : "Pro"].features.map(
-                    (feature, index) => (
-                      <MotiView
-                        key={index}
-                        from={{ opacity: 0, translateX: -20 }}
-                        animate={{ opacity: 1, translateX: 0 }}
-                        transition={{ delay: 400 + index * 100 }}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          marginBottom: 10,
-                        }}
-                      >
-                        <MaterialIcons
-                          name="check"
-                          size={24}
-                          color={currentColors.textPrimary}
-                          style={{ marginRight: 10 }}
-                        />
-                        <Text style={{ color: currentColors.textPrimary }}>
-                          {feature}
-                        </Text>
-                      </MotiView>
-                    )
-                  )}
-                  <TouchableOpacity
-                    disabled={loading}
-                    onPress={() =>
-                      handleSubscribe(user?.isPro ? "Deluxe" : "Pro")
-                    }
-                    className="flex-row items-center justify-center gap-2 py-4 bg-[#1E3A8A] rounded-lg"
-                  >
-                    <Text className="text-lg font-medium text-white ">
-                      {loading
-                        ? "Loading"
-                        : user.isPro
-                        ? "Upgrade"
-                        : "Downgrade"}{" "}
-                      To {user.isPro ? "Deluxe" : "Pro"}
-                    </Text>
-                    {loading ? (
-                      <ActivityIndicator
-                        animating={loading}
-                        size="small"
-                        color="#fff"
-                      />
-                    ) : (
-                      <AntDesign name="arrowright" size={24} color="white" />
-                    )}
-                  </TouchableOpacity>
-                </View> */}
               </View>
             </MotiView>
           ) : (
@@ -524,7 +407,7 @@ const Subscription: React.FC = () => {
                 {Object.keys(Plans).map((plan) => (
                   <Pressable
                     key={plan}
-                    onPress={() => handlePlanSelect(plan as "Pro" | "Deluxe")}
+                    onPress={() => handlePlanSelect(plan as "pro" | "deluxe" | "ProYearly" | "DeluxeYearly")}
                     style={{
                       paddingHorizontal: 20,
                       paddingVertical: 10,
