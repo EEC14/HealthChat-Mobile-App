@@ -45,7 +45,7 @@ const Subscription: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { user, fetchUserDetails, logout } = useAuthContext();
   // console.log("user", user);
-  const [selectedPlan, setSelectedPlan] = useState<"Pro" | "Deluxe">("Pro");
+  const [selectedPlan, setSelectedPlan] = useState<"Pro" | "Deluxe" | "ProYearly" | "DeluxeYearly">("Pro");
   const handleOpenLink = (url: string) => {
     setWebviewUrl(url);
     setWebviewVisible(true);
@@ -116,7 +116,7 @@ const Subscription: React.FC = () => {
     }
   };
 
-  const handlePlanSelect = (plan: "Pro" | "Deluxe") => {
+  const handlePlanSelect = (plan: "Pro" | "Deluxe" | "ProYearly" | "DeluxeYearly") => {
     setSelectedPlan(plan);
     crownScale.value = withSpring(1.2);
     setTimeout(() => {
@@ -125,7 +125,7 @@ const Subscription: React.FC = () => {
       }
     }, 0);
   };
-  const handleSubscribe = async (plan?: "Pro" | "Deluxe") => {
+  const handleSubscribe = async (plan?: "Pro" | "Deluxe" | "ProYearly" | "DeluxeYearly") => {
     try {
       setLoading(true);
       if (!user) return;
@@ -145,18 +145,6 @@ const Subscription: React.FC = () => {
       } else if (result === PAYWALL_RESULT.ERROR) {
         alert("Error occurred during purchase");
       }
-      // const { url } = await handlePurchase(
-      //   currentOffering![selectedPlan.toLowerCase()]
-      // );
-      // if (!url) throw new Error("Purchase URL is undefined");
-      // const supported = await Linking.canOpenURL(url);
-      // const link = `${Plans[selectedPlan]?.link}?prefilled_email=${user.email}`;
-      // if (!link) throw new Error("Plan link is undefined");
-      // const supported = await Linking.canOpenURL(link);
-      // if (!supported) throw new Error("Cannot open the URL");
-      // // console.log("Opened link:", link);
-      // handleOpenLink(link);
-      // // Linking.openURL(link);
     } catch (error) {
       console.error("Subscribe error:", error);
       alert("Failed to subscribe. Please try again.");
