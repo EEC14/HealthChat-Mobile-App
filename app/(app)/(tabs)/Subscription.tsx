@@ -45,7 +45,7 @@ const Subscription: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { user, fetchUserDetails, logout } = useAuthContext();
   // console.log("user", user);
-  const [selectedPlan, setSelectedPlan] = useState<"Pro" | "Deluxe" | "ProYearly" | "DeluxeYearly">("Pro");
+  const [selectedPlan, setSelectedPlan] = useState<"pro" | "deluxe" | "ProYearly" | "DeluxeYearly">("Pro");
   const handleOpenLink = (url: string) => {
     setWebviewUrl(url);
     setWebviewVisible(true);
@@ -116,8 +116,9 @@ const Subscription: React.FC = () => {
     }
   };
 
-  const handlePlanSelect = (plan: "Pro" | "Deluxe" | "ProYearly" | "DeluxeYearly") => {
+  const handlePlanSelect = (plan: "pro" | "deluxe" | "ProYearly" | "DeluxeYearly") => {
     setSelectedPlan(plan);
+    console.log("selcted plan:", selectedPlan);
     crownScale.value = withSpring(1.2);
     setTimeout(() => {
       if (lottieRef.current) {
@@ -125,15 +126,15 @@ const Subscription: React.FC = () => {
       }
     }, 0);
   };
-  const handleSubscribe = async (plan?: "Pro" | "Deluxe" | "ProYearly" | "DeluxeYearly") => {
+  const handleSubscribe = async (plan?: "pro" | "deluxe" | "ProYearly" | "DeluxeYearly") => {
     try {
       setLoading(true);
       if (!user) return;
       const result: PAYWALL_RESULT = await Paywall.presentPaywall({
         displayCloseButton: true,
         offering: plan
-          ? currentOffering![plan.toLowerCase()]
-          : currentOffering![selectedPlan.toLowerCase()],
+          ? currentOffering![plan]
+          : currentOffering![selectedPlan],
       });
       if (result === PAYWALL_RESULT.PURCHASED) {
         await handlePurchase(
@@ -302,92 +303,6 @@ const Subscription: React.FC = () => {
                     <AntDesign name="arrowright" size={24} color="white" />
                   )}
                 </TouchableOpacity>
-                {/* <View>
-                  <Text
-                    className="text-lg font-semibold text-center"
-                    style={{ color: currentColors.textPrimary }}
-                  >
-                    {user.isPro ? "Upgrade" : "Downgrade"} To{" "}
-                    {user.isPro ? "Deluxe" : "Pro"}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "center",
-                      marginBottom: 15,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 36,
-                        fontWeight: "bold",
-                        color: currentColors.textPrimary,
-                      }}
-                    >
-                      ${Plans[user?.isPro ? "Deluxe" : "Pro"].price}
-                    </Text>
-                    <Text
-                      style={{
-                        alignSelf: "flex-end",
-                        color: currentColors.textPrimary,
-                        marginLeft: 5,
-                      }}
-                    >
-                      /month
-                    </Text>
-                  </View>
-
-                  {Plans[user?.isPro ? "Deluxe" : "Pro"].features.map(
-                    (feature, index) => (
-                      <MotiView
-                        key={index}
-                        from={{ opacity: 0, translateX: -20 }}
-                        animate={{ opacity: 1, translateX: 0 }}
-                        transition={{ delay: 400 + index * 100 }}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          marginBottom: 10,
-                        }}
-                      >
-                        <MaterialIcons
-                          name="check"
-                          size={24}
-                          color={currentColors.textPrimary}
-                          style={{ marginRight: 10 }}
-                        />
-                        <Text style={{ color: currentColors.textPrimary }}>
-                          {feature}
-                        </Text>
-                      </MotiView>
-                    )
-                  )}
-                  <TouchableOpacity
-                    disabled={loading}
-                    onPress={() =>
-                      handleSubscribe(user?.isPro ? "Deluxe" : "Pro")
-                    }
-                    className="flex-row items-center justify-center gap-2 py-4 bg-[#1E3A8A] rounded-lg"
-                  >
-                    <Text className="text-lg font-medium text-white ">
-                      {loading
-                        ? "Loading"
-                        : user.isPro
-                        ? "Upgrade"
-                        : "Downgrade"}{" "}
-                      To {user.isPro ? "Deluxe" : "Pro"}
-                    </Text>
-                    {loading ? (
-                      <ActivityIndicator
-                        animating={loading}
-                        size="small"
-                        color="#fff"
-                      />
-                    ) : (
-                      <AntDesign name="arrowright" size={24} color="white" />
-                    )}
-                  </TouchableOpacity>
-                </View> */}
               </View>
             </MotiView>
           ) : (
@@ -452,9 +367,9 @@ const Subscription: React.FC = () => {
                 {Object.keys(Plans).map((plan) => (
                   <Pressable
                     key={plan}
-                    onPress={() => handlePlanSelect(plan as "Pro" | "Deluxe")}
+                    onPress={() => handlePlanSelect(plan as "pro" | "deluxe" | "ProYearly" | "DeluxeYearly")}
                     style={{
-                      paddingHorizontal: 20,
+                      paddingHorizontal: 10,
                       paddingVertical: 10,
                       marginHorizontal: 5,
                       borderRadius: 20,
