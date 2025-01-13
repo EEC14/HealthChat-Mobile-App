@@ -33,3 +33,30 @@ export type PlanType = "workout" | "diet" | "meditation";
 export type StepType = "select" | "profile" | "questionnaire" | "plan";
 
 export type ColorsType = typeof Colors;
+
+export interface MedicalSpecialist {
+  id: string;
+  name: string;
+  specialization: SpecializationType;
+  address: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  phone: string;
+  rating?: number;
+  availableDays?: string[];
+};
+
+export enum SpecializationType {
+  ORTHOPEDIC = 'orthopedic',
+  PHYSIOTHERAPY = 'physiotherapy',
+  GENERAL = 'general',
+  PSYCHOLOGY = 'psychology',
+  CARDIOLOGY = 'cardiology',
+  DERMATOLOGY = 'dermatology'
+};
+
+export interface MedicalSpecialistWithDistance extends MedicalSpecialist {
+  distance: number;
+};

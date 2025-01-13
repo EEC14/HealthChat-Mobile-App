@@ -5,12 +5,13 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, Platform, Alert } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
-
+import { MedicalSpecialist, MedicalSpecialistWithDistance } from "@/types";
 interface ChatMessageProps {
   message: {
     text: string;
     isBot: boolean;
     timestamp: Date;
+    specialists?: MedicalSpecialist[]; // Add this new property
   };
 }
 
@@ -112,15 +113,18 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           }}
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Text
+          <Text
               style={{
                 color: message.isBot ? currentColors.textPrimary : "white",
                 fontSize: 16,
-                flex: 1,
-                marginRight: message.isBot ? 8 : 0,
               }}
             >
-              {message.text}
+              {message.text.split('\n').map((line, index) => (
+                <Text key={index}>
+                  {line}
+                  {index < message.text.split('\n').length - 1 ? '\n' : ''}
+                </Text>
+              ))}
             </Text>
             {message.isBot && (
               <TouchableOpacity onPress={handleSpeak} style={{ padding: 4 }}>

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-
+import * as Location from 'expo-location';
 import {
   View,
   Text,
@@ -48,14 +48,27 @@ function Home() {
   const [remainingMessages, setRemainingMessages] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
 
   useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+  
+      const location = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude
+      });
+    })();
     return () => {
       Speech.stop();
     };
   }, []);
 
-  
   if (!user) {
     router.replace("/(app)/(auth)/Signin");
     return;
@@ -107,7 +120,7 @@ function Home() {
       await incrementMessageCount(user.isPro, user.isDeluxe);
       await loadRemainingMessages();
 
-      const aiResponse = await getAIResponse(input, user);
+      const aiResponse = await getAIResponse(input, user, location, 10);
       const botMessage: Message = {
         id: messages.length + 2,
         text: aiResponse,
