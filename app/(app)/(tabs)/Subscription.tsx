@@ -163,8 +163,8 @@ const Subscription: React.FC = () => {
       const result: PAYWALL_RESULT = await Paywall.presentPaywall({
         displayCloseButton: true,
         offering: plan
-          ? currentOffering![plan.toLowerCase()]
-          : currentOffering![selectedPlan.toLowerCase()],
+          ? currentOffering![plan]
+          : currentOffering![selectedPlan],
       });
       if (result === PAYWALL_RESULT.PURCHASED) {
         await handlePurchase(
@@ -409,7 +409,7 @@ const Subscription: React.FC = () => {
                     key={plan}
                     onPress={() => handlePlanSelect(plan as "pro" | "deluxe" | "ProYearly" | "DeluxeYearly")}
                     style={{
-                      paddingHorizontal: 20,
+                      paddingHorizontal: 10,
                       paddingVertical: 10,
                       marginHorizontal: 5,
                       borderRadius: 20,
