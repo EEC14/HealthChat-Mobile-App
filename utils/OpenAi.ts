@@ -69,7 +69,6 @@ async function findNearbySpecialists(
   const db = getFirestore();
   const specialistsRef = collection(db, 'specialists');
   
-  // Get specialists of the requested type
   const q = query(
     specialistsRef,
     where('specialization', '==', specialization)
@@ -81,7 +80,7 @@ async function findNearbySpecialists(
     ...doc.data()
   } as MedicalSpecialist));
 
-  // Calculate distances and filter by radius
+  // Calculate distances and sort by payment amount first, then distance
   const specialistsWithDistance: MedicalSpecialistWithDistance[] = specialists
     .map(specialist => ({
       ...specialist,
@@ -92,8 +91,16 @@ async function findNearbySpecialists(
         specialist.location.longitude
       )
     }))
-    .filter(specialist => specialist.distance <= radiusInKm) // Filter specialists within radius
-    .sort((a, b) => a.distance - b.distance)
+    .filter(specialist => specialist.distance <= radiusInKm)
+    // Sort by payment amount first (highest to lowest), then by distance
+    .sort((a, b) => {
+      // If payment amounts are different, sort by payment
+      if (b.paymentAmount !== a.paymentAmount) {
+        return b.paymentAmount - a.paymentAmount;
+      }
+      // If payment amounts are the same, sort by distance
+      return a.distance - b.distance;
+    })
     .slice(0, limit);
 
   return specialistsWithDistance;

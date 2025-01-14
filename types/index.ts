@@ -39,14 +39,15 @@ export interface MedicalSpecialist {
   name: string;
   specialization: SpecializationType;
   address: string;
+  phone: string;
   location: {
     latitude: number;
     longitude: number;
   };
-  phone: string;
-  rating?: number;
-  availableDays?: string[];
-};
+  // Simple payment amount field
+  paymentAmount: number; // Amount paid, 0 for non-paying
+  paymentDate: Date; // Track when payment was made
+}
 
 export enum SpecializationType {
   ORTHOPEDIC = 'orthopedic',
