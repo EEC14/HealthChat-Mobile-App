@@ -20,6 +20,7 @@ import { Colors } from "@/constants/Colors";
 import { Theme, useTheme } from "@/context/ThemeContext";
 import { StatusBar } from "expo-status-bar";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { AppleAuthButton } from "@/components/AppleAuthButton";
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -192,6 +193,7 @@ export default function SignIn() {
           </View>
 
           <GoogleAuthButton />
+          <AppleAuthButton />
           <View>
             <Link href="/SignUp" className="text-center">
               <Text style={{ color: currentColors.textPrimary }}>

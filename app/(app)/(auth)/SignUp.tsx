@@ -22,6 +22,7 @@ import Octicons from "@expo/vector-icons/Octicons";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { AppleAuthButton } from "@/components/AppleAuthButton";
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
@@ -261,6 +262,7 @@ export default function SignUp() {
           </View>
 
           <GoogleAuthButton />
+          <AppleAuthButton />
           <View className="mt-4">
             <Link href="/Signin" className="text-center">
               <Text className="text-center text-blue-600 dark:text-blue-400">

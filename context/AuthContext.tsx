@@ -34,6 +34,7 @@ type AuthContextType = {
   clearError: () => void;
   fetchUserDetails: () => Promise<void>;
   signInWithGoogle: () => Promise<boolean>;
+  signInWithApple: () => Promise<boolean>;
   setUser: (user: UserProfile | null) => void;
   setIsAuthenticated: (value: boolean) => void;
 };
@@ -177,6 +178,21 @@ export const AuthContextProvider = ({
     }
   };
 
+  const signInWithApple = async (): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // The actual sign in happens in the GoogleAuthButton component
+      // This is just a placeholder for additional logic you might want to add
+      return true;
+    } catch (error) {
+      handleAuthError(error as AuthError);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -212,6 +228,7 @@ export const AuthContextProvider = ({
         signInWithGoogle,
         setUser,
         setIsAuthenticated,
+        signInWithApple,
       }}
     >
       {children}
