@@ -64,7 +64,7 @@ export const onAuthChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };
 
-export const createUserProfile = async (uid: string, email: string) => {
+export const createUserProfile = async (uid: string, email: string, fullName?: string ) => {
   const userRef = doc(db, "users", uid);
   await setDoc(userRef, {
     uid,
@@ -72,6 +72,7 @@ export const createUserProfile = async (uid: string, email: string) => {
     isPro: false,
     isDeluxe: false,
     createdAt: serverTimestamp(),
+    ...(fullName ? { fullName } : {})
   });
 };
 

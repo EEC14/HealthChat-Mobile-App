@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,60 +19,27 @@ import Octicons from "@expo/vector-icons/Octicons";
 import { Colors } from "@/constants/Colors";
 import { Theme, useTheme } from "@/context/ThemeContext";
 import { StatusBar } from "expo-status-bar";
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/firebase';
-
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { AppleAuthButton } from "@/components/AppleAuthButton";
 const signInSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type SignInFormData = z.infer<typeof signInSchema>;
-
 export default function SignIn() {
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const router = useRouter();
   const { login, isLoading, error, clearError } = useAuthContext();
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
-
   const {
     control,
     handleSubmit,
-    watch,
     formState: { errors, isValid },
   } = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
     mode: "onChange",
   });
-
-  const email = watch("email");
-
-  const handlePasswordReset = async () => {
-    if (!email) {
-      Alert.alert(
-        "Email Required",
-        "Please enter your email address to reset your password."
-      );
-      return;
-    }
-
-    setResetPasswordLoading(true);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      Alert.alert(
-        "Reset Email Sent",
-        "Please check your email for password reset instructions."
-      );
-    } catch (error: any) {
-      Alert.alert(
-        "Error",
-        "Failed to send reset email. Please check your email address."
-      );
-    } finally {
-      setResetPasswordLoading(false);
-    }
-  };
 
   const onSubmit: SubmitHandler<SignInFormData> = async (data) => {
     const success = await login(data.email, data.password);
@@ -119,7 +85,7 @@ export default function SignIn() {
               Welcome Back
             </Text>
             <Text
-              className="text-center"
+              className="text-center "
               style={{ color: currentColors.textSecondary }}
             >
               Sign in to continue
@@ -155,6 +121,7 @@ export default function SignIn() {
                     style={{
                       backgroundColor: currentColors.inputBackground,
                       color: currentColors.textPrimary,
+                      // borderWidth: 1,
                     }}
                     className={`px-6 py-4 rounded-lg focus:border-[1px] border- focus:border-blue-500 ${
                       errors.email ? "border-[1px] border-red-500" : ""
@@ -203,19 +170,6 @@ export default function SignIn() {
               )}
             </View>
 
-            <TouchableOpacity 
-              onPress={handlePasswordReset}
-              disabled={resetPasswordLoading}
-              className="mb-2"
-            >
-              <Text 
-                className="text-center text-blue-600 dark:text-blue-400"
-                style={{ textDecorationLine: 'underline' }}
-              >
-                {resetPasswordLoading ? "Sending reset email..." : "Forgot Password?"}
-              </Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               onPress={handleSubmit(onSubmit)}
               disabled={!isValid || isLoading}
@@ -232,14 +186,21 @@ export default function SignIn() {
               )}
             </TouchableOpacity>
           </View>
+          <View className="my-4 flex-row items-center">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text className="mx-4 text-gray-500">or</Text>
+            <View className="flex-1 h-px bg-gray-300" />
+          </View>
 
+          <GoogleAuthButton />
+          <AppleAuthButton />
           <View>
             <Link href="/SignUp" className="text-center">
               <Text style={{ color: currentColors.textPrimary }}>
                 Don't have an account?{" "}
-                <Text className="text-center text-blue-600 dark:text-blue-400">
-                  Sign Up
-                </Text>
+              </Text>
+              <Text className="text-center text-blue-600 dark:text-blue-400">
+                Sign Up
               </Text>
             </Link>
           </View>

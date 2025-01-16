@@ -27,6 +27,7 @@ export interface UserProfile {
   stripeCustomerId?: string;
   subscriptionId?: string;
   expoPushToken?: string;
+  fullName?: string;
 }
 
 export type PlanType = "workout" | "diet";

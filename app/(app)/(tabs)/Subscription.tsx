@@ -469,7 +469,7 @@ const Subscription: React.FC = () => {
                       marginLeft: 5,
                     }}
                   >
-                    /month
+                    /month or year
                   </Text>
                 </View>
 
