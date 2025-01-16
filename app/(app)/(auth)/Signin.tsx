@@ -27,7 +27,7 @@ const signInSchema = z.object({
 });
 
 type SignInFormData = z.infer<typeof signInSchema>;
-export default function SignIn() {
+function SignIn() {
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const router = useRouter();
@@ -209,3 +209,5 @@ export default function SignIn() {
     </>
   );
 }
+
+export default SignIn;

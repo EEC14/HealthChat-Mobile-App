@@ -164,7 +164,10 @@ const HeaderRight = React.memo(({}: {}) => {
                     </View>
                   </View>
                   <TouchableOpacity
-                    onPress={() => router.push("/(app)/(tabs)/Subscription")}
+                    onPress={() => {
+                          setModalVisible(false);
+                          router.push("/(app)/(tabs)/Subscription");
+                    }}
                     style={{
                       backgroundColor: "#1E3A8A",
                       borderRadius: 10,
@@ -213,7 +216,10 @@ const HeaderRight = React.memo(({}: {}) => {
                     Choose the plan that best fits your wellness journey.
                   </Text>
                   <TouchableOpacity
-                    onPress={() => router.push("/(app)/(tabs)/Subscription")}
+                    onPress={() => {
+                          setModalVisible(false);
+                          router.push("/(app)/(tabs)/Subscription");
+                    }}
                     style={{
                       backgroundColor: "#1E3A8A",
                       borderRadius: 10,
