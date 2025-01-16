@@ -45,7 +45,7 @@ const Subscription: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { user, fetchUserDetails, logout } = useAuthContext();
   // console.log("user", user);
-  const [selectedPlan, setSelectedPlan] = useState<"pro" | "deluxe" | "ProYearly" | "DeluxeYearly">("Pro");
+  const [selectedPlan, setSelectedPlan] = useState<"pro" | "deluxe" | "ProYearly" | "DeluxeYearly">("pro");
   const handleOpenLink = (url: string) => {
     setWebviewUrl(url);
     setWebviewVisible(true);
@@ -89,25 +89,6 @@ const Subscription: React.FC = () => {
         if (!supported) throw new Error("Cannot open the URL");
         handleOpenLink(link);
       }
-      // await precentCus;
-      // const response = await fetch(
-      //   "https://healthchat-patient.esbhealthcare.com/.netlify/functions/billingportal",
-      //   {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify({
-      //       customerId: user?.stripeCustomerId,
-      //     }),
-      //   }
-      // );
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      // const data = await response.json();
-      // handleOpenLink(data.url);
-      // Linking.openURL(data.url);
     } catch (error) {
       console.error("There was an error!", error);
       alert("Failed to redirect to the billing portal.");
@@ -429,7 +410,7 @@ const Subscription: React.FC = () => {
                       marginLeft: 5,
                     }}
                   >
-                    /month
+                    /month or year
                   </Text>
                 </View>
 
