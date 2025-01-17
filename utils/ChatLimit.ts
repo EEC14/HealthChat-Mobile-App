@@ -1,11 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const DAILY_CHAT_LIMIT = 21;
-const STORAGE_KEY = "healthchat_daily_messages";
+const MONTHLY_CHAT_LIMIT = 5;
+const STORAGE_KEY = "healthchat_monthly_messages";
 
-interface DailyMessages {
+interface MonthlyMessages {
   count: number;
-  date: string;
+  month: string;
 }
 
 export async function getRemainingMessages(
@@ -13,8 +13,8 @@ export async function getRemainingMessages(
   isDeluxe: boolean
 ): Promise<number> {
   if (isPro || isDeluxe) return Infinity;
-  const daily = await getDailyMessages();
-  return Math.max(0, DAILY_CHAT_LIMIT - daily.count);
+  const monthly = await getMonthlyMessages();
+  return Math.max(0, MONTHLY_CHAT_LIMIT - monthly.count);
 }
 
 export async function incrementMessageCount(
@@ -22,9 +22,9 @@ export async function incrementMessageCount(
   isDeluxe: boolean
 ): Promise<void> {
   if (isPro || isDeluxe) return;
-  const daily = await getDailyMessages();
-  daily.count += 1;
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(daily));
+  const monthly = await getMonthlyMessages();
+  monthly.count += 1;
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(monthly));
 }
 
 export async function hasReachedLimit(
@@ -32,27 +32,27 @@ export async function hasReachedLimit(
   isDeluxe: boolean
 ): Promise<boolean> {
   if (isPro || isDeluxe) return false;
-  const daily = await getDailyMessages();
-  return daily.count >= DAILY_CHAT_LIMIT;
+  const monthly = await getMonthlyMessages();
+  return monthly.count >= MONTHLY_CHAT_LIMIT;
 }
 
-async function getDailyMessages(): Promise<DailyMessages> {
-  const today = new Date().toDateString();
+async function getMonthlyMessages(): Promise<MonthlyMessages> {
+  const currentMonth = new Date().toISOString().slice(0, 7); // Format: YYYY-MM
   const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
   if (!stored) {
-    const newDaily = { count: 0, date: today };
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newDaily));
-    return newDaily;
+    const newMonthly = { count: 0, month: currentMonth };
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newMonthly));
+    return newMonthly;
   }
 
-  const daily: DailyMessages = JSON.parse(stored);
+  const monthly: MonthlyMessages = JSON.parse(stored);
 
-  if (daily.date !== today) {
-    const resetDaily = { count: 0, date: today };
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(resetDaily));
-    return resetDaily;
+  if (monthly.month !== currentMonth) {
+    const resetMonthly = { count: 0, month: currentMonth };
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(resetMonthly));
+    return resetMonthly;
   }
 
-  return daily;
+  return monthly;
 }

@@ -40,7 +40,7 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
         <View style={{ flex: 1, marginRight: 0 }}>
           <Text style={{ color: "#1e3a8a", fontSize: 14 }}>
             <Text style={{ fontWeight: "bold" }}>Free Plan Limit: </Text>
-            {remainingMessages} messages remaining today
+            {remainingMessages} messages remaining this month
           </Text>
           <View
             style={{
@@ -57,7 +57,7 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
                 fontWeight: "500",
               }}
             >
-              Upgrade to Pro for unlimited messages
+              Upgrade to Pro or Deluxe for unlimited messages
             </Text>
             <FontAwesome6
               name="crown"
