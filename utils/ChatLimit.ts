@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const DAILY_CHAT_LIMIT = 21;
+const DAILY_CHAT_LIMIT = 5;
 const STORAGE_KEY = "healthchat_daily_messages";
 
 interface DailyMessages {
