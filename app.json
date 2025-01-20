@@ -24,7 +24,8 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to location services to find medical specialists near you.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to location services to find medical specialists near you.",
-        "NSLocationAlwaysUsageDescription": "This app needs access to location services to find medical specialists near you."
+        "NSLocationAlwaysUsageDescription": "This app needs access to location services to find medical specialists near you.",
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {

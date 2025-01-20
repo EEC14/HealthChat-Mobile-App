@@ -27,6 +27,15 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
+
+interface Message {
+  id: string | number;
+  text: string;
+  isBot: boolean;
+  videoUrl?: string;
+  timestamp?: Date;
+}
+
 function Home() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -83,6 +92,16 @@ function Home() {
     }
     setRemainingMessages();
   }, []);
+
+  const handleVideoGenerated = (videoUrl: string, messageId: string | number) => {
+    setMessages(prevMessages => 
+      prevMessages.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, videoUrl } 
+          : msg
+      )
+    );
+  };
 
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
@@ -159,26 +178,29 @@ function Home() {
           )}
 
           <FlatList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => <ChatMessage message={item} />}
-            ListHeaderComponent={
-              <Text
-                style={[styles.card, { backgroundColor: currentColors.warn }]}
-              >
-                <View style={styles.highlight}>
-                  <Text style={{ fontSize: 12 }}>
-                  {t('chat.disclaimer')}
+                ref={flatListRef}
+                data={messages}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <ChatMessage 
+                    message={item} 
+                    onVideoGenerated={handleVideoGenerated}
+                  />
+                )}
+                ListHeaderComponent={
+                  <Text style={[styles.card, { backgroundColor: currentColors.warn }]}>
+                    <View style={styles.highlight}>
+                      <Text style={{ fontSize: 12 }}>
+                        {t('chat.disclaimer')}
+                      </Text>
+                    </View>
                   </Text>
-                </View>
-              </Text>
-            }
-            contentContainerStyle={{ padding: 10 }}
-            onContentSizeChange={() =>
-              flatListRef.current?.scrollToEnd({ animated: true })
-            }
-          />
+                }
+                contentContainerStyle={{ padding: 10 }}
+                onContentSizeChange={() =>
+                  flatListRef.current?.scrollToEnd({ animated: true })
+                }
+            />
           <View
             style={{
               backgroundColor: currentColors.background,

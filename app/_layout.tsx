@@ -27,6 +27,7 @@ const MainLayout = () => {
   const segments = useSegments();
   const router = useRouter();
 
+
   useEffect(() => {
     if (typeof isAuthenticated === "undefined") return;
 
