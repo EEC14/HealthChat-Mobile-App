@@ -168,7 +168,7 @@ const CompanyInfo = () => {
       >
         <View style={styles.overlay}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>About HealthChat</Text>
+            <Text style={styles.modalTitle}>About Dr. Dave tm</Text>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Octicons name="x" size={24} color={currentColors.textPrimary} />
             </TouchableOpacity>
@@ -191,7 +191,7 @@ const CompanyInfo = () => {
                 </View>
                 <View style={{ gap: 12, alignItems: "flex-start" }}>
                   <View>
-                    <Text style={styles.title}>HealthChat</Text>
+                    <Text style={styles.title}>Dr. Dave</Text>
                     <Text style={styles.subtitle}>
                       Your AI Health Assistant
                     </Text>
@@ -203,7 +203,7 @@ const CompanyInfo = () => {
               </View>
 
               <Text style={styles.companyDescription}>
-                HealthChat - Your AI Health Assistant. Providing intelligent
+                Dr. Dave tm. Providing intelligent
                 healthcare solutions to simplify your life.
               </Text>
             </View>
@@ -220,7 +220,7 @@ const CompanyInfo = () => {
               >
                 <Text style={styles.actionButtonText}>Visit Our Website</Text>
               </TouchableOpacity>
-              <Text style={styles.footerText}>© 2024 ESB Healthcare Ltd</Text>
+              <Text style={styles.footerText}>© 2025 ESB Healthcare Ltd</Text>
             </View>
           </View>
         </View>

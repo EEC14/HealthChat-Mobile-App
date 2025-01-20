@@ -10,35 +10,33 @@ import {
   StyleSheet,
   Button,
 } from "react-native";
-
 import {
   getRemainingMessages,
   incrementMessageCount,
   hasReachedLimit,
 } from "@/utils/ChatLimit";
 import { getAIResponse } from "@/utils/OpenAi";
-
 import ChatInput from "@/components/ChatUi/ChatInput";
-import { ChatMessage } from "@/components/ChatUi/ChatMessage";
+import ChatMessage  from "@/components/ChatUi/ChatMessage";
 import { ChatLimit } from "@/components/ChatUi/ChatLimit";
 import ShareButton from "@/components/ChatUi/ShareButton";
-
 import { useAuthContext } from "@/context/AuthContext";
 import { Message } from "@/types";
-
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
+import { useTranslation } from 'react-i18next';
 function Home() {
   const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const { user } = useAuthContext();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello! I'm your AI health assistant. I can provide general health information and wellness guidance. How can I help you today?",
+      text: "Hello, I'm Dr. Dave , your AI medical specialist. How can I help you today?",
       isBot: true,
       timestamp: new Date(),
     },
@@ -97,7 +95,7 @@ function Home() {
     if (limitReached) {
       const limitMessage: Message = {
         id: messages.length + 1,
-        text: "You've reached your daily message limit. Please upgrade to Pro for unlimited access.",
+        text: "You've reached your daily message limit. Please upgrade to Pro or Deluxe for unlimited access.",
         isBot: true,
         timestamp: new Date(),
       };
@@ -171,9 +169,7 @@ function Home() {
               >
                 <View style={styles.highlight}>
                   <Text style={{ fontSize: 12 }}>
-                    ⚠️ For informational purposes only. Not a substitute for
-                    professional medical advice. Always consult your healthcare
-                    provider.
+                  {t('chat.disclaimer')}
                   </Text>
                 </View>
               </Text>

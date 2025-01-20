@@ -1,0 +1,108 @@
+{
+    "auth": {
+        "signIn": {
+            "title": "Se connecter",
+            "emailLabel": "E-mail",
+            "passwordLabel": "Mot de passe",
+            "submitButton": "Se connecter",
+            "forgotPassword": "Mot de passe oublié ?",
+            "noAccount": "Pas encore de compte ?"
+        },
+        "signUp": {
+            "title": "Créer un compte",
+            "emailLabel": "E-mail",
+            "passwordLabel": "Mot de passe",
+            "confirmPassword": "Confirmer le mot de passe",
+            "submitButton": "S'inscrire",
+            "hasAccount": "Vous avez déjà un compte ?"
+        }
+    },
+    "tabs": {
+        "home": "Accueil",
+        "carePlan": "Plan de soins",
+        "shareChats": "Partager des conversations",
+        "subscription": "Abonnement"
+    },
+    "chat": {
+        "inputPlaceholder": "Tapez votre message...",
+        "send": "Envoyer",
+        "limitReached": "Limite de messages atteinte",
+        "loadMore": "Charger plus de messages",
+        "startMessage": "Bonjour, je suis Dr. Dave, votre spécialiste médical IA. Comment puis-je vous aider aujourd'hui ?",
+        "disclaimer": "⚠️ À des fins informatives uniquement. Ne remplace pas un avis médical professionnel. Consultez toujours votre professionnel de santé.",
+        "limit": {
+            "freeLimit": "Limite du plan gratuit : ",
+            "remaining": "messages restants aujourd'hui",
+            "upgrade": "Passez à Pro pour des messages illimités"
+        }
+    },
+    "shareChats": {
+        "error": "Veuillez réessayer plus tard",
+        "total": "Total des conversations partagées",
+        "totalUpvotes": "Total des votes positifs",
+        "percentageUpvotes": "Pourcentage de votes positifs",
+        "interesting": "Partagez vos conversations intéressantes pour les voir ici"
+    },
+    "dietPlan": {
+        "questionnaire": {
+            "title": "Questionnaire sur le plan alimentaire",
+            "submit": "Soumettre les réponses",
+            "resetButton": "Réinitialiser le générateur",
+            "resetQuestion": "Êtes-vous sûr de vouloir réinitialiser ? Tous les progrès seront perdus.",
+            "disclaimer": "⚠️ Cet outil est uniquement à des fins informatives. Consultez un professionnel de santé avant de commencer un nouveau programme d'entraînement ou de régime.",
+            "routineEx": "Programme d'exercices personnalisé",
+            "mealPl": "Plan de repas personnalisé",
+            "medPl": "Routine de méditation personnalisée",
+            "another": "Générer un autre plan",
+            "unlimited": "Obtenez un accès illimité aux outils de planification santé et fitness alimentés par l'IA"
+        },
+        "profile": {
+            "height": "Taille",
+            "name": "Nom",
+            "weight": "Poids",
+            "activity": "Niveau d'activité",
+            "conditions": "Conditions médicales (facultatif)",
+            "medications": "Médicaments",
+            "allergies": "Allergies",
+            "age": "Âge",
+            "prevTreatment": "Traitements précédents"
+        }
+    },
+    "profilePage": {
+        "logModify": "Veuillez vous connecter pour mettre à jour votre plan",
+        "edit": "Modifier le profil"
+    },
+    "layout": {
+        "accountModel": {
+            "title": "Paramètres du compte",
+            "personalInfo": "Informations personnelles",
+            "preferences": "Préférences",
+            "featuresFinal": "Profitez d'un accès illimité à toutes les fonctionnalités premium",
+            "modifyPlan": "Mettez à niveau, rétrogradez ou annulez facilement votre abonnement.",
+            "freePlan": "Vous êtes actuellement sur le plan gratuit",
+            "choosePlan": "Choisissez le plan qui correspond le mieux à votre parcours bien-être.",
+            "subDetails": "Détails de l'abonnement",
+            "themeChoose": "Préférence de thème :",
+            "languages": {
+                "title": "Langue",
+                "en": "Englais",
+                "de": "Allemand",
+                "it": "Italien",
+                "fr": "Français",
+                "es": "Espagnol"
+            }
+        },
+        "infoModel": {
+            "close": "Fermer",
+            "moreInfo": "Plus d'informations"
+        }
+    },
+    "common": {
+        "loading": "Chargement...",
+        "error": "Une erreur s'est produite",
+        "retry": "Réessayer",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "delete": "Supprimer"
+    }
+}

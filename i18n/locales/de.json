@@ -1,0 +1,108 @@
+{
+    "auth": {
+        "signIn": {
+            "title": "Anmelden",
+            "emailLabel": "E-Mail",
+            "passwordLabel": "Passwort",
+            "submitButton": "Anmelden",
+            "forgotPassword": "Passwort vergessen?",
+            "noAccount": "Noch kein Konto?"
+        },
+        "signUp": {
+            "title": "Konto erstellen",
+            "emailLabel": "E-Mail",
+            "passwordLabel": "Passwort",
+            "confirmPassword": "Passwort bestätigen",
+            "submitButton": "Registrieren",
+            "hasAccount": "Bereits ein Konto?"
+        }
+    },
+    "tabs": {
+        "home": "Startseite",
+        "carePlan": "Pflegeplan",
+        "shareChats": "Chats teilen",
+        "subscription": "Abonnement"
+    },
+    "chat": {
+        "inputPlaceholder": "Geben Sie Ihre Nachricht ein...",
+        "send": "Senden",
+        "limitReached": "Nachrichtenlimit erreicht",
+        "loadMore": "Mehr Nachrichten laden",
+        "startMessage": "Hallo, ich bin Dr. Dave, Ihr KI-Medizinspezialist. Wie kann ich Ihnen heute helfen?",
+        "disclaimer": "⚠️ Nur zu Informationszwecken. Kein Ersatz für professionelle medizinische Beratung. Konsultieren Sie immer Ihren Arzt.",
+        "limit": {
+            "freeLimit": "Kostenloses Plan-Limit: ",
+            "remaining": "Nachrichten verbleiben heute",
+            "upgrade": "Upgrade auf Pro für unbegrenzte Nachrichten"
+        }
+    },
+    "shareChats": {
+        "error": "Bitte versuchen Sie es später erneut",
+        "total": "Gesamtzahl geteilter Chats",
+        "totalUpvotes": "Gesamtzahl der Upvotes",
+        "percentageUpvotes": "Prozentsatz der Upvotes",
+        "interesting": "Teilen Sie Ihre interessanten Unterhaltungen, um sie hier zu sehen"
+    },
+    "dietPlan": {
+        "questionnaire": {
+            "title": "Ernährungsplan-Fragebogen",
+            "submit": "Antworten einreichen",
+            "resetButton": "Generator zurücksetzen",
+            "resetQuestion": "Sind Sie sicher, dass Sie zurücksetzen möchten? Alle Fortschritte gehen verloren.",
+            "disclaimer": "⚠️ Dieses Tool dient nur zu Informationszwecken. Konsultieren Sie einen Arzt, bevor Sie ein neues Trainings- oder Ernährungsprogramm beginnen.",
+            "routineEx": "Individuelles Trainingsprogramm",
+            "mealPl": "Personalisierter Ernährungsplan",
+            "medPl": "Personalisierte Meditationsroutine",
+            "another": "Einen weiteren Plan erstellen",
+            "unlimited": "Erhalten Sie unbegrenzten Zugang zu KI-gestützten Gesundheits- und Fitnessplanungstools"
+        },
+        "profile": {
+            "height": "Größe",
+            "name": "Name",
+            "weight": "Gewicht",
+            "activity": "Aktivitätslevel",
+            "conditions": "Medizinische Bedingungen (optional)",
+            "medications": "Medikamente",
+            "allergies": "Allergien",
+            "age": "Alter",
+            "prevTreatment": "Frühere Behandlungen"
+        }
+    },
+    "profilePage": {
+        "logModify": "Bitte melden Sie sich an, um Ihren Plan zu aktualisieren",
+        "edit": "Profil bearbeiten"
+    },
+    "layout": {
+        "accountModel": {
+            "title": "Kontoeinstellungen",
+            "personalInfo": "Persönliche Informationen",
+            "preferences": "Einstellungen",
+            "featuresFinal": "Genießen Sie unbegrenzten Zugang zu allen Premiumfunktionen",
+            "modifyPlan": "Einfaches Upgrade, Downgrade oder Kündigung Ihres Abonnements.",
+            "freePlan": "Sie befinden sich derzeit im kostenlosen Plan",
+            "choosePlan": "Wählen Sie den Plan, der am besten zu Ihrer Wellness-Reise passt.",
+            "subDetails": "Abonnementdetails",
+            "themeChoose": "Themenauswahl:",
+            "languages": {
+                "title": "Sprache",
+                "en": "Englisch",
+                "de": "Deutsch",
+                "it": "Italienisch",
+                "fr": "Französisch",
+                "es": "Spanisch"
+            }
+        },
+        "infoModel": {
+            "close": "Schließen",
+            "moreInfo": "Mehr Informationen"
+        }
+    },
+    "common": {
+        "loading": "Lädt...",
+        "error": "Ein Fehler ist aufgetreten",
+        "retry": "Erneut versuchen",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "delete": "Löschen"
+    }
+}

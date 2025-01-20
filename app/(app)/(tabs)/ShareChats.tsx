@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-
 import {
   View,
   Text,
@@ -9,25 +8,22 @@ import {
   RefreshControl,
   Pressable,
 } from "react-native";
-
 import { db } from "@/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-
 import { Link } from "expo-router";
-
 import { useAuthContext } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
 import { Chat } from "@/types";
-
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { FontAwesome } from "@expo/vector-icons";
 import ExternalLinkHandler from "@/components/Layout/ExternalLinkHandler";
+import { useTranslation } from 'react-i18next';
 
 const SkeletonItem = ({ theme }: { theme: "light" | "dark" }) => {
   const fadeAnim = React.useRef(new Animated.Value(0.5)).current;
-
+  const { t } = useTranslation();
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -84,7 +80,7 @@ const SkeletonItem = ({ theme }: { theme: "light" | "dark" }) => {
 const SharedChatsList = () => {
   const [webviewVisible, setWebviewVisible] = useState(false);
   const [webviewUrl, setWebviewUrl] = useState("");
-
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
 
@@ -235,7 +231,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.errorSubtext, { color: currentColors.textSecondary }]}
         >
-          Please try again later
+          {t('shareChats.error')}
         </Text>
       </View>
     );
@@ -264,7 +260,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-          Total Shared Chats
+          {t('shareChats.total')}
         </Text>
       </View>
       <View
@@ -283,7 +279,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-          Total Upvotes
+          {t('shareChats.totalUpvotes')}
         </Text>
       </View>
       <View
@@ -302,7 +298,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-          Upvote Percentage
+          {t('shareChats.percentageUpvotes')}
         </Text>
       </View>
     </View>
@@ -465,7 +461,7 @@ const SharedChatsList = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Share your interesting conversations to see them here
+              {t('shareChats.interesting')}
             </Text>
           </View>
         }

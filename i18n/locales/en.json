@@ -1,0 +1,108 @@
+{
+    "auth": {
+      "signIn": {
+        "title": "Sign In",
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "submitButton": "Sign In",
+        "forgotPassword": "Forgot Password?",
+        "noAccount": "Don't have an account?"
+      },
+      "signUp": {
+        "title": "Create Account",
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "confirmPassword": "Confirm Password",
+        "submitButton": "Sign Up",
+        "hasAccount": "Already have an account?"
+      }
+    },
+    "tabs": {
+      "home": "Home",
+      "carePlan": "Care Plan",
+      "shareChats": "Share Chats",
+      "subscription": "Subscription"
+    },
+    "chat": {
+      "inputPlaceholder": "Type your message...",
+      "send": "Send",
+      "limitReached": "Message limit reached",
+      "loadMore": "Load more messages",
+      "startMessage": "Hello, I'm Dr. Dave , your AI medical specialist. How can I help you today?",
+      "disclaimer": "⚠️ For informational purposes only. Not a substitute for professional medical advice. Always consult your healthcare provider.",
+      "limit":{
+        "freeLimit": "Free Plan Limit: ",
+        "remaining": "messages remaining today",
+        "upgrade": "Upgrade to Pro for unlimited messages"
+      }
+    },
+    "shareChats": {
+      "error": "Please try again later",
+      "total": "Total Shared Chats",
+      "totalUpvotes": "Total Upvotes",
+      "percentageUpvotes": "Upvote Percentage",
+      "interesting": "Share your interesting conversations to see them here"
+    },
+    "dietPlan": {
+      "questionnaire": {
+        "title": "Diet Plan Questionnaire",
+        "submit": "Submit Answers",
+        "resetButton": "Reset Generator",
+        "resetQuestion": "Are you sure you want to reset? All progress will be lost.",
+        "disclaimer": "⚠️ This tool is for informational purposes only. Consult with healthcare professionals before starting any new workout or diet program.",
+        "routineEx": "Customized exercise routine",
+        "mealPl": "Personalized meal plan",
+        "medPl": "Personalized meditation routine",
+        "another": "Generate Another Plan",
+        "unlimited": "Get unlimited access to AI-powered health and fitness planning tools"
+      },
+      "profile": {
+        "height": "Height",
+        "name": "Name",
+        "weight": "Weight",
+        "activity": "Activity level",
+        "conditions": "Medical conditions (optional)",
+        "medications": "Medications",
+        "allergies": "Allergies",
+        "age": "Age",
+        "prevTreatment": "Previous treatments"
+      }
+    },
+    "profilePage": {
+      "logModify": "Please log in to upgrade your plan",
+      "edit": "Edit Profile"
+    },
+    "layout": {
+      "accountModel": {
+        "title": "Account Settings",
+        "personalInfo": "Personal Information",
+        "preferences": "Preferences",
+        "featuresFinal": "Enjoy unlimited access to all premium features",
+        "modifyPlan": "Easily upgrade, downgrade, or cancel your subscription.",
+        "freePlan": "You are currently on the Free plan",
+        "choosePlan": "Choose the plan that best fits your wellness journey.",
+        "subDetails": "Subscription Details",
+        "themeChoose": "Theme Preference:",
+        "languages": {
+            "title": "Language",
+            "en": "English",
+            "de": "German",
+            "it": "Italian",
+            "fr": "French",
+            "es": "Spanish"
+        }
+      },
+      "infoModel": {
+        "close": "Close",
+        "moreInfo": "More Information"
+      }
+    },
+    "common": {
+      "loading": "Loading...",
+      "error": "An error occurred",
+      "retry": "Retry",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
+  }

@@ -1,0 +1,108 @@
+{
+    "auth": {
+        "signIn": {
+            "title": "Accedi",
+            "emailLabel": "Email",
+            "passwordLabel": "Password",
+            "submitButton": "Accedi",
+            "forgotPassword": "Hai dimenticato la password?",
+            "noAccount": "Non hai ancora un account?"
+        },
+        "signUp": {
+            "title": "Crea un account",
+            "emailLabel": "Email",
+            "passwordLabel": "Password",
+            "confirmPassword": "Conferma password",
+            "submitButton": "Registrati",
+            "hasAccount": "Hai già un account?"
+        }
+    },
+    "tabs": {
+        "home": "Home",
+        "carePlan": "Piano di cura",
+        "shareChats": "Condividi conversazioni",
+        "subscription": "Abbonamento"
+    },
+    "chat": {
+        "inputPlaceholder": "Scrivi il tuo messaggio...",
+        "send": "Invia",
+        "limitReached": "Limite di messaggi raggiunto",
+        "loadMore": "Carica altri messaggi",
+        "startMessage": "Ciao, sono il Dr. Dave, il tuo specialista medico con IA. Come posso aiutarti oggi?",
+        "disclaimer": "⚠️ Solo a scopo informativo. Non sostituisce il consiglio medico professionale. Consulta sempre il tuo medico.",
+        "limit": {
+            "freeLimit": "Limite del piano gratuito: ",
+            "remaining": "messaggi rimanenti oggi",
+            "upgrade": "Passa a Pro per messaggi illimitati"
+        }
+    },
+    "shareChats": {
+        "error": "Si prega di riprovare più tardi",
+        "total": "Totale conversazioni condivise",
+        "totalUpvotes": "Totale voti positivi",
+        "percentageUpvotes": "Percentuale di voti positivi",
+        "interesting": "Condividi le tue conversazioni interessanti per vederle qui"
+    },
+    "dietPlan": {
+        "questionnaire": {
+            "title": "Questionario sul piano alimentare",
+            "submit": "Invia risposte",
+            "resetButton": "Reimposta generatore",
+            "resetQuestion": "Sei sicuro di voler reimpostare? Tutti i progressi andranno persi.",
+            "disclaimer": "⚠️ Questo strumento è solo a scopo informativo. Consulta un professionista sanitario prima di iniziare un nuovo programma di esercizi o dieta.",
+            "routineEx": "Routine di esercizi personalizzata",
+            "mealPl": "Piano alimentare personalizzato",
+            "medPl": "Routine di meditazione personalizzata",
+            "another": "Genera un altro piano",
+            "unlimited": "Ottieni accesso illimitato agli strumenti di pianificazione della salute e del fitness basati su IA"
+        },
+        "profile": {
+            "height": "Altezza",
+            "name": "Nome",
+            "weight": "Peso",
+            "activity": "Livello di attività",
+            "conditions": "Condizioni mediche (opzionale)",
+            "medications": "Farmaci",
+            "allergies": "Allergie",
+            "age": "Età",
+            "prevTreatment": "Trattamenti precedenti"
+        }
+    },
+    "profilePage": {
+        "logModify": "Effettua l'accesso per aggiornare il tuo piano",
+        "edit": "Modifica profilo"
+    },
+    "layout": {
+        "accountModel": {
+            "title": "Impostazioni account",
+            "personalInfo": "Informazioni personali",
+            "preferences": "Preferenze",
+            "featuresFinal": "Goditi l'accesso illimitato a tutte le funzionalità premium",
+            "modifyPlan": "Aggiorna, declassa o annulla facilmente il tuo abbonamento.",
+            "freePlan": "Attualmente sei nel piano gratuito",
+            "choosePlan": "Scegli il piano che meglio si adatta al tuo percorso di benessere.",
+            "subDetails": "Dettagli dell'abbonamento",
+            "themeChoose": "Preferenza tema:",
+            "languages": {
+                "title": "Sprache",
+                "en": "Inglese",
+                "de": "Tedesco",
+                "it": "Italiano",
+                "fr": "Francese",
+                "es": "Spagnolo"
+            }
+        },
+        "infoModel": {
+            "close": "Chiudi",
+            "moreInfo": "Maggiori informazioni"
+        }
+    },
+    "common": {
+        "loading": "Caricamento...",
+        "error": "Si è verificato un errore",
+        "retry": "Riprova",
+        "save": "Salva",
+        "cancel": "Annulla",
+        "delete": "Elimina"
+    }
+}

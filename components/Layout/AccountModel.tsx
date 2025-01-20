@@ -18,14 +18,23 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-
+import { useLanguage } from '../../utils/useLanguage';
+import { useTranslation } from 'react-i18next';
 const HeaderRight = React.memo(({}: {}) => {
   const router = useRouter();
   const { user, logout } = useAuthContext();
   const [modalVisible, setModalVisible] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const currentColors = Colors[theme];
-
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage } = useLanguage();
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'es', name: 'Español', flag: '🇪🇸' },
+  ];
   return (
     <>
       <Pressable
@@ -140,7 +149,7 @@ const HeaderRight = React.memo(({}: {}) => {
                       color: currentColors.textSecondary,
                     }}
                   >
-                    Enjoy unlimited access to all premium features
+                    {t('layout.accountModel.featuresFinal')}
                   </Text>
                   <View style={{ gap: 4, alignItems: "flex-start" }}>
                     <AntDesign
@@ -159,7 +168,7 @@ const HeaderRight = React.memo(({}: {}) => {
                         className="text-sm"
                         style={{ color: currentColors.textSecondary }}
                       >
-                        Easily upgrade, downgrade, or cancel your subscription.
+                        {t('layout.accountModel.modifyPlan')}
                       </Text>
                     </View>
                   </View>
@@ -203,14 +212,14 @@ const HeaderRight = React.memo(({}: {}) => {
                       marginTop: 10,
                     }}
                   >
-                    You are currently on the Free plan
+                    {t('layout.accountModel.freePlan')}
                   </Text>
                   <Text
                     style={{
                       color: currentColors.textSecondary,
                     }}
                   >
-                    Choose the plan that best fits your wellness journey.
+                    {t('layout.accountModel.choosePlan')}
                   </Text>
                   <TouchableOpacity
                     onPress={() => router.push("/(app)/(tabs)/Subscription")}
@@ -226,7 +235,7 @@ const HeaderRight = React.memo(({}: {}) => {
                     }}
                   >
                     <Text style={{ color: "white", fontWeight: "bold" }}>
-                      Subscriptions Details
+                    {t('layout.accountModel.subDetails')}
                     </Text>
                     <AntDesign name="arrowright" size={24} color="white" />
                   </TouchableOpacity>
@@ -264,7 +273,7 @@ const HeaderRight = React.memo(({}: {}) => {
                   color: currentColors.textPrimary,
                 }}
               >
-                Theme Preference:
+                {t('layout.accountModel.themeChoose')}
               </Text>
               <Pressable
                 onPress={toggleTheme}
@@ -285,6 +294,43 @@ const HeaderRight = React.memo(({}: {}) => {
                   }
                 />
               </Pressable>
+            </View>
+            <Text
+              style={{
+                fontWeight: "900",
+                fontSize: 16,
+                color: currentColors.textPrimary,
+              }}
+            >
+              {t('layout.accountModel.languages.title')}:
+            </Text>
+            <View style={[styles.languageContainer, { backgroundColor: currentColors.background }]}>
+              {languages.map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.languageButton,
+                    {
+                      backgroundColor: currentLanguage === lang.code ? currentColors.secondary : currentColors.background,
+                      borderColor: currentColors.textSecondary,
+                    },
+                  ]}
+                  onPress={() => changeLanguage(lang.code)}
+                >
+                  <Text style={{ fontSize: 18, marginRight: 4 }}>{lang.flag}</Text>
+                  <Text
+                    style={[
+                      styles.languageText,
+                      {
+                        color: currentLanguage === lang.code ? currentColors.primary : currentColors.textPrimary,
+                        fontWeight: currentLanguage === lang.code ? 'bold' : 'normal',
+                      },
+                    ]}
+                  >
+                    {t(`layout.accountModel.languages.${lang.code}`)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </ScrollView>
         </View>
@@ -353,5 +399,21 @@ const styles = StyleSheet.create({
   themeToggle: {
     padding: 20,
     borderRadius: 20,
+  },
+  languageContainer: {
+    width: '100%',
+    borderRadius: 10,
+    padding: 10,
+    gap: 8,
+  },
+  languageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  languageText: {
+    fontSize: 16,
   },
 });

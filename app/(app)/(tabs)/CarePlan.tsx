@@ -27,7 +27,7 @@ import { MotiText } from "moti";
 import { Link } from "expo-router";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-
+import { useTranslation } from 'react-i18next';
 interface HealthProfile {
   name: string;
   weight: string;
@@ -71,6 +71,7 @@ const CarePlan: React.FC = () => {
     previousTreatments: '',
     age: '',
   });
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -238,7 +239,7 @@ const CarePlan: React.FC = () => {
               { color: currentColors.textPrimary },
             ]}
           >
-            Reset Generator
+            {t('dietPlan.questionnaire.resetButton')}
           </Text>
           <Text
             style={[
@@ -246,7 +247,7 @@ const CarePlan: React.FC = () => {
               { color: currentColors.textSecondary },
             ]}
           >
-            Are you sure you want to reset? All progress will be lost.
+            {t('dietPlan.questionnaire.resetQuestion')}
           </Text>
           <View style={styles.resetModalButtons}>
             <TouchableOpacity
@@ -302,9 +303,7 @@ const CarePlan: React.FC = () => {
           <View style={[styles.card, { backgroundColor: currentColors.warn }]}>
             <View style={styles.highlight}>
               <Text>
-                ⚠️ This tool is for informational purposes only. Consult with
-                healthcare professionals before starting any new workout or diet
-                program.
+              {t('dietPlan.questionnaire.disclaimer')}
               </Text>
             </View>
           </View>
@@ -340,7 +339,7 @@ const CarePlan: React.FC = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Customized exercise routine
+              {t('dietPlan.questionnaire.routineEx')}
             </Text>
           </TouchableOpacity>
 
@@ -376,7 +375,7 @@ const CarePlan: React.FC = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Personalized meal plan
+              {t('dietPlan.questionnaire.mealPl')}
             </Text>
           </TouchableOpacity>
 
@@ -412,7 +411,7 @@ const CarePlan: React.FC = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Personalized meditation routine
+              {t('dietPlan.questionnaire.medPl')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -427,7 +426,7 @@ const CarePlan: React.FC = () => {
         >
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Name
+            {t('dietPlan.profile.name')}
             </Text>
             <TextInput
               style={[styles.textInput, { color: currentColors.textPrimary }]}
@@ -440,7 +439,7 @@ const CarePlan: React.FC = () => {
     
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Weight (kg)
+            {t('dietPlan.profile.weight')}
             </Text>
             <TextInput
               style={[styles.textInput, { color: currentColors.textPrimary }]}
@@ -454,7 +453,7 @@ const CarePlan: React.FC = () => {
     
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Height (cm)
+            {t('dietPlan.profile.height')}
             </Text>
             <TextInput
               style={[styles.textInput, { color: currentColors.textPrimary }]}
@@ -468,7 +467,7 @@ const CarePlan: React.FC = () => {
     
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Activity Level
+            {t('dietPlan.profile.activity')}
             </Text>
             {activityLevels.map((level) => (
               <TouchableOpacity
@@ -499,7 +498,7 @@ const CarePlan: React.FC = () => {
     
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Medical Conditions (optional)
+            {t('dietPlan.profile.conditions')}
             </Text>
             <TextInput
               style={[
@@ -519,7 +518,7 @@ const CarePlan: React.FC = () => {
           </View>
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Medications
+            {t('dietPlan.profile.medications')}
             </Text>
             <TextInput
               style={[
@@ -539,7 +538,7 @@ const CarePlan: React.FC = () => {
           </View>
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Allergies
+            {t('dietPlan.profile.allergies')}
             </Text>
             <TextInput
               style={[
@@ -559,7 +558,7 @@ const CarePlan: React.FC = () => {
           </View>
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Age
+            {t('dietPlan.profile.age')}
             </Text>
             <TextInput
               style={[
@@ -579,7 +578,7 @@ const CarePlan: React.FC = () => {
           </View>
           <View style={styles.questionContainer}>
             <Text style={[styles.label, { color: currentColors.textPrimary }]}>
-              Previous Treatments
+            {t('dietPlan.profile.prevTreatment')}
             </Text>
             <TextInput
               style={[
@@ -745,7 +744,7 @@ const CarePlan: React.FC = () => {
           </View>
           <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
             <AntDesign name="arrowleft" size={16} color="#000" />
-            <Text style={styles.resetText}>Generate Another Plan</Text>
+            <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
           </TouchableOpacity>
         </ScrollView>
       );
@@ -792,7 +791,7 @@ const CarePlan: React.FC = () => {
           <Text
             style={[styles.infoText, { color: currentColors.textSecondary }]}
           >
-            Get unlimited access to AI-powered health and fitness planning tools
+            {t('dietPlan.questionnaire.unlimited')}          
           </Text>
         </View>
 
