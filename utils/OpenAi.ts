@@ -111,15 +111,15 @@ export async function generatePlanQuestions(
     throw new Error("OpenAI API key is not configured");
   }
 
-  const prompt =
-    type === "workout"
-      ? "You are a certified fitness trainer. Generate 5 relevant questions to create a personalized workout plan. Questions should cover fitness level, schedule, equipment access, and any limitations. DO NOT put examples in questions and end every question with a question mark."
-      : "You are a certified nutritionist. Generate 5 relevant questions to create a personalized diet plan. Questions should cover dietary preferences, restrictions, current eating habits, and lifestyle. DO NOT put examples in questions and end every question with a question mark.";
-
+  const prompts = {
+    workout: "You are a certified fitness trainer. Generate 5 relevant questions to create a personalized workout plan. Questions should cover fitness level, schedule, equipment access, and any limitations.DO NOT put examples in questions and end every question with a question mark.",
+    diet: "You are a certified nutritionist. Generate 5 relevant questions to create a personalized diet plan. Questions should cover dietary preferences, restrictions, current eating habits, and lifestyle.DO NOT put examples in questions and end every question with a question mark.",
+    meditation: "You are a meditation instructor. Generate 5 relevant questions to create a personalized meditation plan. Questions should cover experience level, schedule, practice goals, preferred techniques, and any specific challenges.DO NOT put examples in questions and end every question with a question mark."
+  };
   try {
     const completion = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: prompt },
+        { role: "system", content: prompts[type] },
         {
           role: "user",
           content: `Generate questions for someone with these goals: ${goals}`,
@@ -155,15 +155,17 @@ export async function generatePlan(
     .map(([q, a]) => `Q: ${q}\nA: ${a}`)
     .join("\n\n");
 
-  const prompt =
-    type === "workout"
-      ? "You are a certified fitness trainer. Create a detailed workout plan based on the user's goals and answers. Include exercise descriptions, sets, reps, and weekly schedule."
-      : "You are a certified nutritionist. Create a detailed meal plan based on the user's goals and answers. Include meal suggestions, portions, and nutritional guidance. You can also include a weekly schedule if you deem it necessary";
-
+    const prompts = {
+      workout: `You are a certified fitness trainer. Create a detailed workout plan based on the user's profile, goals, and answers. Include exercise descriptions, sets, reps, and weekly schedule. The plan should be specifically tailored to their physical characteristics and any medical conditions.`,
+      
+      diet: `You are a certified nutritionist. Create a detailed meal plan based on the user's profile, goals, and answers. Include meal suggestions, portions, and nutritional guidance. Calculate and consider their BMI and any medical conditions. You can also include a weekly schedule if you deem it necessary.`,
+      
+      meditation: `You are a meditation instructor. Create a structured meditation plan based on the user's profile, goals, and answers. Include technique descriptions, session durations, progression path, and daily practice guidance. Consider any medical conditions that might affect their practice. You can also include a weekly schedule if you deem it necessary.`
+    };
   try {
     const completion = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: prompt },
+        { role: "system", content: prompts[type] },
         {
           role: "user",
           content: `Create a ${type} plan with the following information:\n\nGoals: ${goals}\n\nUser Information:\n${questionsAndAnswers}`,
@@ -176,7 +178,7 @@ export async function generatePlan(
 
     return completion.choices[0]?.message?.content || "Unable to generate plan";
   } catch (error) {
-    console.error("OpenAI API Error:", error);
+    console.error("API Error:", error);
     throw new Error(`Failed to generate ${type} plan`);
   }
 }

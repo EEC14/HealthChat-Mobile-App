@@ -30,7 +30,7 @@ export interface UserProfile {
   fullName?: string;
 }
 
-export type PlanType = "workout" | "diet";
+export type PlanType = "workout" | "diet" | "meditation";
 export type StepType = "select" | "questionnaire" | "plan";
 
 export type ColorsType = typeof Colors;

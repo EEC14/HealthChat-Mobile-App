@@ -10,7 +10,7 @@ import {
 import { Loader2 } from "lucide-react-native";
 import { generatePlan, generatePlanQuestions } from "@/utils/OpenAi";
 
-export type PlanType = "workout" | "diet";
+export type PlanType = "workout" | "diet" | "meditation";
 
 interface PlanQuestionnaireProps {
   type: PlanType;

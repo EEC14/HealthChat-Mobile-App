@@ -1,5 +1,4 @@
-import React, { useState, useCallback } from "react";
-
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,27 +9,23 @@ import {
   StyleSheet,
   SafeAreaView,
   Modal,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  KeyboardAvoidingView
 } from "react-native";
-
 import { generatePlan, generatePlanQuestions } from "@/utils/OpenAi";
-
 import Markdown from "react-native-markdown-display";
 import { ColorsType, PlanType, StepType } from "@/types";
-
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from "@expo/vector-icons/AntDesign";
-
 import { useAuthContext } from "@/context/AuthContext";
-
 import { Colors } from "@/constants/Colors";
 import { Theme, useTheme } from "@/context/ThemeContext";
-import { MotiText, MotiView } from "moti";
+import { MotiText } from "moti";
 import { Link } from "expo-router";
 import { FontAwesome6 } from "@expo/vector-icons";
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const CarePlan: React.FC = () => {
   const { user } = useAuthContext();
@@ -74,6 +69,11 @@ const CarePlan: React.FC = () => {
     }
   };
 
+  const handlePlanSelect = (type: PlanType) => {
+    setPlanType(type);
+    setStep("questionnaire"); // Go to profile step first
+  };
+
   const resetPlan = useCallback(() => {
     setPlanType(null);
     setGoals("");
@@ -112,10 +112,10 @@ const CarePlan: React.FC = () => {
         </TouchableOpacity>
       )}
       <Text style={[styles.headerTitle, { color: currentColors.textPrimary }]}>
-        {step === "select" && "Choose a Plan"}
-        {step === "questionnaire" &&
-          `${planType === "workout" ? "Fitness" : "Diet"} Questions`}
-        {step === "plan" && "Your Personalized Plan"}
+          {step === "select" && "Choose a Plan"}
+          {step === "questionnaire" &&
+            `${planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Questions`}
+          {step === "plan" && "Your Personalized Plan"}
       </Text>
       <View style={styles.headerActions}>
         {step !== "select" && (
@@ -136,6 +136,7 @@ const CarePlan: React.FC = () => {
           </TouchableOpacity>
         )}
       </View>
+
     </View>
   );
 
@@ -159,7 +160,7 @@ const CarePlan: React.FC = () => {
               { color: currentColors.textPrimary },
             ]}
           >
-            Reset Generator
+            Reset
           </Text>
           <Text
             style={[
@@ -223,9 +224,9 @@ const CarePlan: React.FC = () => {
           <View style={[styles.card, { backgroundColor: currentColors.warn }]}>
             <View style={styles.highlight}>
               <Text>
-                ⚠️ This tool is for informational purposes only. Consult with
-                healthcare professionals before starting any new workout or diet
-                program.
+              ⚠️ This tool is for informational purposes only. 
+              Consult with healthcare professionals before starting 
+              any new workout or diet program.
               </Text>
             </View>
           </View>
@@ -300,9 +301,45 @@ const CarePlan: React.FC = () => {
               Personalized meal plan
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              setPlanType("meditation");
+              setStep("questionnaire");
+            }}
+            style={[
+              styles.card,
+              {
+                backgroundColor: currentColors.surface,
+                borderWidth: 1,
+                borderColor: currentColors.border,
+              },
+            ]}
+          >
+            <View style={styles.iconContainer}>
+              <FontAwesome5
+                name="om"
+                size={24}
+                color={currentColors.textPrimary}
+              />
+            </View>
+            <Text
+              style={[styles.cardTitle, { color: currentColors.textPrimary }]}
+            >
+              Meditation Plan
+            </Text>
+            <Text
+              style={[
+                styles.cardSubtitle,
+                { color: currentColors.textSecondary },
+              ]}
+            >
+              Personalized meditation routine
+            </Text>  
+          </TouchableOpacity>
         </View>
       );
-    }
+    };
 
     if (step === "questionnaire") {
       return (
@@ -321,7 +358,7 @@ const CarePlan: React.FC = () => {
                     style={[styles.label, { color: currentColors.textPrimary }]}
                   >
                     What are your{" "}
-                    {planType === "workout" ? "fitness" : "dietary"} goals?
+                    {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} goals?
                   </Text>
                   <TextInput
                     style={[
@@ -418,7 +455,7 @@ const CarePlan: React.FC = () => {
           <Text
             style={[styles.planTitle, { color: currentColors.textPrimary }]}
           >
-            Your {planType === "workout" ? "Workout" : "Diet"} Plan
+            Your {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Plan
           </Text>
           <View
             style={[
@@ -479,7 +516,7 @@ const CarePlan: React.FC = () => {
           <Text
             style={[styles.infoText, { color: currentColors.textSecondary }]}
           >
-            Get unlimited access to AI-powered health and fitness planning tools
+            Get unlimited access to AI-powered health and fitness planning tools         
           </Text>
         </View>
 
@@ -691,97 +728,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
-// const getMarkdownStyles = (colors) => ({
-//   body: {
-//     fontSize: 16,
-//     lineHeight: 18,
-//     gap: 20,
-//     color: colors.textPrimary,
-//   },
-//   hr: { padding: 0, backgroundColor: colors.textPrimary, margin: 0 },
-//   h1: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     marginBottom: 16,
-//     color: colors.textPrimary,
-//     paddingBottom: 8,
-//     borderBottomWidth: 1,
-//     borderBottomColor: "#e0e0e0",
-//   },
-//   h2: {
-//     fontSize: 40,
-//     fontWeight: "bold",
-//     marginTop: 16,
-//     marginBottom: 12,
-//     color: colors.textPrimary,
-//   },
-//   h3: {
-//     fontSize: 58,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   h4: {
-//     fontSize: 58,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   h5: {
-//     fontSize: 58,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   h6: {
-//     fontSize: 48,
-//     fontWeight: "bold",
-//     marginTop: 12,
-//     marginBottom: 8,
-//     color: colors.textPrimary,
-//   },
-//   p: {
-//     color: colors.textPrimary,
-//   },
-
-//   listItemText: {
-//     fontSize: 16,
-//     lineHeight: 24,
-//     flex: 1,
-//     color: colors.textPrimary,
-//   },
-//   listItemBullet: {
-//     width: 6,
-//     height: 6,
-//     borderRadius: 3,
-//     backgroundColor: "#007BFF",
-//     marginRight: 8,
-//   },
-//   list: {
-//     marginLeft: 16,
-//     marginBottom: 12,
-//   },
-//   blockquote: {
-//     backgroundColor: "#f9f9f9",
-//     borderLeftWidth: 4,
-//     borderLeftColor: "#007BFF",
-//     paddingLeft: 12,
-//     paddingVertical: 8,
-//     marginVertical: 12,
-//   },
-//   code: {
-//     backgroundColor: "#f4f4f4",
-//     borderRadius: 4,
-//     padding: 8,
-//     fontFamily: "monospace",
-//     fontSize: 14,
-//     color: colors.textPrimary,
-//   },
-// });
 const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   body: {
     color: colors.textSecondary,
@@ -888,4 +834,4 @@ const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   },
 });
 
-export default CarePlan;
+export default CarePlan ;
