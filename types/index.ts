@@ -62,3 +62,5 @@ export enum SpecializationType {
 export interface MedicalSpecialistWithDistance extends MedicalSpecialist {
   distance: number;
 };
+
+

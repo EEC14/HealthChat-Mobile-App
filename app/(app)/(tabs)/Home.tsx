@@ -8,7 +8,6 @@ import {
   Platform,
   SafeAreaView,
   StyleSheet,
-  Button,
 } from "react-native";
 import {
   getRemainingMessages,
@@ -17,21 +16,23 @@ import {
 } from "@/utils/ChatLimit";
 import { getAIResponse } from "@/utils/OpenAi";
 import ChatInput from "@/components/ChatUi/ChatInput";
-import ChatMessage  from "@/components/ChatUi/ChatMessage";
+import ChatMessage from "@/components/ChatUi/ChatMessage";
 import { ChatLimit } from "@/components/ChatUi/ChatLimit";
 import ShareButton from "@/components/ChatUi/ShareButton";
 import { useAuthContext } from "@/context/AuthContext";
-import { Message } from "@/types";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
-
+import { SpecializationType } from "@/types";
+import { characters_ex } from "@/utils/OpenAi";
+import { Picker } from '@react-native-picker/picker';
 interface Message {
   id: string | number;
   text: string;
   isBot: boolean;
+  botCharacter?: string;
   videoUrl?: string;
   timestamp?: Date;
 }
@@ -45,18 +46,18 @@ function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello, I'm Dr. Dave , your AI medical specialist. How can I help you today?",
+      text: "Hello, I'm Dr. Dave, your AI medical specialist. How can I help you today?",
       isBot: true,
+      botCharacter: "Dr. Dave",
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedSpecialist, setSelectedSpecialist] = useState<SpecializationType | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-
 
   useEffect(() => {
     (async () => {
@@ -64,7 +65,7 @@ function Home() {
       if (status !== 'granted') {
         return;
       }
-  
+
       const location = await Location.getCurrentPositionAsync({});
       setLocation({
         latitude: location.coords.latitude,
@@ -106,7 +107,6 @@ function Home() {
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
     if (!user) {
-      setError("Please log in to send messages");
       return;
     }
 
@@ -116,6 +116,7 @@ function Home() {
         id: messages.length + 1,
         text: "You've reached your daily message limit. Please upgrade to Pro or Deluxe for unlimited access.",
         isBot: true,
+        botCharacter: "Dr. Dave",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, limitMessage]);
@@ -137,11 +138,13 @@ function Home() {
       await incrementMessageCount(user.isPro, user.isDeluxe);
       await loadRemainingMessages();
 
-      const aiResponse = await getAIResponse(input, user, location, 10);
+      const aiResponse = await getAIResponse(input, user, location, 10, selectedSpecialist);
+
       const botMessage: Message = {
         id: messages.length + 2,
-        text: aiResponse,
+        text: aiResponse.responseText,
         isBot: true,
+        botCharacter: aiResponse.characterName,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
@@ -153,12 +156,32 @@ function Home() {
           error.message ||
           "I apologize, but I encountered a technical issue. Please try again later.",
         isBot: true,
+        botCharacter: "Dr. Dave",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderSpecialistPicker = () => {
+    if (!user.isDeluxe) return null;
+
+    return (
+      <View style={{ marginVertical: 10 }}>
+        <Text>Choose a Specialist:</Text>
+        <Picker
+          selectedValue={selectedSpecialist}
+          onValueChange={(itemValue) => setSelectedSpecialist(itemValue)}
+        >
+          <Picker.Item label="Select Specialist" value={null} />
+          {Object.entries(characters_ex).map(([key, character]) => (
+            <Picker.Item key={key} label={character.name} value={character.specialization} />
+          ))}
+        </Picker>
+      </View>
+    );
   };
 
   return (
@@ -173,34 +196,27 @@ function Home() {
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >
+          {renderSpecialistPicker()}
+
           {!user.isPro && !user.isDeluxe && remainingMessages <= 20 && (
             <ChatLimit remainingMessages={remainingMessages} />
           )}
 
           <FlatList
-                ref={flatListRef}
-                data={messages}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                  <ChatMessage 
-                    message={item} 
-                    onVideoGenerated={handleVideoGenerated}
-                  />
-                )}
-                ListHeaderComponent={
-                  <Text style={[styles.card, { backgroundColor: currentColors.warn }]}>
-                    <View style={styles.highlight}>
-                      <Text style={{ fontSize: 12 }}>
-                        {t('chat.disclaimer')}
-                      </Text>
-                    </View>
-                  </Text>
-                }
-                contentContainerStyle={{ padding: 10 }}
-                onContentSizeChange={() =>
-                  flatListRef.current?.scrollToEnd({ animated: true })
-                }
-            />
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <ChatMessage 
+                message={item} 
+                onVideoGenerated={handleVideoGenerated}
+              />
+            )}
+            contentContainerStyle={{ padding: 10 }}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+          />
           <View
             style={{
               backgroundColor: currentColors.background,
@@ -237,15 +253,6 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 5,
-  },
-  highlight: {
-    width: "100%",
-    backgroundColor: "#E6F7FF",
-    padding: 8,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#007BFF",
-    color: "rgb(161 98 7)",
   },
 });
 
