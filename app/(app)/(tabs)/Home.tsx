@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-
 import {
   View,
   Text,
@@ -10,25 +9,23 @@ import {
   StyleSheet,
   Button,
 } from "react-native";
-
 import {
   getRemainingMessages,
   incrementMessageCount,
   hasReachedLimit,
 } from "@/utils/ChatLimit";
 import { getAIResponse } from "@/utils/OpenAi";
-
 import ChatInput from "@/components/ChatUi/ChatInput";
 import { ChatMessage } from "@/components/ChatUi/ChatMessage";
 import { ChatLimit } from "@/components/ChatUi/ChatLimit";
 import ShareButton from "@/components/ChatUi/ShareButton";
-
 import { useAuthContext } from "@/context/AuthContext";
 import { Message } from "@/types";
-
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
+import * as Speech from 'expo-speech';
+
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -47,6 +44,12 @@ export default function Home() {
   const [remainingMessages, setRemainingMessages] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
 
   if (!user) {
     router.replace("/(app)/(auth)/Signin");
@@ -132,42 +135,6 @@ export default function Home() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 36 : 26}
         style={{ flex: 1 }}
       >
-        {/* testing push notifications */}
-        {/* <View
-          style={{
-            alignItems: "center",
-            justifyContent: "space-around",
-          }}
-        >
-          <Text style={{ color: currentColors.textPrimary }}>
-            Your Expo push token: {expoPushToken}
-          </Text>
-          <View style={{ alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: currentColors.textPrimary }}>
-              Title: {notification && notification.request.content.title}{" "}
-            </Text>
-            <Text style={{ color: currentColors.textPrimary }}>
-              Body: {notification && notification.request.content.body}
-            </Text>
-            <Text style={{ color: currentColors.textPrimary }}>
-              Data:{" "}
-              {notification &&
-                JSON.stringify(notification.request.content.data)}
-            </Text>
-          </View>
-          <Button
-            title="Press to Send Notification"
-            onPress={async () => {
-              await sendPushNotification(expoPushToken!);
-            }}
-          />
-          <Button
-            title="scheduled Notifications"
-            onPress={async () => {
-              await scheduledNotifications();
-            }}
-          />
-        </View> */}
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >

@@ -19,6 +19,7 @@ export const Plans = {
       "All Pro features",
       "Workout plans generator",
       "Diet plans generator",
+      "Text-to-speech",
     ],
   },
   ProYearly: {
@@ -41,6 +42,7 @@ export const Plans = {
       "All Pro features",
       "Workout plans generator",
       "Diet plans generator",
+      "Text-to-speech",
     ],
   },
 };
