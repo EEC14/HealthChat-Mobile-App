@@ -8,7 +8,11 @@ import {
   Platform,
   SafeAreaView,
   StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Button,
 } from "react-native";
+import { Picker } from '@react-native-picker/picker';
 import {
   getRemainingMessages,
   incrementMessageCount,
@@ -25,9 +29,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
-import { SpecializationType } from "@/types";
-import { characters_ex } from "@/utils/OpenAi";
-import { Picker } from '@react-native-picker/picker';
+
 interface Message {
   id: string | number;
   text: string;
@@ -37,25 +39,27 @@ interface Message {
   timestamp?: Date;
 }
 
+const characters = {
+  GENERAL: { name: "Dr. Dave", specialization: "general practitioner" },
+  ORTHOPEDIC: { name: "Ortho Oscar", specialization: "orthopedic specialist" },
+  PHYSIOTHERAPY: { name: "Physio Pete", specialization: "physiotherapist" },
+  PSYCHOLOGY: { name: "Psychology Paula", specialization: "psychologist" },
+  CARDIOLOGY: { name: "Cardiology Carl", specialization: "cardiologist" },
+  DERMATOLOGY: { name: "Dermatology Debrah", specialization: "dermatologist" },
+};
+
 function Home() {
   const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const { user } = useAuthContext();
   const { t } = useTranslation();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Hello, I'm Dr. Dave, your AI medical specialist. How can I help you today?",
-      isBot: true,
-      botCharacter: "Dr. Dave",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState(0);
-  const [selectedSpecialist, setSelectedSpecialist] = useState<SpecializationType | null>(null);
+  const [selectedSpecialist, setSelectedSpecialist] = useState<keyof typeof characters | null>("GENERAL");
+  const [isModalVisible, setModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
@@ -76,6 +80,21 @@ function Home() {
       Speech.stop();
     };
   }, []);
+
+  useEffect(() => {
+    if (selectedSpecialist) {
+      const specialist = characters[selectedSpecialist];
+      setMessages([
+        {
+          id: 1,
+          text: `Hello, I'm ${specialist.name}, your AI ${specialist.specialization}. How can I help you today?`,
+          isBot: true,
+          botCharacter: specialist.name,
+          timestamp: new Date(),
+        },
+      ]);
+    }
+  }, [selectedSpecialist]);
 
   if (!user) {
     router.replace("/(app)/(auth)/Signin");
@@ -165,24 +184,39 @@ function Home() {
     }
   };
 
-  const renderSpecialistPicker = () => {
-    if (!user.isDeluxe) return null;
-
-    return (
-      <View style={{ marginVertical: 10 }}>
-        <Text>Choose a Specialist:</Text>
-        <Picker
-          selectedValue={selectedSpecialist}
-          onValueChange={(itemValue) => setSelectedSpecialist(itemValue)}
-        >
-          <Picker.Item label="Select Specialist" value={null} />
-          {Object.entries(characters_ex).map(([key, character]) => (
-            <Picker.Item key={key} label={character.name} value={character.specialization} />
-          ))}
-        </Picker>
+  const renderSpecialistPicker = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isModalVisible}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Choose a Specialist:</Text>
+          <Picker
+            selectedValue={selectedSpecialist}
+            onValueChange={(itemValue) => setSelectedSpecialist(itemValue)}
+            style={{ width: "100%", color: "black" }} 
+          >
+              {Object.entries(characters).map(([key, character]) => (
+                <Picker.Item
+                  key={key}
+                  label={character.name}
+                  value={key}
+                  color="black"
+                />
+              ))}
+          </Picker>
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    );
-  };
+    </Modal>
+  );
 
   return (
     <SafeAreaView
@@ -198,6 +232,13 @@ function Home() {
         >
           {renderSpecialistPicker()}
 
+          <TouchableOpacity
+            style={styles.changeButton}
+            onPress={() => setModalVisible(true)}
+          >
+            <Text style={styles.changeButtonText}>Change Specialist</Text>
+          </TouchableOpacity>
+
           {!user.isPro && !user.isDeluxe && remainingMessages <= 20 && (
             <ChatLimit remainingMessages={remainingMessages} />
           )}
@@ -209,7 +250,6 @@ function Home() {
             renderItem={({ item }) => (
               <ChatMessage 
                 message={item} 
-                onVideoGenerated={handleVideoGenerated}
               />
             )}
             contentContainerStyle={{ padding: 10 }}
@@ -244,15 +284,46 @@ function Home() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 8,
-    marginBottom: 10,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#fff", // Solid white for better visibility
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+  confirmButton: {
+    marginTop: 20,
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 5,
+  },
+  confirmButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  changeButton: {
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    margin: 10,
+  },
+  changeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

@@ -191,7 +191,7 @@ const CompanyInfo = () => {
                 </View>
                 <View style={{ gap: 12, alignItems: "flex-start" }}>
                   <View>
-                    <Text style={styles.title}>Dr. Dave</Text>
+                    <Text style={styles.title}>HealthChat</Text>
                     <Text style={styles.subtitle}>
                       Your AI Health Assistant
                     </Text>
