@@ -29,6 +29,14 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
+import { AIModel } from "@/utils/OpenAi";
+
+const aiModels = {
+  [AIModel.LLAMA]: "Llama 3.2 (Meta)",
+  [AIModel.GPT4]: "GPT-4o (OpenAI)",
+  [AIModel.O1]: "O1-Preview (OpenAI)",
+  [AIModel.CLAUDE]: "Claude 3.5 (Anthropic)",
+};
 
 interface Message {
   id: string | number;
@@ -62,6 +70,8 @@ function Home() {
   const [isModalVisible, setModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isModelModalVisible, setModelModalVisible] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<AIModel>(AIModel.GPT4);
 
   useEffect(() => {
     (async () => {
@@ -100,6 +110,40 @@ function Home() {
     router.replace("/(app)/(auth)/Signin");
     return;
   }
+
+  const renderModelPicker = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isModelModalVisible}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Choose AI Model:</Text>
+          <Picker
+            selectedValue={selectedModel}
+            onValueChange={(itemValue) => setSelectedModel(itemValue)}
+            style={{ width: "100%", color: "black" }}
+          >
+            {Object.entries(aiModels).map(([key, label]) => (
+              <Picker.Item
+                key={key}
+                label={label}
+                value={key}
+                color="black"
+              />
+            ))}
+          </Picker>
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() => setModelModalVisible(false)}
+          >
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const loadRemainingMessages = useCallback(async () => {
     const remaining = await getRemainingMessages(user.isPro, user.isDeluxe);
@@ -157,8 +201,13 @@ function Home() {
       await incrementMessageCount(user.isPro, user.isDeluxe);
       await loadRemainingMessages();
 
-      const aiResponse = await getAIResponse(input, user, location, 10, selectedSpecialist);
-
+      const aiResponse = await getAIResponse(
+        input,
+        { ...user, preferredModel: user.isDeluxe ? selectedModel : undefined },
+        location,
+        10,
+        selectedSpecialist
+      );
       const botMessage: Message = {
         id: messages.length + 2,
         text: aiResponse.responseText,
@@ -230,14 +279,26 @@ function Home() {
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >
-          {renderSpecialistPicker()}
+         {renderSpecialistPicker()}
+          {renderModelPicker()}
 
-          <TouchableOpacity
-            style={styles.changeButton}
-            onPress={() => setModalVisible(true)}
-          >
-            <Text style={styles.changeButtonText}>Change Specialist</Text>
-          </TouchableOpacity>
+          <View>
+            <TouchableOpacity
+              style={styles.changeButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text style={styles.changeButtonText}>Change Specialist</Text>
+            </TouchableOpacity>
+
+            {user.isDeluxe && (
+              <TouchableOpacity
+                style={styles.changeButton}
+                onPress={() => setModelModalVisible(true)}
+              >
+                <Text style={styles.changeButtonText}>Change AI Model</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {!user.isPro && !user.isDeluxe && remainingMessages <= 20 && (
             <ChatLimit remainingMessages={remainingMessages} />
@@ -269,7 +330,7 @@ function Home() {
               borderTopColor: currentColors.border,
             }}
           >
-            <ShareButton messages={messages} />
+            
             <ChatInput
               input={input}
               setInput={setInput}

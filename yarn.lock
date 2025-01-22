@@ -20,6 +20,19 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
+"@anthropic-ai/sdk@^0.33.1":
+  version "0.33.1"
+  resolved "https://registry.npmjs.org/@anthropic-ai/sdk/-/sdk-0.33.1.tgz"
+  integrity sha512-VrlbxiAdVRGuKP2UQlCnsShDHJKWepzvfRCkZMpU+oaUdKLpOfmylLMRojGrAgebV+kDtPjewCVP0laHXg+vsA==
+  dependencies:
+    "@types/node" "^18.11.18"
+    "@types/node-fetch" "^2.6.4"
+    abort-controller "^3.0.0"
+    agentkeepalive "^4.2.1"
+    form-data-encoder "1.7.2"
+    formdata-node "^4.3.2"
+    node-fetch "^2.6.7"
+
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.24.7", "@babel/code-frame@^7.25.9", "@babel/code-frame@^7.26.0", "@babel/code-frame@^7.26.2":
   version "7.26.2"
   resolved "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.26.2.tgz"
@@ -2822,9 +2835,9 @@
     undici-types "~6.20.0"
 
 "@types/node@^18.11.18":
-  version "18.19.68"
-  resolved "https://registry.npmjs.org/@types/node/-/node-18.19.68.tgz"
-  integrity sha512-QGtpFH1vB99ZmTa63K4/FU8twThj4fuVSBkGddTp7uIL/cuoLWIUSL2RcOaigBhfR+hg5pgGkBnkoOxrTVBMKw==
+  version "18.19.71"
+  resolved "https://registry.npmjs.org/@types/node/-/node-18.19.71.tgz"
+  integrity sha512-evXpcgtZm8FY4jqBSN8+DmOTcVkkvTmAayeo4Wf3m1xAruyVGzGuDh/Fb/WWX2yLItUiho42ozyJjB0dw//Tkw==
   dependencies:
     undici-types "~5.26.4"
 
