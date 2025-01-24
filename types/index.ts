@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { Timestamp } from "firebase/firestore";
-
+import { AIModel } from "@/utils/OpenAi";
 export type Message = {
   id: number;
   text: string;
@@ -63,4 +63,6 @@ export interface MedicalSpecialistWithDistance extends MedicalSpecialist {
   distance: number;
 };
 
-
+export interface ExtendedUserProfile extends UserProfile {
+  preferredModel?: AIModel;
+}

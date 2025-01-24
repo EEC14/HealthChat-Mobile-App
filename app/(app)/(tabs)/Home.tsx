@@ -30,12 +30,14 @@ import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import { useTranslation } from 'react-i18next';
 import { AIModel } from "@/utils/OpenAi";
+import { SpecializationType } from "@/types";
 
 const aiModels = {
   [AIModel.LLAMA]: "Llama 3.2 (Meta)",
   [AIModel.GPT4]: "GPT-4o (OpenAI)",
-  [AIModel.O1]: "O1-Preview (OpenAI)",
+  [AIModel.O1]: "O1-Mini (OpenAI)",
   [AIModel.CLAUDE]: "Claude 3.5 (Anthropic)",
+  [AIModel.GEMMA]: "DeepMind Gemma (Google)",
 };
 
 interface Message {

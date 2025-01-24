@@ -10,7 +10,9 @@ import {
   DocumentData
 } from 'firebase/firestore';
 import { Anthropic } from "@anthropic-ai/sdk";
+import Replicate from "replicate";
 
+//Instances creation
 const openai = new OpenAI({
   apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true,
@@ -18,6 +20,10 @@ const openai = new OpenAI({
 
 const anthropic = new Anthropic({
   apiKey: process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY,
+});
+
+const replicate = new Replicate({
+  auth: process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN,
 });
 
 const db = getFirestore();
@@ -34,8 +40,9 @@ export const characters_ex = {
 export enum AIModel {
   LLAMA = "llama-3.2",
   GPT4 = "gpt-4o",
-  O1 = "o1-preview",
-  CLAUDE = "claude-3.5-sonnet"
+  O1 = "o1-mini",
+  CLAUDE = "claude-3.5-sonnet",
+  GEMMA = "gemma-7b-it"
 }
 
 
@@ -279,7 +286,9 @@ export async function getAIResponse(
   }
 
   try {
-    const selectedSpecialization = forcedCharacter || await selectCharacterAI(userMessage);
+    const selectedSpecialization = (forcedCharacter && Object.values(SpecializationType).includes(forcedCharacter)) 
+  ? forcedCharacter 
+  : await selectCharacterAI(userMessage);
     const character = characters[selectedSpecialization];
     const fullPrompt = `${character.systemPrompt}\n${COMMON_RULES}`;
 
@@ -296,18 +305,64 @@ export async function getAIResponse(
             ]
           });
           return {
-            responseText: anthropicResponse || "I'm sorry, I didn't understand that.",
+            responseText: anthropicResponse.content.map(block => block.text).join(' ') || "I'm sorry, I didn't understand that.",
             characterName: character.name,
           };
 
         case AIModel.LLAMA:
-          // Implement Llama API call here
-          // For now, fallback to GPT-4
-          console.warn("Llama model not implemented, falling back to GPT-4");
-          user.preferredModel = AIModel.GPT4;
-          break;
+            const output = await replicate.run(
+              "meta/meta-llama-3-8b-instruct",
+              {
+                input: {
+                  prompt: `${character.name}: ${userMessage}`,
+                  max_new_tokens: 500,
+                  temperature: 0.7,
+                  system_prompt: fullPrompt
+                }
+              }
+            );
+            
+            return {
+              responseText: output?.join("") || "I'm sorry, I didn't understand that.",
+              characterName: character.name
+            };
+
+        case AIModel.GEMMA:
+              const output_g = await replicate.run(
+                "google-deepmind/gemma-7b-it:2790a695e5dcae15506138cc4718d1106d0d475e6dca4b1d43f42414647993d5",
+                {
+                  input: {
+                    prompt: `${character.name}: ${userMessage}`,
+                    max_new_tokens: 500,
+                    temperature: 0.7,
+                    system_prompt: fullPrompt
+                  }
+                }
+              );
+              
+              return {
+                responseText: output_g?.join("") || "I'm sorry, I didn't understand that.",
+                characterName: character.name
+              };
 
         case AIModel.O1:
+            try {
+              const completion = await openai.chat.completions.create({
+                messages: [
+                  { role: "assistant", content: fullPrompt },
+                  { role: "user", content: userMessage }
+                ],
+                model: "o1-mini",
+                max_completion_tokens: 500,
+              });
+              return {
+                responseText: completion.choices[0]?.message?.content || "I'm sorry, I didn't understand that.",
+                characterName: character.name,
+              };
+            } catch (error) {
+              console.error("O1 API Error, falling back to GPT-4:", error);
+              user.preferredModel = AIModel.GPT4;
+            }
         case AIModel.GPT4:
         default:
           const completion = await openai.chat.completions.create({

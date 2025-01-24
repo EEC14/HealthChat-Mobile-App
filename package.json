@@ -76,6 +76,7 @@
     "react-native-video": "^6.9.1",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
+    "replicate": "^1.0.1",
     "tailwindcss": "^3.4.16",
     "zod": "^3.24.1"
   },
