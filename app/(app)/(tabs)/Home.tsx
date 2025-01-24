@@ -7,10 +7,11 @@ import {
   Platform,
   SafeAreaView,
   StyleSheet,
-  Button,
   Modal,
   TouchableOpacity,
+  Button,
 } from "react-native";
+import { Picker } from '@react-native-picker/picker';
 import {
   getRemainingMessages,
   incrementMessageCount,
@@ -18,7 +19,7 @@ import {
 } from "@/utils/ChatLimit";
 import { getAIResponse } from "@/utils/OpenAi";
 import ChatInput from "@/components/ChatUi/ChatInput";
-import  ChatMessage  from "@/components/ChatUi/ChatMessage";
+import ChatMessage from "@/components/ChatUi/ChatMessage";
 import { ChatLimit } from "@/components/ChatUi/ChatLimit";
 import ShareButton from "@/components/ChatUi/ShareButton";
 import { useAuthContext } from "@/context/AuthContext";
@@ -27,27 +28,27 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import { SpecializationType } from "@/types";
-import { characters_ex } from "@/utils/OpenAi";
-import { Picker } from '@react-native-picker/picker';
+
 
 interface Message {
   id: string | number;
   text: string;
   isBot: boolean;
   botCharacter?: string;
+  videoUrl?: string;
   timestamp?: Date;
 }
 
 const characters = {
-  GENERAL: { name: "Dr. Dave", specialization: "general practitioner" },
-  ORTHOPEDIC: { name: "Ortho Oscar", specialization: "orthopedic specialist" },
-  PHYSIOTHERAPY: { name: "Physio Pete", specialization: "physiotherapist" },
-  PSYCHOLOGY: { name: "Psychology Paula", specialization: "psychologist" },
-  CARDIOLOGY: { name: "Cardiology Carl", specialization: "cardiologist" },
-  DERMATOLOGY: { name: "Dermatology Debrah", specialization: "dermatologist" },
+  general: { name: "Dr. Dave", specialization: "general practitioner" },
+  orthopedic: { name: "Ortho Oscar", specialization: "orthopedic specialist" },
+  physiotherapy: { name: "Physio Pete", specialization: "physiotherapist" },
+  psychology: { name: "Psychology Paula", specialization: "psychologist" },
+  cardiology: { name: "Cardiology Carl", specialization: "cardiologist" },
+  dermatology: { name: "Dermatology Debrah", specialization: "dermatologist" },
 };
 
-export default function Home() {
+function Home() {
   const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
@@ -56,11 +57,11 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const flatListRef = useRef<FlatList>(null);
-  const [selectedSpecialist, setSelectedSpecialist] = useState<keyof typeof characters | null>("GENERAL");
+  const [selectedSpecialist, setSelectedSpecialist] = useState<SpecializationType>(SpecializationType.GENERAL);
   const [isModalVisible, setModalVisible] = useState(false);
-
+  const flatListRef = useRef<FlatList>(null);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isModelModalVisible, setModelModalVisible] = useState(false);
   useEffect(() => {
     return () => {
       Speech.stop();
@@ -102,7 +103,6 @@ export default function Home() {
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
     if (!user) {
-      setError("Please log in to send messages");
       return;
     }
 
@@ -110,10 +110,10 @@ export default function Home() {
     if (limitReached) {
       const limitMessage: Message = {
         id: messages.length + 1,
-        text: "You've reached your daily message limit. Please upgrade to Pro for unlimited access.",
+        text: "You've reached your daily message limit. Please upgrade to Pro or Deluxe for unlimited access.",
         isBot: true,
-        timestamp: new Date(),
         botCharacter: "Dr. Dave",
+        timestamp: new Date(),
       };
       setMessages((prev) => [...prev, limitMessage]);
       return;
@@ -134,13 +134,17 @@ export default function Home() {
       await incrementMessageCount(user.isPro, user.isDeluxe);
       await loadRemainingMessages();
 
-      const aiResponse = await getAIResponse(input, user, selectedSpecialist);
+      const aiResponse = await getAIResponse(
+        input,
+        user,
+        selectedSpecialist
+      );
       const botMessage: Message = {
         id: messages.length + 2,
         text: aiResponse.responseText,
         isBot: true,
-        timestamp: new Date(),
         botCharacter: aiResponse.characterName,
+        timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error: any) {
@@ -151,8 +155,8 @@ export default function Home() {
           error.message ||
           "I apologize, but I encountered a technical issue. Please try again later.",
         isBot: true,
-        timestamp: new Date(),
         botCharacter: "Dr. Dave",
+        timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -206,6 +210,19 @@ export default function Home() {
         <View
           style={{ flex: 1, paddingBottom: Platform.OS === "ios" ? 46 : 60 }}
         >
+         {renderSpecialistPicker()}
+
+          <View>
+            {user.isDeluxe && (
+            <TouchableOpacity
+            style={styles.changeButton}
+            onPress={() => setModalVisible(true)}
+          >
+            <Text style={styles.changeButtonText}>Change Specialist</Text>
+          </TouchableOpacity>
+            )}
+          </View>
+
           {!user.isPro && !user.isDeluxe && remainingMessages <= 20 && (
             <ChatLimit remainingMessages={remainingMessages} />
           )}
@@ -214,32 +231,16 @@ export default function Home() {
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => <ChatMessage message={item} />}
-            ListHeaderComponent={
-              <Text
-                style={[styles.card, { backgroundColor: currentColors.warn }]}
-              >
-                <View style={styles.highlight}>
-                  <Text style={{ fontSize: 12 }}>
-                    ⚠️ For informational purposes only. Not a substitute for
-                    professional medical advice. Always consult your healthcare
-                    provider.
-                  </Text>
-                </View>
-              </Text>
-            }
+            renderItem={({ item }) => (
+              <ChatMessage 
+                message={item} 
+              />
+            )}
             contentContainerStyle={{ padding: 10 }}
             onContentSizeChange={() =>
               flatListRef.current?.scrollToEnd({ animated: true })
             }
           />
-          {renderSpecialistPicker()}
-          <TouchableOpacity
-            style={styles.changeButton}
-            onPress={() => setModalVisible(true)}
-          >
-            <Text style={styles.changeButtonText}>Change Specialist</Text>
-          </TouchableOpacity>
           <View
             style={{
               backgroundColor: currentColors.background,
@@ -252,7 +253,7 @@ export default function Home() {
               borderTopColor: currentColors.border,
             }}
           >
-            <ShareButton messages={messages} />
+            
             <ChatInput
               input={input}
               setInput={setInput}
@@ -280,6 +281,11 @@ const styles = StyleSheet.create({
     width: "80%",
     alignItems: "center",
   },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
   confirmButton: {
     marginTop: 20,
     backgroundColor: "#007BFF",
@@ -303,28 +309,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  modalTitle: {
-    fontSize: 18,
-    marginBottom: 10,
-    fontWeight: "bold",
-  },
-  card: {
-    padding: 8,
-    marginBottom: 10,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  highlight: {
-    width: "100%",
-    backgroundColor: "#E6F7FF",
-    padding: 8,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#007BFF",
-    color: "rgb(161 98 7)",
-  },
 });
+
+export default Home;

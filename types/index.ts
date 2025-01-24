@@ -40,7 +40,11 @@ export enum SpecializationType {
 };
 
 
+
 export type PlanType = "workout" | "diet" | "meditation";
 export type StepType = "select" | "questionnaire" | "plan";
 
 export type ColorsType = typeof Colors;
+
+export interface ExtendedUserProfile extends UserProfile {
+}
