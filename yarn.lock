@@ -7890,11 +7890,6 @@ react-native-markdown-display@^7.0.2:
     prop-types "^15.7.2"
     react-native-fit-image "^1.5.5"
 
-react-native-picker@^4.3.7:
-  version "4.3.7"
-  resolved "https://registry.npmjs.org/react-native-picker/-/react-native-picker-4.3.7.tgz"
-  integrity sha512-bqY0FOsgNe/svnlV7CTvDKjqca5iZr0E0h4gYO8LDh9alxGK7P6bTvqSx6VwDR144moHAG7dsKGrSH2r8bTx2Q==
-
 react-native-purchases-ui@^8.5.0:
   version "8.5.0"
   resolved "https://registry.npmjs.org/react-native-purchases-ui/-/react-native-purchases-ui-8.5.0.tgz"
