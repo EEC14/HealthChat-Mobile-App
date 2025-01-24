@@ -5,6 +5,7 @@ export type Message = {
   id: number;
   text: string;
   isBot: boolean;
+  botCharacter?: string;
   timestamp: Date;
 };
 
@@ -29,6 +30,15 @@ export interface UserProfile {
   expoPushToken?: string;
   fullName?: string;
 }
+export enum SpecializationType {
+  ORTHOPEDIC = 'orthopedic',
+  PHYSIOTHERAPY = 'physiotherapy',
+  GENERAL = 'general',
+  PSYCHOLOGY = 'psychology',
+  CARDIOLOGY = 'cardiology',
+  DERMATOLOGY = 'dermatology'
+};
+
 
 export type PlanType = "workout" | "diet" | "meditation";
 export type StepType = "select" | "questionnaire" | "plan";
