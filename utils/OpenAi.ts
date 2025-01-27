@@ -21,8 +21,27 @@ interface Character {
   description: string;
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  character?: string;
+}
 
 const characters: Record<SpecializationType, Character> = {
+  [SpecializationType.DEFAULT]: {
+    name: "Health Assistant",
+    specialization: SpecializationType.DEFAULT,
+    description: "AI health assistant that routes to appropriate specialists",
+    systemPrompt: `You are an AI health assistant.
+Always start your responses with "Health Assistant here!"
+Your responsibilities:
+1. Provide initial guidance on health-related questions
+2. Route users to appropriate specialists when needed
+3. Focus on understanding user needs and connecting them with the right expertise
+4. Maintain a professional and helpful demeanor
+5. NEVER provide diagnosis or prescribe medication
+6. Always emphasize the importance of consulting healthcare professionals`
+  },
   [SpecializationType.GENERAL]: {
     name: "Dr. Dave",
     specialization: SpecializationType.GENERAL,
@@ -126,33 +145,75 @@ function selectOpenAIModel(user: ExtendedUserProfile | null): string {
   return "gpt-3.5-turbo";
 }
 
-async function selectCharacterAI(query: string): Promise<SpecializationType> {
+async function shouldKeepSpecialist(
+  userMessage: string,
+  currentSpecialization: SpecializationType,
+  conversationHistory: ChatMessage[]
+): Promise<boolean> {
   try {
-    const characterDescriptions = Object.entries(characters)
-      .map(([type, char]) => `${type}: ${char.description}`)
-      .join('\n');
-    const prompt = `As a medical query router, analyze this health-related question and select the most appropriate specialist to answer it. If the question doesn't clearly match a specialist's expertise, select 'general' for Dr. Dave.
-Available specialists:
-${characterDescriptions}
-User question: "${query}"
-Respond with ONLY one of these exact words: general, orthopedic, physiotherapy, psychology, cardiology, dermatology`;
+    const lastBotMessage = conversationHistory
+      .slice()
+      .reverse()
+      .find(m => m.role === 'assistant');
+
+    const prompt = `Analyze if this health question should remain with ${currentSpecialization} specialist.
+Consider:
+- Previous conversation context: ${lastBotMessage?.content || "No previous context"}
+- User's current question: "${userMessage}"
+
+Reply ONLY with "true" if:
+1. Question relates to previous discussion
+2. Falls within ${currentSpecialization} domain
+3. Is a follow-up requiring continuity
+
+Reply "false" if:
+1. Completely new unrelated topic
+2. Clearly requires different specialty
+3. User explicitly requests specialist change
+
+Answer: `;
+
     const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: prompt },
-        { role: "user", content: query }
-      ],
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-3.5-turbo",
+      temperature: 0.1,
+      max_tokens: 10
+    });
+
+    return completion.choices[0]?.message?.content?.toLowerCase().trim() === "true";
+  } catch (error) {
+    console.error("Enhanced specialist check error:", error);
+    return true; // Default to keeping specialist on error
+  }
+}
+
+async function selectCharacterAI(
+  query: string,
+  conversationHistory: ChatMessage[]
+): Promise<SpecializationType> {
+  try {
+    const contextSummary = conversationHistory
+      .slice(-3)
+      .map(m => `${m.role}: ${m.content}`)
+      .join('\n');
+
+    const prompt = `Analyze this conversation context and new question to select specialist:    
+Previous Context:
+${contextSummary}
+New Question: "${query}"
+Available Specialists: ${Object.values(characters).map(c => c.description).join('\n')}
+Reply ONLY with: general, orthopedic, physiotherapy, psychology, cardiology, or dermatology`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "system", content: prompt }, { role: "user", content: query }],
       model: "gpt-3.5-turbo",
       temperature: 0.1,
       max_tokens: 10
     });
     const response = completion.choices[0]?.message?.content?.toLowerCase().trim();
-    console.log("AI response for specialization:", response);
-    // Check if response is a valid specialization
-    const validSpecializations = Object.values(SpecializationType).map(s => s.toLowerCase());
-    if (response && validSpecializations.includes(response)) {
+    if (response && Object.values(SpecializationType).includes(response as SpecializationType)) {
       return response as SpecializationType;
     }
-    console.warn("Invalid response, defaulting to Dr. Dave.");
     return SpecializationType.GENERAL;
   } catch (error) {
     console.error("Character selection error:", error);
@@ -160,46 +221,101 @@ Respond with ONLY one of these exact words: general, orthopedic, physiotherapy, 
   }
 }
 
+
 export async function getAIResponse(
   userMessage: string,
   user: UserProfile,
-  forcedCharacter?: SpecializationType
-): Promise<{ responseText: string; characterName: string }> {
+  conversationHistory: ChatMessage[],
+  forcedCharacter?: SpecializationType,
+  previousCharacter?: string
+): Promise<{ responseText: string; characterName: string; updatedHistory: ChatMessage[] }>  {
   if (!process.env.EXPO_PUBLIC_OPENAI_API_KEY) {
     throw new Error("OpenAI API key is not configured");
   }
-
   try {
-    const selectedSpecialization = forcedCharacter || await selectCharacterAI(userMessage);
+    let selectedSpecialization = forcedCharacter;
+    // Enhanced continuity check for follow-ups
+    if (!selectedSpecialization && previousCharacter) {
+      const prevSpecType = Object.entries(characters).find(
+        ([_, char]) => char.name === previousCharacter
+      )?.[0] as SpecializationType;
+      if (prevSpecType) {
+        const shouldKeep = await shouldKeepSpecialist(
+          userMessage,
+          prevSpecType,
+          conversationHistory
+        );
+        if (shouldKeep) {
+          selectedSpecialization = prevSpecType;
+          console.log("Maintaining specialist for follow-up");
+        }
+      }
+    }
+    // If no previous specialist or not keeping, select new
+    if (!selectedSpecialization) {
+      selectedSpecialization = await selectCharacterAI(userMessage, conversationHistory);
+    }
+    // Fallback for Deluxe users if selectCharacterAI returns DEFAULT
+    if (user.isDeluxe && selectedSpecialization === SpecializationType.DEFAULT) {
+      selectedSpecialization = await selectCharacterAI(userMessage, conversationHistory);
+    }
     const character = characters[selectedSpecialization];
-    const fullPrompt = `${character.systemPrompt}\n${COMMON_RULES}`
+    let systemPrompt = character.systemPrompt;    
+    if (user.isDeluxe && forcedCharacter && forcedCharacter !== SpecializationType.DEFAULT) {
+      systemPrompt += "\nIf the query is outside your specialization, kindly remind the user to switch to a more appropriate specialist or return to the default profile.";
+    }    
+    const fullPrompt = `${systemPrompt}\n${COMMON_RULES}`;
+    // Build messages array with history
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: "system", content: fullPrompt },
+      ...conversationHistory.filter(m => m.role !== 'system'),  // Exclude previous system messages
+      { role: "user", content: userMessage }
+    ];
+
     const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: fullPrompt },
-        { role: "user", content: userMessage },
-      ],
+      messages,
       model: selectOpenAIModel(user),
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 500
     });
 
-    const responseText = completion.choices[0]?.message?.content || "I'm sorry, I didn't understand that.";
+    const responseText = completion.choices[0]?.message?.content || "I apologize, I didn't understand that.";
 
-    return {
-      responseText,
-      characterName: character.name,
-    };
-  } catch (error: any) {
-    console.error("OpenAI API Error:", error);
-    return {
-      responseText: "I apologize, but I am experiencing technical difficulties. Please try again later.",
-      characterName: "Dr. Dave", // Fallback to Dr. Dave in case of an error
-    };
-  }
+// Update conversation history
+const updatedHistory: ChatMessage[] = [
+  ...(conversationHistory || []),
+  {
+    role: 'user',
+    content: userMessage,
+    character: character.name
+  } as ChatMessage, // Explicit type assertion
+  {
+    role: 'assistant',
+    content: responseText,
+    character: character.name
+  } as ChatMessage
+].slice(-10);
+ // Keep last 10 messages to manage context window
+
+return {
+  responseText,
+  characterName: character.name,
+  updatedHistory
+};
+} catch (error) {
+console.error("OpenAI API Error:", error);
+return {
+  responseText: "I apologize, but I am experiencing technical difficulties. Please try again later.",
+  characterName: characters[SpecializationType.GENERAL].name,
+  updatedHistory: conversationHistory  // Return original history on error
+};
 }
+}
+
+//Daily health tips
 export async function generateDailyHealthTip(): Promise<string> {
   if (!process.env.EXPO_PUBLIC_OPENAI_API_KEY) {
-    throw new Error("OpenAI API key is not configured");
+    throw new Error("API key error");
   }
 
   try {
@@ -222,17 +338,18 @@ export async function generateDailyHealthTip(): Promise<string> {
 
     return completion.choices[0]?.message?.content || "Stay healthy!";
   } catch (error) {
-    console.error("OpenAI API Error:", error);
+    console.error("API Error:", error);
     throw new Error("Failed to generate daily health tip");
   }
 }
 
+//Plan generator - questions
 export async function generatePlanQuestions(
   type: PlanType,
   goals: string
 ): Promise<string[]> {
   if (!process.env.EXPO_PUBLIC_OPENAI_API_KEY) {
-    throw new Error("OpenAI API key is not configured");
+    throw new Error("API key error");
   }
 
   const prompts = {
@@ -266,6 +383,7 @@ export async function generatePlanQuestions(
   }
 }
 
+//Plan generator - plan
 export async function generatePlan(
   type: PlanType,
   goals: string,

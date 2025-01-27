@@ -15,8 +15,6 @@ interface PurchaseContextType {
   customerInfo: CustomerInfo | null;
   handlePurchase: (packageToPurchase: PurchasesPackage) => Promise<void>;
   restorePurchases: () => Promise<void>;
-  // handlePurchaseNotification: (info: CustomerInfo) => Promise<void>;
-  // handlePurchaseSwitch: (packageToPurchase: PurchasesPackage) => Promise<void>;
 }
 
 const PurchaseContext = createContext<PurchaseContextType | undefined>(
@@ -56,20 +54,6 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     initPurchases();
   }, []);
-
-  // listen for customer info updates and update the purchase status
-  // useEffect(() => {
-  //   if (user) {
-  //     Purchases.addCustomerInfoUpdateListener((info) => {
-  //       console.log("addCustomerInfoUpdateListener");
-  //       updatePurchaseStatus(info);
-  //       handlePurchaseNotification(info);
-  //     });
-  //   }
-  //   return () => {
-  //     Purchases.removeCustomerInfoUpdateListener((info) => {});
-  //   };
-  // }, [user]);
 
   const updatePurchaseStatus = async (customerInfo: CustomerInfo) => {
     console.log(
@@ -188,8 +172,6 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
         customerInfo,
         handlePurchase,
         restorePurchases,
-        // handlePurchaseNotification,
-        // handlePurchaseSwitch,
       }}
     >
       {children}

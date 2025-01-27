@@ -1,13 +1,13 @@
 import { Colors } from "@/constants/Colors";
 import { Timestamp } from "firebase/firestore";
 
-export type Message = {
-  id: number;
-  text: string;
-  isBot: boolean;
-  botCharacter?: string;
-  timestamp: Date;
-};
+export interface Message {
+  id: string | number;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  character?: string;
+  timestamp?: Date;
+}
 
 export type Chat = {
   id: string;
@@ -36,7 +36,8 @@ export enum SpecializationType {
   GENERAL = 'general',
   PSYCHOLOGY = 'psychology',
   CARDIOLOGY = 'cardiology',
-  DERMATOLOGY = 'dermatology'
+  DERMATOLOGY = 'dermatology',
+  DEFAULT= 'default'
 };
 
 

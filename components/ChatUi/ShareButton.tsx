@@ -16,7 +16,11 @@ import { saveChatToDatabase } from "@/firebase";
 import { useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
 
-const ShareButton = ({ messages }: { messages: Message[] }) => {
+interface ShareMessage extends Omit<Message, 'timestamp'> {
+  timestamp?: Date;
+}
+
+const ShareButton = ({ messages }: { messages: ShareMessage[] }) => {
   const { user } = useAuthContext();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
@@ -31,12 +35,22 @@ const ShareButton = ({ messages }: { messages: Message[] }) => {
       return;
     }
 
+    // Filter out system messages and empty content
+    const shareableMessages = messages.filter(m => 
+      m.role !== 'system' && m.content.trim().length > 0
+    );
+
+    if (shareableMessages.length < 2) {
+      setError("Not enough messages to share");
+      return;
+    }
+
     setIsSharing(true);
     setError(null);
 
     try {
-      const chatId = await saveChatToDatabase(user.uid, messages);
-      const url = `https://healthchat-patient.esbhealthcare.com/shared/${chatId}`; // Update with your app's URL
+      const chatId = await saveChatToDatabase(user.uid, shareableMessages);
+      const url = `https://healthchat-patient.esbhealthcare.com/shared/${chatId}`;
       setShareUrl(url);
     } catch (err) {
       setError("Failed to generate shareable link.");
@@ -139,20 +153,21 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   shareContainer: {
-    width: "100%",
-    position: "absolute",
-    bottom: 4,
-    zIndex: 2,
-    backgroundColor: "white",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    position: 'absolute',
+    bottom: 50,
+    left: 10,
+    width: '90%',
+    backgroundColor: 'white',
+    padding: 10,
     borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
+    zIndex: 9999,
+    elevation: 5,
   },
   input: {
     flex: 1,

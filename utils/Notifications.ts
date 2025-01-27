@@ -35,12 +35,6 @@ export async function scheduledNotifications() {
         data: { data: "goes here" },
       },
       trigger: null,
-      // {
-      // type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      // seconds: 60,
-      // repeats: true,
-      // channelId: "new_emails",
-      // },
     });
 
     console.log("Notification scheduled with ID:", identifier);

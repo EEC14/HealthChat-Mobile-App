@@ -16,7 +16,7 @@ export function GoogleAuthButton() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: '703134724815-49j2l06g01m5ijuhgamlga8mmeg518um.apps.googleusercontent.com',
     iosClientId: '703134724815-he6bcu5nm6jlfpatdrv2aofse4ocqlhq.apps.googleusercontent.com',
-    expoClientId: '703134724815-kqjfjgdm7mravn9et36ptqt9tgjvn6rm.apps.googleusercontent.com',
+    //expoClientId: '703134724815-kqjfjgdm7mravn9et36ptqt9tgjvn6rm.apps.googleusercontent.com',
   });
 
   React.useEffect(() => {

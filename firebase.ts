@@ -112,14 +112,30 @@ export const updateUserProfile = async (
 };
 
 export async function saveChatToDatabase(userId: string, messages: Message[]) {
-  const chatRef = doc(collection(db, "ChatsCollection"));
-  await setDoc(chatRef, {
-    userId,
-    messages,
-    createdAt: Timestamp.now(),
-    shared: true,
-    upvotes: 0,
-    downvotes: 0,
-  });
-  return chatRef.id;
+  try {
+    const chatRef = doc(collection(db, "ChatsCollection"));
+    const data = {
+      userId,
+      messages: messages.map(msg => {
+        const messageData: any = {
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp ? Timestamp.fromDate(msg.timestamp) : Timestamp.now()
+        };
+        if (msg.character) {
+          messageData.character = msg.character;
+        }
+        return messageData;
+      }),
+      createdAt: Timestamp.now(),
+      shared: true,
+      upvotes: 0,
+      downvotes: 0,
+    };
+    await setDoc(chatRef, data);
+    return chatRef.id;
+  } catch (error) {
+    console.error('Error saving chat:', error);
+    throw error;
+  }
 }
