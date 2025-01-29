@@ -26,6 +26,11 @@ const replicate = new Replicate({
   auth: process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN,
 });
 
+//const deepseek = new OpenAI({
+ // baseURL: 'https://api.deepseek.com',
+//  apiKey: process.env.EXPO_PUBLIC_DEEPSEEK_API_KEY,
+//});
+
 const db = getFirestore();
 
 export const characters_ex = {
@@ -42,7 +47,8 @@ export enum AIModel {
   GPT4 = "gpt-4o",
   O1 = "o1-mini",
   CLAUDE = "claude-3.5-sonnet",
-  GEMMA = "gemma-7b-it"
+  GEMMA = "gemma-7b-it",
+  DEEPSEEK = "deepseek-reasoner"
 }
 
 
@@ -344,6 +350,22 @@ export async function getAIResponse(
                 responseText: output_g?.join("") || "I'm sorry, I didn't understand that.",
                 characterName: character.name
               };
+
+          //    case AIModel.GPT4:
+          //        const deep_completion = await deepseek.chat.completions.create({
+           //         messages: [
+           //           { role: "system", content: fullPrompt },
+          //            { role: "user", content: userMessage },
+          //          ],
+          //          model: "deepseek-reasoner",
+          //          temperature: 0.7,
+          //          max_tokens: 500,
+          //        });
+        
+          //        return {
+          //          responseText: deep_completion.choices[0]?.message?.content || "I'm sorry, I didn't understand that.",
+          //          characterName: character.name,
+          //        };
 
         case AIModel.O1:
             try {

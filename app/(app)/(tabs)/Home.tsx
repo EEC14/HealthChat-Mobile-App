@@ -38,6 +38,7 @@ const aiModels = {
   [AIModel.O1]: "O1-Mini (OpenAI)",
   [AIModel.CLAUDE]: "Claude 3.5 (Anthropic)",
   [AIModel.GEMMA]: "DeepMind Gemma (Google)",
+  [AIModel.DEEPSEEK]: "Deepseek R1 (Deepseek)",
 };
 
 interface Message {
@@ -58,7 +59,7 @@ const characters = {
   DERMATOLOGY: { name: "Dermatology Debrah", specialization: "dermatologist" },
 };
 
-function Home() {
+export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
@@ -112,40 +113,6 @@ function Home() {
     router.replace("/(app)/(auth)/Signin");
     return;
   }
-
-  const renderModelPicker = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={isModelModalVisible}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Choose AI Model:</Text>
-          <Picker
-            selectedValue={selectedModel}
-            onValueChange={(itemValue) => setSelectedModel(itemValue)}
-            style={{ width: "100%", color: "black" }}
-          >
-            {Object.entries(aiModels).map(([key, label]) => (
-              <Picker.Item
-                key={key}
-                label={label}
-                value={key}
-                color="black"
-              />
-            ))}
-          </Picker>
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={() => setModelModalVisible(false)}
-          >
-            <Text style={styles.confirmButtonText}>Confirm</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
 
   const loadRemainingMessages = useCallback(async () => {
     const remaining = await getRemainingMessages(user.isPro, user.isDeluxe);
@@ -234,6 +201,40 @@ function Home() {
       setIsLoading(false);
     }
   };
+
+  const renderModelPicker = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isModelModalVisible}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Choose AI Model:</Text>
+          <Picker
+            selectedValue={selectedModel}
+            onValueChange={(itemValue) => setSelectedModel(itemValue)}
+            style={{ width: "100%", color: "black" }}
+          >
+            {Object.entries(aiModels).map(([key, label]) => (
+              <Picker.Item
+                key={key}
+                label={label}
+                value={key}
+                color="black"
+              />
+            ))}
+          </Picker>
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() => setModelModalVisible(false)}
+          >
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const renderSpecialistPicker = () => (
     <Modal
@@ -390,4 +391,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+//export default Home;
