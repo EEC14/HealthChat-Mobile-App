@@ -1,0 +1,132 @@
+{
+    "auth": {
+      "signIn": {
+        "title": "Iniciar sesión",
+        "emailLabel": "Correo electrónico",
+        "passwordLabel": "Contraseña",
+        "submitButton": "Iniciar sesión",
+        "forgotPassword": "¿Olvidaste tu contraseña?",
+        "noAccount": "¿No tienes una cuenta?"
+      },
+      "signUp": {
+        "title": "Crear cuenta",
+        "emailLabel": "Correo electrónico",
+        "passwordLabel": "Contraseña",
+        "confirmPassword": "Confirmar contraseña",
+        "submitButton": "Registrarse",
+        "hasAccount": "¿Ya tienes una cuenta?"
+      }
+    },
+    "tabs": {
+      "home": "Inicio",
+      "carePlan": "Plan de cuidado",
+      "shareChats": "Compartir chats",
+      "subscription": "Suscripción"
+    },
+    "chat": {
+      "inputPlaceholder": "Escribe tu mensaje...",
+      "send": "Enviar",
+      "limitReached": "Límite de mensajes alcanzado",
+      "loadMore": "Cargar más mensajes",
+      "startMessage": "Hola, soy el Dr. Dave, tu especialista médico de IA. ¿Cómo puedo ayudarte hoy?",
+      "disclaimer": "⚠️ Solo con fines informativos. No sustituye el consejo médico profesional. Consulta siempre a tu proveedor de salud.",
+      "limit": {
+        "freeLimit": "Límite del plan gratuito: ",
+        "remaining": "mensajes restantes este mes",
+        "upgrade": "Actualiza a Pro o Deluxe para mensajes ilimitados"
+      }
+    },
+    "shareChats": {
+      "error": "Por favor, inténtalo de nuevo más tarde",
+      "total": "Total de chats compartidos",
+      "totalUpvotes": "Total de votos positivos",
+      "percentageUpvotes": "Porcentaje de votos positivos",
+      "interesting": "Comparte tus conversaciones interesantes para verlas aquí",
+      "noYet": "Aún no se han compartido chats"
+    },
+    "dietPlan": {
+      "questionnaire": {
+        "title": "Cuestionario del plan de dieta",
+        "submit": "Enviar respuestas",
+        "resetButton": "Restablecer generador",
+        "resetQuestion": "¿Estás seguro de que quieres restablecer? Todo el progreso se perderá.",
+        "disclaimer": "⚠️ Solo con fines informativos. No sustituye el consejo médico profesional. Consulta siempre a tu proveedor de salud.",
+        "routineEx": "Rutina de ejercicio personalizada",
+        "mealPl": "Plan de comidas personalizado",
+        "medPl": "Rutina de meditación personalizada",
+        "another": "Generar otro plan",
+        "unlimited": "Obtén acceso ilimitado a herramientas de planificación de salud y fitness impulsadas por IA",
+        "premium": "Planes de asistencia Premium",
+        "upgrade": "Actualizar a",
+        "toAccess": "para acceder a planes de dieta, entrenamiento y meditación personalizados",
+        "deluxeUp": "Actualizar a Deluxe"
+      },
+      "profile": {
+        "height": "Altura",
+        "name": "Nombre",
+        "weight": "Peso",
+        "activity": "Nivel de actividad",
+        "conditions": "Condiciones médicas (opcional)",
+        "medications": "Medicamentos",
+        "allergies": "Alergias",
+        "age": "Edad",
+        "prevTreatment": "Tratamientos previos"
+      }
+    },
+    "profilePage": {
+      "logModify": "Por favor, inicia sesión para actualizar tu plan",
+      "edit": "Editar perfil"
+    },
+    "layout": {
+      "accountModel": {
+        "title": "Configuración de la cuenta",
+        "personalInfo": "Información personal",
+        "preferences": "Preferencias",
+        "featuresFinal": "Disfruta de acceso ilimitado a todas las funciones premium",
+        "modifyPlan": "Actualiza, degrada o cancela fácilmente tu suscripción. Si te suscribiste en la web, modifícala allí",
+        "freePlan": "Actualmente estás en el plan gratuito",
+        "choosePlan": "Elige el plan que mejor se adapte a tu viaje de bienestar.",
+        "subDetails": "Detalles de la suscripción",
+        "themeChoose": "Preferencia de tema:",
+        "languages": {
+          "title": "Idioma",
+          "en": "Inglés",
+          "de": "Alemán",
+          "it": "Italiano",
+          "fr": "Francés",
+          "es": "Español"
+        },
+        "plan": "Detalles del plan:",
+        "profile": "Perfil",
+        "account": "Cuenta:",
+        "enjoy": "Disfrute de acceso ilimitado a ",
+        "manage": "Gestione su plan",
+        "upgrade": "Actualice su plan",
+        "subscribe": "Suscríbase ahora",
+        "mailManage": "Gestione su email",
+        "mailChange": "Cambia tu email",
+        "deleteAcc": "Eliminar cuenta:"
+      },
+      "infoModel": {
+        "close": "Cerrar",
+        "moreInfo": "Más información"
+      },
+      "planFeatures": {
+        "bot": "Acceso ilimitado al chatbot",
+        "tips": "Consejos de salud diarios",
+        "workout": "Generador de planes de ejercicio",
+        "diet": "Generador de planes de dieta",
+        "meditation": "Generador de planes de meditación",
+        "tts": "Texto a voz",
+        "specialist": "elige tu especialista"
+      }
+    },
+    "common": {
+      "loading": "Cargando...",
+      "error": "Ocurrió un error",
+      "retry": "Reintentar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar"
+    }
+  }

@@ -1,6 +1,7 @@
 import React from "react";
 import { ActivityIndicator, Text, View, Image } from "react-native";
-
+import '../i18n/config';
+import { I18nextProvider } from 'react-i18next';
 function LoadingScreen() {
   return (
     <View className="items-center justify-center flex-1 bg-white">

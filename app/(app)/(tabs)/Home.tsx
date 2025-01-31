@@ -29,6 +29,7 @@ import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import { SpecializationType } from "@/types";
 import { Message } from "@/types";
+import { useTranslation } from 'react-i18next';
 
 const characters = {
   general: { name: "Dr. Dave", specialization: "general practitioner" },
@@ -49,14 +50,15 @@ function Home() {
   const [conversationHistory, setConversationHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [remainingMessages, setRemainingMessages] = useState(0);
+  const [remainingMessages, setRemainingMessages] = useState<number>(0);
   const [selectedSpecialist, setSelectedSpecialist] = useState<SpecializationType>(
     user?.isDeluxe ? SpecializationType.DEFAULT : SpecializationType.GENERAL
   );
   const [isModalVisible, setModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [isModelModalVisible, setModelModalVisible] = useState(false);
+  //const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  //const [isModelModalVisible, setModelModalVisible] = useState(false);
+  const { t } = useTranslation();
   useEffect(() => {
     return () => {
       Speech.stop();
@@ -86,16 +88,13 @@ function Home() {
   }
 
   const loadRemainingMessages = useCallback(async () => {
+    if (!user) return;
     const remaining = await getRemainingMessages(user.isPro, user.isDeluxe);
     setRemainingMessages(remaining);
-  }, [user.isPro]);
-
+  }, [user?.isPro, user?.isDeluxe]);
   useEffect(() => {
-    async function setRemainingMessages() {
-      await loadRemainingMessages();
-    }
-    setRemainingMessages();
-  }, []);
+    loadRemainingMessages();
+  }, [loadRemainingMessages, messages.length]);
 
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
@@ -106,11 +105,12 @@ function Home() {
       const limitMessage: Message = {
         id: Date.now(),
         role: 'assistant',
-        content: "You've reached your daily message limit...",
+        content: "You've reached your daily message limit. Consider upgrading to continue chatting!",
         character: characters[SpecializationType.DEFAULT].name,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, limitMessage]);
+      await loadRemainingMessages(); // Update remaining messages
       return;
     }
 
@@ -146,6 +146,7 @@ function Home() {
       setConversationHistory(aiResponse.updatedHistory);
       
       setInput("");
+      await loadRemainingMessages();
     } catch (error: any) {
       const errorMessage: Message = {
         id: Date.now(),
@@ -216,9 +217,17 @@ function Home() {
     <SafeAreaView style={{ flex: 1, backgroundColor: currentColors.background }}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
         style={{ flex: 1 }}
       >
+          <View style={styles.highlight}>
+            <Text style={{ fontSize: 12 }}>
+                  {t('chat.disclaimer')}
+            </Text>
+          </View>
+          {!user?.isPro && !user?.isDeluxe && (
+          <ChatLimit remainingMessages={remainingMessages} />
+        )}
         <View style={{ flex: 1 }}>
           {user?.isDeluxe && (
             <>
@@ -325,6 +334,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  card: {
+    padding: 8,
+    marginBottom: 10,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  highlight: {
+    width: "100%",
+    backgroundColor: "#E6F7FF",
+    padding: 8,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#007BFF",
+    color: "rgb(161 98 7)",
+  }
 });
 
 export default Home;

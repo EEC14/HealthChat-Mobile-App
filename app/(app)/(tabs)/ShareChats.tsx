@@ -24,10 +24,11 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { FontAwesome } from "@expo/vector-icons";
 import ExternalLinkHandler from "@/components/Layout/ExternalLinkHandler";
+import { useTranslation } from 'react-i18next';
 
 const SkeletonItem = ({ theme }: { theme: "light" | "dark" }) => {
   const fadeAnim = React.useRef(new Animated.Value(0.5)).current;
-
+  const { t } = useTranslation();
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -99,6 +100,7 @@ const SharedChatsList = () => {
     totalDownvotes: 0,
     upvotePercentage: 0,
   });
+  const { t } = useTranslation();
 
   const fetchChats = async () => {
     if (!user) {
@@ -235,7 +237,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.errorSubtext, { color: currentColors.textSecondary }]}
         >
-          Please try again later
+          {t('shareChats.error')}
         </Text>
       </View>
     );
@@ -264,7 +266,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-          Shared Chats
+          {t('shareChats.total')}
         </Text>
       </View>
       <View
@@ -283,7 +285,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-        Upvotes
+        {t('shareChats.totalUpvotes')}
         </Text>
       </View>
       <View
@@ -302,7 +304,7 @@ const SharedChatsList = () => {
         <Text
           style={[styles.statLabel, { color: currentColors.textSecondary }]}
         >
-          Upvote Percentage
+          {t('shareChats.percentageUpvotes')}
         </Text>
       </View>
     </View>
@@ -457,7 +459,7 @@ const SharedChatsList = () => {
                 { color: currentColors.textPrimary },
               ]}
             >
-              No Shared Chats Yet
+              {t('shareChats.noYet')}
             </Text>
             <Text
               style={[
@@ -465,7 +467,7 @@ const SharedChatsList = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Share your interesting conversations to see them here
+              {t('shareChats.interesting')}
             </Text>
           </View>
         }

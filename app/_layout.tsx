@@ -8,6 +8,8 @@ import { ActivityIndicator, Image, Text, View } from "react-native";
 import * as Notifications from "expo-notifications";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { PurchaseProvider } from "@/context/PurchaseContext";
+import i18n from '../i18n/config';
+import { I18nextProvider } from 'react-i18next';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -54,9 +56,11 @@ export default function RootLayout() {
     <AuthContextProvider>
       <PurchaseProvider>
         <NotificationProvider>
-          <ThemeProvider>
-            <MainLayout />
-          </ThemeProvider>
+        <I18nextProvider i18n={i18n}>
+            <ThemeProvider>
+              <MainLayout />
+            </ThemeProvider>
+          </I18nextProvider>
         </NotificationProvider>
       </PurchaseProvider>
     </AuthContextProvider>

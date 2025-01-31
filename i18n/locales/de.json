@@ -1,0 +1,132 @@
+{
+    "auth": {
+      "signIn": {
+        "title": "Anmelden",
+        "emailLabel": "E-Mail",
+        "passwordLabel": "Passwort",
+        "submitButton": "Anmelden",
+        "forgotPassword": "Passwort vergessen?",
+        "noAccount": "Haben Sie kein Konto?"
+      },
+      "signUp": {
+        "title": "Konto erstellen",
+        "emailLabel": "E-Mail",
+        "passwordLabel": "Passwort",
+        "confirmPassword": "Passwort bestätigen",
+        "submitButton": "Registrieren",
+        "hasAccount": "Haben Sie bereits ein Konto?"
+      }
+    },
+    "tabs": {
+      "home": "Startseite",
+      "carePlan": "Betreuungsplan",
+      "shareChats": "Chats teilen",
+      "subscription": "Abonnement"
+    },
+    "chat": {
+      "inputPlaceholder": "Geben Sie Ihre Nachricht ein...",
+      "send": "Senden",
+      "limitReached": "Nachrichtenlimit erreicht",
+      "loadMore": "Mehr Nachrichten laden",
+      "startMessage": "Hallo, ich bin Dr. Dave, Ihr KI-Medizinspezialist. Wie kann ich Ihnen heute helfen?",
+      "disclaimer": "⚠️ Nur zu Informationszwecken. Kein Ersatz für professionelle medizinische Beratung. Konsultieren Sie immer Ihren Arzt.",
+      "limit": {
+        "freeLimit": "Limit des kostenlosen Plans: ",
+        "remaining": "Nachrichten verbleiben diese Monat",
+        "upgrade": "Upgrade auf Pro oder Deluxe für unbegrenzte Nachrichten"
+      }
+    },
+    "shareChats": {
+      "error": "Bitte versuchen Sie es später erneut",
+      "total": "Gesamtzahl der geteilten Chats",
+      "totalUpvotes": "Gesamtzahl der positiven Bewertungen",
+      "percentageUpvotes": "Prozentsatz der positiven Bewertungen",
+      "interesting": "Teilen Sie Ihre interessanten Gespräche, um sie hier zu sehen",
+      "noYet": "Noch keine gemeinsamen Chats"
+    },
+    "dietPlan": {
+      "questionnaire": {
+        "title": "Fragebogen zum Ernährungsplan",
+        "submit": "Antworten senden",
+        "resetButton": "Generator zurücksetzen",
+        "resetQuestion": "Sind Sie sicher, dass Sie zurücksetzen möchten? Alle Fortschritte gehen verloren.",
+        "disclaimer": "⚠️ Nur zu Informationszwecken. Kein Ersatz für professionelle medizinische Beratung. Konsultieren Sie immer Ihren Arzt.",
+        "routineEx": "Individuelle Trainingsroutine",
+        "mealPl": "Personalisierter Ernährungsplan",
+        "medPl": "Personalisierte Meditationsroutine",
+        "another": "Einen anderen Plan erstellen",
+        "unlimited": "Erhalten Sie unbegrenzten Zugang zu KI-gestützten Gesundheits- und Fitnessplanungstools",
+        "premium": "Premium-Pflege-Pläne",
+        "upgrade": "Upgrade auf",
+        "toAccess": "für Zugang zu personalisierten Diätplänen, Trainingsplänen und Meditationsplänen",
+        "deluxeUp": "Upgrade auf Deluxe"
+      },
+      "profile": {
+        "height": "Größe",
+        "name": "Name",
+        "weight": "Gewicht",
+        "activity": "Aktivitätsniveau",
+        "conditions": "Medizinische Bedingungen (optional)",
+        "medications": "Medikamente",
+        "allergies": "Allergien",
+        "age": "Alter",
+        "prevTreatment": "Frühere Behandlungen"
+      }
+    },
+    "profilePage": {
+      "logModify": "Bitte melden Sie sich an, um Ihren Plan zu aktualisieren",
+      "edit": "Profil bearbeiten"
+    },
+    "layout": {
+      "accountModel": {
+        "title": "Kontoeinstellungen",
+        "personalInfo": "Persönliche Informationen",
+        "preferences": "Einstellungen",
+        "featuresFinal": "Genießen Sie unbegrenzten Zugang zu allen Premium-Funktionen",
+        "modifyPlan": "Sie können Ihr Abonnement ganz einfach aktualisieren, herabstufen oder kündigen. Wenn Sie das Abonnement über das Internet erworben haben, ändern Sie es bitte dort",
+        "freePlan": "Sie sind derzeit im Free Plan",
+        "choosePlan": "Wählen Sie den Plan, der am besten zu Ihrer Wellness-Reise passt.",
+        "subDetails": "Abonnementdetails",
+        "themeChoose": "Themenpräferenz:",
+        "languages": {
+          "title": "Sprache",
+          "en": "Englisch",
+          "de": "Deutsch",
+          "it": "Italienisch",
+          "fr": "Französisch",
+          "es": "Spanisch"
+        },
+        "plan": "Pläne Details:",
+        "profile": "Profil",
+        "account": "Konto:",
+        "enjoy": "Genießen Sie unbegrenzten Zugang zu ",
+        "manage": "Verwalten Sie Ihren Plan",
+        "upgrade": "Aktualisieren Sie Ihren Plan",
+        "subscribe": "Jetzt abonnieren",
+        "mailManage": "Verwalten Sie Ihre email",
+        "mailChange": "Ändern Sie Ihre E-Mail",
+        "deleteAcc": "Konto löschen:"
+      },
+      "infoModel": {
+        "close": "Schließen",
+        "moreInfo": "Mehr Informationen"
+      },
+      "planFeatures": {
+        "bot": "Unbegrenzter Chatbot-Zugang",
+        "tips": "Tägliche Gesundheitstipps",
+        "workout": "Trainingsplangenerator",
+        "diet": "Ernährungsplangenerator",
+        "meditation": "Meditationsplangenerator",
+        "tts": "Text-zu-Sprache",
+        "specialist": "Wählen Sie Ihren Spezialisten"
+      }
+    },
+    "common": {
+      "loading": "Laden...",
+      "error": "Ein Fehler ist aufgetreten",
+      "retry": "Erneut versuchen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Löschen"
+    }
+  }

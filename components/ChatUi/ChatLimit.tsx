@@ -2,6 +2,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useRouter } from "expo-router";
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
+import { useTranslation } from 'react-i18next';
 
 interface ChatLimitProps {
   remainingMessages: number;
@@ -9,7 +10,7 @@ interface ChatLimitProps {
 
 export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
   const router = useRouter();
-
+  const { t } = useTranslation();
   return (
     <TouchableOpacity
       onPress={() => router.replace("/Subscription")}
@@ -39,8 +40,8 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
       >
         <View style={{ flex: 1, marginRight: 0 }}>
           <Text style={{ color: "#1e3a8a", fontSize: 14 }}>
-            <Text style={{ fontWeight: "bold" }}>Free Plan Limit: </Text>
-            {remainingMessages} messages remaining this month
+          <Text style={{ fontWeight: "bold" }}>{t('chat.limit.freeLimit')}</Text>
+          {remainingMessages} {t('chat.limit.remaining')}
           </Text>
           <View
             style={{
@@ -57,7 +58,7 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
                 fontWeight: "500",
               }}
             >
-              Upgrade to Pro or Deluxe for unlimited messages
+              {t('chat.limit.upgrade')}
             </Text>
             <FontAwesome6
               name="crown"

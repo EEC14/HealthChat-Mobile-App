@@ -19,7 +19,9 @@ export const Plans = {
       "All Pro features",
       "Workout plans generator",
       "Diet plans generator",
+      "Meditation plans generator",
       "Text-to-speech",
+      "Choose your specialist"
     ],
   },
   ProYearly: {
@@ -42,7 +44,9 @@ export const Plans = {
       "All Pro features",
       "Workout plans generator",
       "Diet plans generator",
+      "Meditation plans generator",
       "Text-to-speech",
+      "Choose your specialist"
     ],
   },
 };

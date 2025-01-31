@@ -41,6 +41,7 @@ import Purchases, {
   PurchasesPackage,
   CustomerInfo,
 } from "react-native-purchases";
+import { useTranslation } from 'react-i18next';
 
 const Subscription: React.FC = () => {
   const { currentOffering, handlePurchase } = usePurchases();
@@ -51,7 +52,7 @@ const Subscription: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user, fetchUserDetails, logout } = useAuthContext();
-  // console.log("user", user);
+  const { t } = useTranslation();
   const [selectedPlan, setSelectedPlan] = useState<"pro" | "deluxe" | "ProYearly" | "DeluxeYearly">("pro");
   const handleOpenLink = (url: string) => {
     setWebviewUrl(url);
@@ -289,7 +290,7 @@ const Subscription: React.FC = () => {
                   transition={{ delay: 300 }}
                   style={{ color: currentColors.textSecondary }}
                 >
-                  Enjoy unlimited access to all {user.isPro ? "Pro" : "Deluxe"}{" "}
+                  {t('layout.accountModel.enjoy')} {user.isPro ? "Pro" : "Deluxe"}{" "}
                   features
                 </MotiText>
               </View>
@@ -314,13 +315,13 @@ const Subscription: React.FC = () => {
                       className="text-lg font-semibold text-center"
                       style={{ color: currentColors.textPrimary }}
                     >
-                      Manage Your Plan
+                      {t('layout.accountModel.manage')}
                     </Text>
                     <Text
                       className="text-sm text-center"
                       style={{ color: currentColors.textSecondary }}
                     >
-                      Easily upgrade, downgrade, or cancel your subscription.
+                      {t('layout.accountModel.modifyPlan')}
                     </Text>
                   </View>
                 </View>
@@ -381,7 +382,7 @@ const Subscription: React.FC = () => {
                   marginBottom: 2,
                 }}
               >
-                Upgrade Your Plan
+                {t('layout.accountModel.upgrade')}
               </MotiText>
               <MotiText
                 from={{ opacity: 0, translateY: -20 }}
@@ -393,7 +394,7 @@ const Subscription: React.FC = () => {
                   marginBottom: 20,
                 }}
               >
-                Choose the plan that best fits your wellness journey.
+                {t('layout.accountModel.choosePlan')}
               </MotiText>
               {/* Plan Selection */}
               <View
@@ -532,7 +533,7 @@ const Subscription: React.FC = () => {
                         textAlign: "center",
                       }}
                     >
-                      Please log in to upgrade your plan
+                      {t('layout.profilePage.logModify')}
                     </Text>
                   </Link>
                 )}
@@ -578,7 +579,7 @@ const Subscription: React.FC = () => {
                 color: currentColors.textPrimary,
               }}
             >
-              Theme Preference:
+              {t('layout.accountModel.themeChoose')}
             </Text>
             <Pressable
               onPress={toggleTheme}
@@ -617,7 +618,7 @@ const Subscription: React.FC = () => {
                 color: currentColors.textPrimary,
               }}
             >
-              Manage your e-mail
+              {t('layout.accountModel.mailManage')}
             </Text>
             <TouchableOpacity
               style={[
@@ -634,7 +635,7 @@ const Subscription: React.FC = () => {
               <Text
                 style={[styles.logoutText, { color: currentColors.background }]}
               >
-                Change your email
+                {t('layout.accountModel.mailChange')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -646,7 +647,7 @@ const Subscription: React.FC = () => {
                 color: currentColors.textPrimary,
               }}
             >
-              Delete account:
+              {t('layout.accountModel.deleteAcc')}
             </Text>
             <TouchableOpacity
               style={[

@@ -25,7 +25,8 @@ import { Theme, useTheme } from "@/context/ThemeContext";
 import { MotiText } from "moti";
 import { Link } from "expo-router";
 import { FontAwesome6 } from "@expo/vector-icons";
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+//import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 
 const CarePlan: React.FC = () => {
   const { user } = useAuthContext();
@@ -39,7 +40,7 @@ const CarePlan: React.FC = () => {
   const [generatedPlan, setGeneratedPlan] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
-
+  const { t } = useTranslation();
   const handleGoalsSubmit = async () => {
     if (!goals.trim()) return;
     setIsLoading(true);
@@ -160,7 +161,7 @@ const CarePlan: React.FC = () => {
               { color: currentColors.textPrimary },
             ]}
           >
-            Reset
+            {t('dietPlan.questionnaire.resetButton')}
           </Text>
           <Text
             style={[
@@ -168,7 +169,7 @@ const CarePlan: React.FC = () => {
               { color: currentColors.textSecondary },
             ]}
           >
-            Are you sure you want to reset? All progress will be lost.
+            {t('dietPlan.questionnaire.resetQuestion')}
           </Text>
           <View style={styles.resetModalButtons}>
             <TouchableOpacity
@@ -224,9 +225,7 @@ const CarePlan: React.FC = () => {
           <View style={[styles.card, { backgroundColor: currentColors.warn }]}>
             <View style={styles.highlight}>
               <Text>
-              ⚠️ This tool is for informational purposes only. 
-              Consult with healthcare professionals before starting 
-              any new workout or diet program.
+              {t('dietPlan.questionnaire.disclaimer')}
               </Text>
             </View>
           </View>
@@ -262,7 +261,7 @@ const CarePlan: React.FC = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Customized exercise routine
+              {t('dietPlan.questionnaire.routineEx')}
             </Text>
           </TouchableOpacity>
 
@@ -298,7 +297,7 @@ const CarePlan: React.FC = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Personalized meal plan
+              {t('dietPlan.questionnaire.mealPl')}
             </Text>
           </TouchableOpacity>
 
@@ -334,7 +333,7 @@ const CarePlan: React.FC = () => {
                 { color: currentColors.textSecondary },
               ]}
             >
-              Personalized meditation routine
+              {t('dietPlan.questionnaire.medPl')}
             </Text>  
           </TouchableOpacity>
         </View>
@@ -469,7 +468,7 @@ const CarePlan: React.FC = () => {
           </View>
           <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
             <AntDesign name="arrowleft" size={16} color="#000" />
-            <Text style={styles.resetText}>Generate Another Plan</Text>
+            <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
           </TouchableOpacity>
         </ScrollView>
       );
@@ -490,7 +489,7 @@ const CarePlan: React.FC = () => {
         <MotiText
           style={[styles.restrictedTitle, { color: currentColors.textPrimary }]}
         >
-          Premium Care Plans
+          {t('dietPlan.questionnaire.premium')}
         </MotiText>
         <Text
           style={[
@@ -498,13 +497,13 @@ const CarePlan: React.FC = () => {
             { color: currentColors.textSecondary },
           ]}
         >
-          Upgrade to{" "}
+          {t('dietPlan.questionnaire.upgrade')}{" "}
           <Text
             style={{ fontWeight: "bold", color: currentColors.textPrimary }}
           >
             Deluxe
           </Text>{" "}
-          to access personalized health and fitness plans
+          {t('dietPlan.questionnaire.toAccess')}
         </Text>
 
         <View style={styles.infoBox}>
@@ -516,7 +515,7 @@ const CarePlan: React.FC = () => {
           <Text
             style={[styles.infoText, { color: currentColors.textSecondary }]}
           >
-            Get unlimited access to AI-powered health and fitness planning tools         
+            {t('dietPlan.questionnaire.unlimited')}        
           </Text>
         </View>
 
@@ -529,7 +528,7 @@ const CarePlan: React.FC = () => {
           }}
         >
           <View style={styles.upgradeButton}>
-            <Text style={styles.upgradeButtonText}>Upgrade to Deluxe</Text>
+            <Text style={styles.upgradeButtonText}>{t('dietPlan.questionnaire.deluxeUp')}</Text>
             <AntDesign name="arrowright" size={20} color="white" />
           </View>
         </Link>
