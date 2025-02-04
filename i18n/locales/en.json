@@ -32,8 +32,8 @@
       "disclaimer": "⚠️ For informational purposes only. Not a substitute for professional medical advice. Always consult your healthcare provider.",
       "limit":{
         "freeLimit": "Free Plan Limit: ",
-        "remaining": "messages remaining today",
-        "upgrade": "Upgrade to Pro for unlimited messages"
+        "remaining": "messages remaining this month",
+        "upgrade": "Upgrade to Pro or Deluxe for unlimited messages"
       }
     },
     "shareChats": {

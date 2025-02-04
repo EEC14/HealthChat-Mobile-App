@@ -17,7 +17,7 @@ import {
   incrementMessageCount,
   hasReachedLimit,
 } from "@/utils/ChatLimit";
-import { getAIResponse } from "@/utils/OpenAi";
+import { getAIResponse, selectAIModel, AI_MODELS } from "@/utils/OpenAi";
 import ChatInput from "@/components/ChatUi/ChatInput";
 import ChatMessage from "@/components/ChatUi/ChatMessage";
 import { ChatLimit } from "@/components/ChatUi/ChatLimit";
@@ -56,31 +56,38 @@ function Home() {
   );
   const [isModalVisible, setModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  //const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  //const [isModelModalVisible, setModelModalVisible] = useState(false);
+  const [isModelModalVisible, setModelModalVisible] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("gpt-4o-mini"); 
+  const [isNewChat, setIsNewChat] = useState(true);
   const { t } = useTranslation();
+  useEffect(() => {
+    if (!user) return;
+    
+    const specialist = characters[selectedSpecialist];
+    if (!specialist) return;
+
+    if (messages.length === 0) {
+      const initialMessage: Message = {
+        id: 1,
+        role: 'assistant',
+        content: specialist.name === "Health Assistant" 
+          ? "Hello, I'm your AI Health Assistant. I'll help route your questions to the appropriate specialist. How can I help you today?"
+          : `${specialist.name} here! How can I assist you today?`,
+        character: selectedSpecialist,
+        timestamp: new Date(),
+      };
+
+      setMessages([initialMessage]);
+      setConversationHistory([]);
+    }
+  }, [selectedSpecialist, user?.isDeluxe, messages.length]);
+
   useEffect(() => {
     return () => {
       Speech.stop();
     };
   }, []);
 
-  useEffect(() => {
-    const specialist = characters[selectedSpecialist];
-    const initialMessage = user?.isDeluxe
-      ? "Hello, I'm your AI Health Assistant. I'll help route your questions to the appropriate specialist. How can I help you today?"
-      : `Hello, I'm ${specialist.name}, your AI ${specialist.specialization}. How can I help you today?`;
-
-    setMessages([
-      {
-        id: 1,
-        content: initialMessage,
-        role: 'assistant',
-        character: specialist.name,
-        timestamp: new Date(),
-      },
-    ]);
-  }, [selectedSpecialist, user?.isDeluxe]);
 
   if (!user) {
     router.replace("/(app)/(auth)/Signin");
@@ -96,6 +103,38 @@ function Home() {
     loadRemainingMessages();
   }, [loadRemainingMessages, messages.length]);
 
+  const handleNewChat = () => {
+    // Reset messages and conversation history
+    setMessages([]);
+    setConversationHistory([]);
+    
+    // Set isNewChat to true to trigger specialist selection
+    setIsNewChat(true);
+    
+    // Reset to appropriate initial specialist
+    if (user?.isDeluxe) {
+      setSelectedSpecialist(SpecializationType.DEFAULT);  // Health Assistant for Deluxe
+    } else {
+      setSelectedSpecialist(SpecializationType.GENERAL);  // Dr. Dave for free/pro users
+    }
+    
+    setInput('');
+  };
+
+
+  const handleModelSelection = (model: string) => {
+    setSelectedModel(model);
+    selectAIModel(user, model);
+    setModelModalVisible(false);
+  };
+
+  const handleSpecialistChange = (newSpecialist: SpecializationType) => {
+    setSelectedSpecialist(newSpecialist);
+    setMessages([]);
+    setConversationHistory([]);
+    setIsNewChat(true);
+  };
+
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
     if (!user) return;
@@ -106,11 +145,11 @@ function Home() {
         id: Date.now(),
         role: 'assistant',
         content: "You've reached your daily message limit. Consider upgrading to continue chatting!",
-        character: characters[SpecializationType.DEFAULT].name,
+        character: SpecializationType.DEFAULT,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, limitMessage]);
-      await loadRemainingMessages(); // Update remaining messages
+      await loadRemainingMessages(); // Update remaining messages count
       return;
     }
 
@@ -119,40 +158,46 @@ function Home() {
       id: Date.now(),
       role: 'user',
       content: input,
+      character: selectedSpecialist,
       timestamp: new Date(),
     };
 
     try {
       await incrementMessageCount(user.isPro, user.isDeluxe);
-      
       const aiResponse = await getAIResponse(
         input,
         user,
-        conversationHistory, // Pass full history
+        conversationHistory,
         user.isDeluxe ? selectedSpecialist : undefined,
-        messages[messages.length - 1]?.character
+        selectedSpecialist,
+        isNewChat,
+        selectedModel
       );
+
+      if (aiResponse.newSpecialist && aiResponse.newSpecialist !== selectedSpecialist) {
+        handleSpecialistChange(aiResponse.newSpecialist);
+      }
 
       const botMessage: Message = {
         id: Date.now(),
         role: 'assistant',
         content: aiResponse.responseText,
-        character: aiResponse.characterName,
+        character: aiResponse.newSpecialist || selectedSpecialist,
         timestamp: new Date(),
       };
 
-      // Update both displayed messages and conversation history
       setMessages(prev => [...prev, tempUserMessage, botMessage]);
       setConversationHistory(aiResponse.updatedHistory);
-      
       setInput("");
+      setIsNewChat(false); 
       await loadRemainingMessages();
+      //console.log(remainingMessages)
     } catch (error: any) {
       const errorMessage: Message = {
         id: Date.now(),
         role: 'assistant',
         content: error.message || "Technical issue...",
-        character: characters[SpecializationType.DEFAULT].name,
+        character: SpecializationType.DEFAULT,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -162,22 +207,10 @@ function Home() {
   };
 
   useEffect(() => {
-    const specialist = characters[selectedSpecialist];
-    const initialMessage = user?.isDeluxe
-      ? "Hello, I'm your AI Health Assistant..."
-      : `Hello, I'm ${specialist.name}, your AI ${specialist.specialization}...`;
-
-    const initialBotMessage: Message = {
-      id: 1,
-      role: 'assistant',
-      content: initialMessage,
-      character: specialist.name,
-      timestamp: new Date(),
-    };
-    
-    setMessages([initialBotMessage]);
-    setConversationHistory([initialBotMessage]);
-  }, [selectedSpecialist, user?.isDeluxe]);
+    if (user) {
+      loadRemainingMessages();
+    }
+  }, [user, messages.length]);
 
   const renderSpecialistPicker = () => (
     <Modal
@@ -190,21 +223,47 @@ function Home() {
           <Text style={styles.modalTitle}>Choose a Specialist:</Text>
           <Picker
             selectedValue={selectedSpecialist}
-            onValueChange={(itemValue) => setSelectedSpecialist(itemValue)}
-            style={{ width: "100%", color: "black" }} 
+            onValueChange={(itemValue: SpecializationType) => setSelectedSpecialist(itemValue)}
+            style={{ width: "100%", color: "black" }}
           >
-              {Object.entries(characters).map(([key, character]) => (
-                <Picker.Item
-                  key={key}
-                  label={character.name}
-                  value={key}
-                  color="black"
-                />
-              ))}
+            {Object.entries(characters).map(([key, char]) => (
+              <Picker.Item
+                key={key}
+                label={char.name}
+                value={key as SpecializationType}
+                color="black"
+              />
+            ))}
           </Picker>
           <TouchableOpacity
             style={styles.confirmButton}
             onPress={() => setModalVisible(false)}
+          >
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderModelPicker = () => (
+    <Modal animationType="slide" transparent={true} visible={isModelModalVisible}>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Choose AI Model:</Text>
+          <Picker
+            selectedValue={selectedModel}
+            onValueChange={(itemValue) => setSelectedModel(itemValue)}
+            style={{ width: "100%", color: "black" }}
+          >
+          <Picker.Item label="GPT-4o" value="gpt-4o" color='black' />
+          <Picker.Item label="GPT-4o Mini" value="gpt-4-turbo" color='black' />
+          <Picker.Item label="Claude 3-5 Sonnet" value="claude-3-5-sonnet" color='black' />
+          <Picker.Item label="Llama 3" value="llama-3" color='black' />
+          </Picker>
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() => handleModelSelection(selectedModel)}
           >
             <Text style={styles.confirmButtonText}>Confirm</Text>
           </TouchableOpacity>
@@ -229,18 +288,39 @@ function Home() {
           <ChatLimit remainingMessages={remainingMessages} />
         )}
         <View style={{ flex: 1 }}>
-          {user?.isDeluxe && (
-            <>
-              {renderSpecialistPicker()}
+          {renderSpecialistPicker()}
+          {renderModelPicker()}
+        {user?.isDeluxe ? (
+            <View style={styles.customizationContainer}>
               <TouchableOpacity
-                style={[styles.changeButton, { zIndex: 1 }]}
+                style={styles.customButton}
                 onPress={() => setModalVisible(true)}
               >
-                <Text style={styles.changeButtonText}>Change Specialist</Text>
+                <Text style={styles.customButtonText}>Specialist</Text>
               </TouchableOpacity>
-            </>
-          )}
 
+              <TouchableOpacity
+                style={styles.customButton}
+                onPress={() => setModelModalVisible(true)}
+              >
+                <Text style={styles.customButtonText}>AI Model</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.customButton}
+                onPress={handleNewChat}
+              >
+                <Text style={styles.customButtonText}>New Chat</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.newChatButton}
+              onPress={handleNewChat}
+            >
+              <Text style={styles.customButtonText}>New Chat</Text>
+            </TouchableOpacity>
+          )}
           <FlatList
             ref={flatListRef}
             data={messages}
@@ -251,7 +331,7 @@ function Home() {
                   ...item,
                   isBot: item.role === 'assistant',
                   text: item.content,
-                  botCharacter: item.character
+                  botCharacter: item.character.name
                 }} 
               />
             )}
@@ -322,18 +402,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  changeButton: {
-    backgroundColor: "#007BFF",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    margin: 10,
-  },
-  changeButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
   card: {
     padding: 8,
     marginBottom: 10,
@@ -352,7 +420,65 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: "#007BFF",
     color: "rgb(161 98 7)",
-  }
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "80%",
+    alignSelf: "center",
+    marginVertical: 10,
+  },
+  changeButton: {
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    width: "48%",
+  },
+  changeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  newChatButton: {
+    backgroundColor: '#007AFF',
+    padding: 10,
+    borderRadius: 8,
+    margin: 10,
+  },
+  newChatButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  specialistInfo: {
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 10,
+    borderRadius: 8,
+  },
+  customizationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  customButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    padding: 8,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customButtonText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });
 
 export default Home;

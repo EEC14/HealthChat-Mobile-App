@@ -5,7 +5,7 @@ export interface Message {
   id: string | number;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  character?: string;
+  character?: SpecializationType;
   timestamp?: Date;
 }
 
