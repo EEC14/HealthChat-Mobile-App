@@ -30,7 +30,7 @@ import * as Speech from 'expo-speech';
 import { SpecializationType } from "@/types";
 import { Message } from "@/types";
 import { useTranslation } from 'react-i18next';
-
+import { AntDesign } from '@expo/vector-icons';
 const characters = {
   general: { name: "Dr. Dave", specialization: "general practitioner" },
   orthopedic: { name: "Ortho Oscar", specialization: "orthopedic specialist" },
@@ -60,6 +60,7 @@ function Home() {
   const [selectedModel, setSelectedModel] = useState("gpt-4o-mini"); 
   const [isNewChat, setIsNewChat] = useState(true);
   const { t } = useTranslation();
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   useEffect(() => {
     if (!user) return;
     
@@ -93,6 +94,14 @@ function Home() {
     router.replace("/(app)/(auth)/Signin");
     return;
   }
+
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+    // Optional: scroll to input
+    if (flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  };
 
   const loadRemainingMessages = useCallback(async () => {
     if (!user) return;
@@ -155,12 +164,14 @@ function Home() {
 
     setIsLoading(true);
     const tempUserMessage: Message = {
-      id: Date.now(),
-      role: 'user',
-      content: input,
-      character: selectedSpecialist,
-      timestamp: new Date(),
+        id: Date.now(),
+        role: 'user',
+        content: input,
+        character: selectedSpecialist,
+        timestamp: new Date(),
+        replyTo: replyingTo || undefined 
     };
+    
 
     try {
       await incrementMessageCount(user.isPro, user.isDeluxe);
@@ -190,6 +201,7 @@ function Home() {
       setConversationHistory(aiResponse.updatedHistory);
       setInput("");
       setIsNewChat(false); 
+      setReplyingTo(null);
       await loadRemainingMessages();
       //console.log(remainingMessages)
     } catch (error: any) {
@@ -272,6 +284,32 @@ function Home() {
     </Modal>
   );
 
+  const renderReplyingTo = () => {
+    if (!replyingTo) return null;
+  
+    return (
+      <View style={{
+        backgroundColor: currentColors.inputBackground,
+        padding: 8,
+        borderTopWidth: 1,
+        borderTopColor: currentColors.border,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: currentColors.textPrimary }}>
+            Replying to: {replyingTo.content.substring(0, 30)}
+            {replyingTo.content.length > 30 ? '...' : ''}
+          </Text>
+        </View>
+        <TouchableOpacity onPress={() => setReplyingTo(null)}>
+          <AntDesign name="close" size={20} color={currentColors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: currentColors.background }}>
       <KeyboardAvoidingView 
@@ -327,12 +365,8 @@ function Home() {
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <ChatMessage 
-                message={{
-                  ...item,
-                  isBot: item.role === 'assistant',
-                  text: item.content,
-                  botCharacter: item.character.name
-                }} 
+                message={item}
+                onReply={handleReply}
               />
             )}
             contentContainerStyle={{ padding: 10, paddingBottom: 120 }}
@@ -344,16 +378,21 @@ function Home() {
               left: 0,
               right: 0,
               backgroundColor: currentColors.background,
-              paddingHorizontal: 10,
-              paddingBottom: Platform.OS === "ios" ? 65 : 15,
-              paddingTop: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              borderTopWidth: 1,
-              borderTopColor: currentColors.border,
               zIndex: 2
             }}
           >
+            {renderReplyingTo()}  {/* Add this line */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 10,
+                paddingBottom: Platform.OS === "ios" ? 65 : 15,
+                paddingTop: 10,
+                borderTopWidth: 1,
+                borderTopColor: currentColors.border,
+              }}
+            >
             <View style={{ position: 'relative', width: 40 }}>
               <ShareButton messages={messages} />
             </View>
@@ -365,6 +404,7 @@ function Home() {
                 isLoading={isLoading}
               />
             </View>
+          </View>
           </View>
         </View>
       </KeyboardAvoidingView>

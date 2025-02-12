@@ -7,10 +7,11 @@ import { Colors } from "@/constants/Colors";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { Message, SpecializationType } from "@/types";
 import { characters } from "@/utils/OpenAi";
+
 interface ChatMessageProps {
   message: Message;
+  onReply: (message: Message) => void;
 }
-
 const SPECIALIST_VOICES = {
   [SpecializationType.DEFAULT]: {
     ios: [
@@ -133,23 +134,28 @@ const profilePictures: Record<string, any> = {
   "Health Assistant": require("../../assets/images/icon.png"),
 };
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply }) => {
   const { user } = useAuthContext();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const isBot = message.role === 'assistant';
 
-  const getCharacterName = () => {
-    if (!isBot || !message.character) return "";
-    const character = characters[message.character];
+  const getCharacterName = (characterType?: SpecializationType) => {
+    if (!characterType && !message.character) return "";
+    const specType = characterType || message.character;
+    const character = characters[specType];
     return character ? character.name : "Health Assistant";
   };
 
   const getProfilePicture = () => {
     if (!isBot) return profilePictures["user"];
     
+    // Get the character name based on the message's character type
     const characterName = getCharacterName();
+    console.log('Character name:', characterName); // For debugging
+    //console.log('Available pictures:', Object.keys(profilePictures)); // For debugging
+    
     return profilePictures[characterName] || profilePictures["Health Assistant"];
   };
   
@@ -197,7 +203,26 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     }
   };
 
+const renderReplyPreview = () => {
+  if (!message.replyTo) return null;
+  const replyMessage = message.replyTo as Message;
+  
   return (
+    <View style={replyStyles.replyContainer}>
+      <View style={replyStyles.replyLine} />
+      <Text style={replyStyles.replyText} numberOfLines={1}>
+        {replyMessage.role === 'user' ? 'You' : getCharacterName(replyMessage.character)}
+        : {replyMessage.content}
+      </Text>
+    </View>
+  );
+};
+
+  return (
+    <TouchableOpacity 
+    onLongPress={() => onReply(message)}
+    delayLongPress={200}
+    >
     <View style={[
       styles.messageContainer,
       isBot ? styles.botMessage : styles.userMessage
@@ -216,7 +241,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             {getCharacterName()}
           </Text>
         )}
-        
+        {renderReplyPreview()}
         {/* Message text */}
         <Text style={styles.text}>
           {message.content}
@@ -246,6 +271,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         </View>
       </View>
     </View>
+    </TouchableOpacity>
   );
 };
 
@@ -322,6 +348,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
+});
+const replyStyles = StyleSheet.create({
+  replyContainer: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  replyText: {
+    color: '#868686',
+    fontSize: 14,
+  },
+  replyLine: {
+    position: 'absolute',
+    left: -2,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: '#007AFF',
+  }
 });
 
 

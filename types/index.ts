@@ -7,6 +7,7 @@ export interface Message {
   content: string;
   character?: SpecializationType;
   timestamp?: Date;
+  replyTo?: Message;
 }
 
 export type Chat = {
