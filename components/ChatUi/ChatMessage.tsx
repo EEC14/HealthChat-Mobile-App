@@ -225,7 +225,8 @@ const renderReplyPreview = () => {
     >
     <View style={[
       styles.messageContainer,
-      isBot ? styles.botMessage : styles.userMessage
+      isBot ? styles.botMessage : styles.userMessage,
+      message.isPartial && styles.partialMessage // Add this
     ]}>
       <Image 
         source={getProfilePicture()} 
@@ -367,6 +368,9 @@ const replyStyles = StyleSheet.create({
     bottom: 0,
     width: 2,
     backgroundColor: '#007AFF',
+  },
+  partialMessage: {
+    opacity: 0.8  // Slightly fade partial messages
   }
 });
 

@@ -164,44 +164,75 @@ function Home() {
 
     setIsLoading(true);
     const tempUserMessage: Message = {
-        id: Date.now(),
-        role: 'user',
-        content: input,
-        character: selectedSpecialist,
-        timestamp: new Date(),
-        replyTo: replyingTo || undefined 
+      id: Date.now(),
+      role: 'user',
+      content: input,
+      character: selectedSpecialist,
+      timestamp: new Date(),
+      replyTo: replyingTo
     };
-    
 
+    const streamingMessage: Message = {
+      id: Date.now() + 1,
+      role: 'assistant',
+      content: '',
+      character: selectedSpecialist,
+      timestamp: new Date(),
+      isPartial: true
+    };
+  
+    setMessages(prev => [...prev, tempUserMessage, streamingMessage]);
+    setInput("");
+    setReplyingTo(null);
+  
     try {
       await incrementMessageCount(user.isPro, user.isDeluxe);
-      const aiResponse = await getAIResponse(
+      
+      const response = await getAIResponse(
         input,
         user,
         conversationHistory,
         user.isDeluxe ? selectedSpecialist : undefined,
         selectedSpecialist,
         isNewChat,
-        selectedModel
+        selectedModel,
+        // Update streaming handler to only append new content
+        (chunk: string) => {
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.isPartial) {
+              lastMessage.content = lastMessage.content + chunk;  // Append only new content
+            }
+            return newMessages;
+          });
+        }
       );
-
-      if (aiResponse.newSpecialist && aiResponse.newSpecialist !== selectedSpecialist) {
-        handleSpecialistChange(aiResponse.newSpecialist);
-      }
-
-      const botMessage: Message = {
-        id: Date.now(),
-        role: 'assistant',
-        content: aiResponse.responseText,
-        character: aiResponse.newSpecialist || selectedSpecialist,
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, tempUserMessage, botMessage]);
-      setConversationHistory(aiResponse.updatedHistory);
-      setInput("");
-      setIsNewChat(false); 
-      setReplyingTo(null);
+  
+      // Final message update
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (lastMessage.isPartial) {
+          lastMessage.content = response.responseText;
+          lastMessage.isPartial = false;
+          lastMessage.character = response.newSpecialist || selectedSpecialist;
+        }
+        return newMessages;
+      });
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (lastMessage.isPartial) {
+          lastMessage.content = response.responseText;
+          lastMessage.isPartial = false;
+          lastMessage.character = response.newSpecialist || selectedSpecialist;
+        }
+        return newMessages;
+      });
+  
+      setConversationHistory(response.updatedHistory);
+      setIsNewChat(false);
       await loadRemainingMessages();
       //console.log(remainingMessages)
     } catch (error: any) {

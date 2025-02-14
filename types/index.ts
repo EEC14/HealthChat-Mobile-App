@@ -2,12 +2,13 @@ import { Colors } from "@/constants/Colors";
 import { Timestamp } from "firebase/firestore";
 
 export interface Message {
-  id: string | number;
-  role: 'user' | 'assistant' | 'system';
+  id: number;
+  role: 'user' | 'assistant';
   content: string;
-  character?: SpecializationType;
-  timestamp?: Date;
-  replyTo?: Message;
+  character: SpecializationType;
+  timestamp: Date;
+  replyTo?: Message | null;
+  isPartial?: boolean; 
 }
 
 export type Chat = {

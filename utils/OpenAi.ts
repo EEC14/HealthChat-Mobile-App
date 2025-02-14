@@ -245,7 +245,8 @@ export async function getAIResponse(
   forcedCharacter?: SpecializationType,
   currentSpecialist?: SpecializationType,
   isNewChat: boolean = false,
-  selectedModel?: string
+  selectedModel?: string,
+  onStreamUpdate?: (chunk: string) => void  // Add this parameter
 ): Promise<{ responseText: string; characterName: string; updatedHistory: ChatMessage[]; newSpecialist?: SpecializationType }>  {
   if (!isValidModel(selectedModel)) {
     console.error(`Invalid model selected: ${selectedModel}`);
@@ -286,41 +287,206 @@ export async function getAIResponse(
     let aiResponse = '';
     switch (model.provider) {
       case 'openai': {
-        const completion = await openai.chat.completions.create({
-          messages,
-          model: model.name,
-          temperature: 0.7,
-          max_tokens: model.maxTokens
-        });
-        aiResponse = completion.choices[0]?.message?.content || 'No response generated';
+        if (onStreamUpdate) {
+          try {
+            return new Promise((resolve, reject) => {
+              let fullResponse = '';
+              const xhr = new XMLHttpRequest();
+              
+              xhr.open('POST', 'https://api.openai.com/v1/chat/completions');
+              xhr.setRequestHeader('Content-Type', 'application/json');
+              xhr.setRequestHeader('Authorization', `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`);
+              xhr.setRequestHeader('Accept', 'text/event-stream');
+              
+              // Handle incoming data
+              let buffer = '';
+              xhr.onprogress = () => {
+                const newData = xhr.responseText.substring(buffer.length);
+                buffer = xhr.responseText;
+                
+                const lines = newData.split('\n').filter(line => line.trim() !== '');
+                
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+                    
+                    try {
+                      const parsed = JSON.parse(data);
+                      const content = parsed.choices[0]?.delta?.content || '';
+                      if (content) {
+                        fullResponse += content;
+                        onStreamUpdate(content);
+                      }
+                    } catch (e) {
+                      console.error('Error parsing chunk:', e);
+                    }
+                  }
+                }
+              };
+              
+              xhr.onload = function() {
+                if (xhr.status === 200) {
+                  console.log("Stream complete. Full response:", fullResponse);
+                  resolve({
+                    responseText: fullResponse,
+                    characterName: safeCharacter.name,
+                    updatedHistory: [
+                      ...conversationHistory,
+                      { role: 'user', content: userMessage },
+                      { role: 'assistant', content: fullResponse }
+                    ],
+                    newSpecialist: selectedSpecialization
+                  });
+                } else {
+                  reject(new Error(`HTTP error! status: ${xhr.status}`));
+                }
+              };
+              
+              xhr.onerror = () => {
+                reject(new Error('Network request failed'));
+              };
+              
+              const payload = {
+                model: model.name,
+                messages,
+                temperature: 0.7,
+                max_tokens: model.maxTokens,
+                stream: true,
+              };
+              
+              xhr.send(JSON.stringify(payload));
+            });
+          } catch (streamError) {
+            console.error("Streaming error:", streamError);
+            // Fallback to non-streaming
+            const completion = await openai.chat.completions.create({
+              messages,
+              model: model.name,
+              temperature: 0.7,
+              max_tokens: model.maxTokens
+            });
+            aiResponse = completion.choices[0]?.message?.content || 'No response generated';
+            if (onStreamUpdate) {
+              onStreamUpdate(aiResponse);
+            }
+          }
+        } else {
+          // Non-streaming response (existing code)
+          const completion = await openai.chat.completions.create({
+            messages,
+            model: model.name,
+            temperature: 0.7,
+            max_tokens: model.maxTokens
+          });
+          aiResponse = completion.choices[0]?.message?.content || 'No response generated';
+        }
         break;
       }
 
       case 'anthropic': {
-        // Extract system message
         const systemMessage = messages.find(m => m.role === 'system')?.content || '';
-        
-        // Convert other messages to Anthropic's format, excluding system messages
         const anthropicMessages = messages
           .filter(m => m.role !== 'system')
           .map(m => ({
-            role: m.role as 'user' | 'assistant',  // Anthropic only accepts these roles
+            role: m.role as 'user' | 'assistant',
             content: m.content
           }));
       
-        try {
-          const anthropicResponse = await anthropic.messages.create({
+        if (onStreamUpdate) {
+          try {
+            return new Promise((resolve, reject) => {
+              let fullResponse = '';
+              const xhr = new XMLHttpRequest();
+              
+              xhr.open('POST', 'https://api.anthropic.com/v1/messages');
+              xhr.setRequestHeader('Content-Type', 'application/json');
+              xhr.setRequestHeader('x-api-key', process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY || '');
+              xhr.setRequestHeader('anthropic-version', '2023-06-01');
+              xhr.setRequestHeader('Accept', 'text/event-stream');
+              
+              // Handle incoming data
+              let buffer = '';
+              xhr.onprogress = () => {
+                const newData = xhr.responseText.substring(buffer.length);
+                buffer = xhr.responseText;
+                
+                const lines = newData.split('\n').filter(line => line.trim() !== '');
+                
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+                    
+                    try {
+                      const parsed = JSON.parse(data);
+                      const content = parsed.delta?.text || '';
+                      if (content) {
+                        fullResponse += content;
+                        onStreamUpdate(content);
+                      }
+                    } catch (e) {
+                      console.error('Error parsing Claude chunk:', e);
+                    }
+                  }
+                }
+              };
+              
+              xhr.onload = function() {
+                if (xhr.status === 200) {
+                  console.log("Claude stream complete. Full response:", fullResponse);
+                  resolve({
+                    responseText: fullResponse,
+                    characterName: safeCharacter.name,
+                    updatedHistory: [
+                      ...conversationHistory,
+                      { role: 'user', content: userMessage },
+                      { role: 'assistant', content: fullResponse }
+                    ],
+                    newSpecialist: selectedSpecialization
+                  });
+                } else {
+                  reject(new Error(`HTTP error! status: ${xhr.status}`));
+                }
+              };
+              
+              xhr.onerror = () => {
+                reject(new Error('Network request failed'));
+              };
+              
+              const payload = {
+                model: model.name,
+                messages: anthropicMessages,
+                system: systemMessage,
+                stream: true,
+                max_tokens: model.maxTokens,
+                temperature: 0.7
+              };
+              
+              xhr.send(JSON.stringify(payload));
+            });
+          } catch (streamError) {
+            console.error("Claude streaming error:", streamError);
+            // Fallback to non-streaming
+            const response = await anthropic.messages.create({
+              model: model.name,
+              max_tokens: model.maxTokens,
+              temperature: 0.7,
+              system: systemMessage,
+              messages: anthropicMessages
+            });
+            aiResponse = response.content[0].text;
+          }
+        } else {
+          // Non-streaming response (existing code)
+          const response = await anthropic.messages.create({
             model: model.name,
             max_tokens: model.maxTokens,
             temperature: 0.7,
-            system: systemMessage,  // System message goes here as a separate parameter
-            messages: anthropicMessages  // Other messages go here without the system message
+            system: systemMessage,
+            messages: anthropicMessages
           });
-          
-          aiResponse = anthropicResponse.content[0].text;
-        } catch (error) {
-          console.error('Anthropic API Error:', error);
-          throw error;  // Re-throw to be caught by the outer try-catch
+          aiResponse = response.content[0].text;
         }
         break;
       }
@@ -330,16 +496,62 @@ export async function getAIResponse(
           .filter(m => m.role !== 'system')
           .map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`)
           .join('\n');
-
-        const replicateResponse = await replicate.run(model.name, {
-          input: {
-            prompt: conversation + "\nAssistant:",
-            system_prompt: messages[0].content,
-            temperature: 0.7,
-            max_tokens: model.maxTokens,
+      
+        try {
+          if (onStreamUpdate) {
+            // Start the prediction
+            const prediction = await replicate.predictions.create({
+              version: model.name,
+              input: {
+                prompt: conversation + "\nAssistant:",
+                system_prompt: messages[0].content,
+                temperature: 0.7,
+                max_tokens: model.maxTokens,
+              }
+            });
+      
+            // Poll for updates
+            let fullResponse = '';
+            while (true) {
+              const status = await replicate.predictions.get(prediction.id);
+              
+              if (status.status === 'succeeded') {
+                const newContent = Array.isArray(status.output) 
+                  ? status.output.join('')
+                  : status.output.toString();
+                
+                // Only send the new portion
+                const newPortion = newContent.substring(fullResponse.length);
+                if (newPortion) {
+                  fullResponse += newPortion;
+                  onStreamUpdate(newPortion);
+                }
+                
+                if (status.status === 'succeeded') break;
+              } else if (status.status === 'failed') {
+                throw new Error('Prediction failed');
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 500)); // Poll every 500ms
+            }
+            
+            aiResponse = fullResponse;
+          } else {
+            // Non-streaming response (existing code)
+            const replicateResponse = await replicate.run(model.name, {
+              input: {
+                prompt: conversation + "\nAssistant:",
+                system_prompt: messages[0].content,
+                temperature: 0.7,
+                max_tokens: model.maxTokens,
+              }
+            });
+            aiResponse = Array.isArray(replicateResponse) ? replicateResponse.join('') : replicateResponse.toString();
           }
-        });
-        aiResponse = Array.isArray(replicateResponse) ? replicateResponse.join('') : replicateResponse.toString();
+        } catch (error) {
+          console.error("Replicate error:", error);
+          throw error;
+        }
         break;
       }
 
