@@ -94,6 +94,13 @@ export default function TabLayout() {
             tabBarLabel: "Profile",
           }}
         />
+                <Tabs.Screen
+          name="ChallengeScreen"
+          options={{
+            title: "Challenge",
+            tabBarLabel: "Challenge",
+          }}
+        />
       </Tabs>
     </>
   );
@@ -113,6 +120,10 @@ function renderTabIcon(name: string, color: string, size: number) {
       return (
         <MaterialCommunityIcons name="dumbbell" size={size} color={color} />
       );
+    case "ChallengeScreen":
+      return (
+          <MaterialCommunityIcons name="dumbbell" size={size} color={color} />
+      );  
     default:
       return null;
   }
