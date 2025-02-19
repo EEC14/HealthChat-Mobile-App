@@ -122,7 +122,7 @@ function renderTabIcon(name: string, color: string, size: number) {
       );
     case "ChallengeScreen":
       return (
-          <MaterialCommunityIcons name="dumbbell" size={size} color={color} />
+          <MaterialCommunityIcons name="arm-flex" size={size} color={color} />
       );  
     default:
       return null;

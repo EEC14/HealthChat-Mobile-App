@@ -1,5 +1,3 @@
-// /src/components/Challenge/ChallengeCard.tsx
-
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Challenge } from '../../types/challenge';
@@ -13,11 +11,16 @@ interface ChallengeCardProps {
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View>
+      <View style={styles.infoContainer}>
         <Text style={styles.title}>{challenge.title}</Text>
         <Text style={styles.description}>{challenge.description}</Text>
       </View>
-      <ProgressBar progress={challenge.currentProgress} goal={challenge.goal} />
+      <View style={styles.progressContainer}>
+        <ProgressBar progress={challenge.currentProgress} goal={challenge.goal} />
+        <Text style={styles.progressText}>
+          {challenge.currentProgress} / {challenge.goal}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -35,6 +38,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
+  infoContainer: {
+    marginBottom: 12,
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
@@ -43,7 +49,15 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 8,
+  },
+  progressContainer: {
+    marginTop: 8,
+  },
+  progressText: {
+    marginTop: 4,
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#333',
   },
 });
 
