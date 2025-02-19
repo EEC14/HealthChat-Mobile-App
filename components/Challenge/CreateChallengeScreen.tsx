@@ -144,6 +144,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  highlight: {
+    backgroundColor: "#E6F7FF",
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#007BFF",
+    color: "rgb(161 98 7)",
+  },
 });
 
 export default CreateChallengeScreen;
