@@ -94,11 +94,11 @@ export default function TabLayout() {
             tabBarLabel: "Profile",
           }}
         />
-                <Tabs.Screen
-          name="ChallengeScreen"
+        <Tabs.Screen
+          name="WorkoutPlayerScreen"
           options={{
-            title: "Challenge",
-            tabBarLabel: "Challenge",
+            title: "Workout",
+            tabBarLabel: "Workouts",
           }}
         />
       </Tabs>
@@ -120,10 +120,10 @@ function renderTabIcon(name: string, color: string, size: number) {
       return (
         <MaterialCommunityIcons name="dumbbell" size={size} color={color} />
       );
-    case "ChallengeScreen":
-      return (
-          <MaterialCommunityIcons name="arm-flex" size={size} color={color} />
-      );  
+    case "WorkoutPlayerScreen":
+        return (
+            <MaterialCommunityIcons name="arm-flex" size={size} color={color} />
+        ); 
     default:
       return null;
   }

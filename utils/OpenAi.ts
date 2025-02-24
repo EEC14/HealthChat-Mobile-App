@@ -2,7 +2,7 @@ import { PlanType, UserProfile, SpecializationType, ExtendedUserProfile } from "
 import OpenAI from "openai";
 import Anthropic from '@anthropic-ai/sdk';
 import Replicate from 'replicate';
-
+import { AudioCue } from "@/types/voiceTypes";
 const openai = new OpenAI({
   apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true,
@@ -677,7 +677,46 @@ export async function generatePlan(
     .join("\n\n");
 
     const prompts = {
-      workout: `You are a certified fitness trainer. Create a detailed workout plan based on the user's profile, goals, and answers. Include exercise descriptions, sets, reps, and weekly schedule. The plan should be specifically tailored to their physical characteristics and any medical conditions.`,
+      workout: `You are a certified fitness trainer. Create a detailed workout plan based on the user's profile, goals, and answers. 
+
+      First, provide a general overview and schedule in markdown format.
+      
+      Then, for each exercise, provide two formats:
+      1. A readable markdown description for display
+      2. A JSON structure in a code block for voice guidance
+      
+      Example format:
+      
+      # Your Personalized Workout Plan
+      
+      [Overview and schedule here]
+      
+      ## Exercises
+      
+      ### 1. Push-ups
+      **Sets:** 3
+      **Reps:** 10
+      **Duration:** 60 seconds
+      **Rest:** 30 seconds
+      
+      **Description:** Perform standard push-ups keeping your body in a straight line
+      **Form Tips:**
+      - Keep core tight
+      - Elbows at 45 degrees
+      
+      \`\`\`json
+      {
+        "name": "Push-ups",
+        "description": "Standard push-ups",
+        "duration": 60,
+        "sets": 3,
+        "reps": 10,
+        "rest": 30,
+        "formCues": ["Keep core tight", "Elbows at 45 degrees"]
+      }
+      \`\`\`
+      
+      [Continue with remaining exercises]`,
       
       diet: `You are a certified nutritionist. Create a detailed meal plan based on the user's profile, goals, and answers. Include meal suggestions, portions, and nutritional guidance. Calculate and consider their BMI and any medical conditions. You can also include a weekly schedule if you deem it necessary.`,
       
@@ -692,15 +731,99 @@ export async function generatePlan(
           content: `Create a ${type} plan with the following information:\n\nGoals: ${goals}\n\nUser Information:\n${questionsAndAnswers}`,
         },
       ],
-      model: "chatgpt-4o-latest",
+      model: "gpt-4o",
       temperature: 0.7,
       max_tokens: 2500,
     });
 
-    return completion.choices[0]?.message?.content || "Unable to generate plan";
+    const generatedPlan = completion.choices[0]?.message?.content;
+    if (!generatedPlan) {
+      throw new Error("No plan was generated");
+    }
+
+    console.log('Plan generated successfully. Length:', generatedPlan.length);
+    return generatedPlan;
+
   } catch (error) {
-    console.error("API Error:", error);
-    throw new Error(`Failed to generate ${type} plan`);
+    console.error("OpenAI API Error:", error);
+    console.error("Error response:", error.response?.data);
+    throw new Error(`Failed to generate ${type} plan: ${error.message}`);
   }
 }
 
+interface WorkoutExercise {
+  name: string;
+  description: string;
+  duration: number;
+  sets: number;
+  reps: number;
+  rest: number;
+  formCues: string[];
+}
+
+export function parseWorkoutPlan(markdownPlan: string): AudioCue[] {
+  const audioCues: AudioCue[] = [];
+  let id = 1;
+
+  // Extract JSON blocks from markdown
+  const jsonBlocks = markdownPlan.match(/```json\n([\s\S]*?)\n```/g);
+  if (!jsonBlocks) return [];
+
+  jsonBlocks.forEach(block => {
+    const exercise: WorkoutExercise = JSON.parse(
+      block.replace(/```json\n/, '').replace(/\n```/, '')
+    );
+
+    // Add exercise introduction - no duration for instructions
+    audioCues.push({
+      id: `${id++}`,
+      type: 'exercise',
+      text: `Next exercise: ${exercise.name}. ${exercise.description}`,
+      duration: 0, // Set to 0 to indicate it's just instruction
+      priority: 1
+    });
+
+    // Add form cues - no duration
+    exercise.formCues.forEach(cue => {
+      audioCues.push({
+        id: `${id++}`,
+        type: 'form',
+        text: cue,
+        duration: 0,
+        priority: 2
+      });
+    });
+
+    // Add countdown - no duration
+    audioCues.push({
+      id: `${id++}`,
+      type: 'countdown',
+      text: `Starting in 3, 2, 1`,
+      duration: 0,
+      priority: 1
+    });
+
+    // Exercise sets with actual duration
+    for (let set = 1; set <= exercise.sets; set++) {
+      audioCues.push({
+        id: `${id++}`,
+        type: 'exercise',
+        text: `Set ${set}: Begin ${exercise.name}`,
+        duration: exercise.duration,
+        priority: 1
+      });
+
+      if (set < exercise.sets) {
+        audioCues.push({
+          id: `${id++}`,
+          type: 'rest',
+          text: `Rest for ${exercise.rest} seconds`,
+          duration: exercise.rest,
+          priority: 1
+        });
+      }
+    }
+  });
+
+  return audioCues;
+}

@@ -8,13 +8,13 @@ import {
   Alert,
 } from "react-native";
 import { Loader2 } from "lucide-react-native";
-import { generatePlan, generatePlanQuestions } from "@/utils/OpenAi";
-
+import { generatePlan, generatePlanQuestions, parseWorkoutPlan } from "@/utils/OpenAi";
+import { AudioCue } from "@/types/voiceTypes";
 export type PlanType = "workout" | "diet" | "meditation";
 
 interface PlanQuestionnaireProps {
   type: PlanType;
-  onPlanGenerated: (plan: string) => void;
+  onPlanGenerated: (plan: string, audioCues?: AudioCue[]) => void;
 }
 
 export const PlanQuestionnaire: React.FC<PlanQuestionnaireProps> = ({
@@ -43,21 +43,17 @@ export const PlanQuestionnaire: React.FC<PlanQuestionnaireProps> = ({
 
   const handleAnswersSubmit = async () => {
     if (isLoading) return;
-
-    // Check if all questions are answered
-    const unansweredQuestions = questions.filter((q) => !answers[q]?.trim());
-    if (unansweredQuestions.length > 0) {
-      Alert.alert(
-        "Incomplete",
-        "Please answer all questions before submitting."
-      );
-      return;
-    }
-
     setIsLoading(true);
     try {
       const plan = await generatePlan(type, goals, answers);
-      onPlanGenerated(plan);
+      
+      // If it's a workout plan, create audio cues
+      if (type === 'workout') {
+        const audioCues = parseWorkoutPlan(plan);
+        onPlanGenerated(plan, audioCues);
+      } else {
+        onPlanGenerated(plan);
+      }
     } catch (error) {
       console.error("Error:", error);
       Alert.alert("Error", "Failed to generate plan. Please try again.");

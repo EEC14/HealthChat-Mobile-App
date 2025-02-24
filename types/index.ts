@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { Timestamp } from "firebase/firestore";
-
+import { AudioCue } from "./voiceTypes";
 export interface Message {
   id: number;
   role: 'user' | 'assistant';
@@ -50,4 +50,14 @@ export type StepType = "select" | "questionnaire" | "plan";
 export type ColorsType = typeof Colors;
 
 export interface ExtendedUserProfile extends UserProfile {
+}
+
+export interface SavedPlan {
+  id: string;
+  userId: string;
+  type: PlanType;
+  name: string; // We'll ask users to name their plans
+  plan: string;
+  audioCues?: AudioCue[];
+  createdAt: number;
 }

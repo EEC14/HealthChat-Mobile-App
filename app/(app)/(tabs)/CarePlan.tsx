@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView
 } from "react-native";
-import { generatePlan, generatePlanQuestions } from "@/utils/OpenAi";
+import { generatePlan, generatePlanQuestions, parseWorkoutPlan } from "@/utils/OpenAi";
 import Markdown from "react-native-markdown-display";
 import { ColorsType, PlanType, StepType } from "@/types";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -25,9 +25,11 @@ import { Theme, useTheme } from "@/context/ThemeContext";
 import { MotiText } from "moti";
 import { Link } from "expo-router";
 import { FontAwesome6 } from "@expo/vector-icons";
-//import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { AudioCue } from "@/types/voiceTypes";
 import { useTranslation } from 'react-i18next';
-
+import { VoiceGuidancePlayer } from "@/components/VoiceGuidancePlayer";
+import { SavedPlansModal } from "@/components/SavedPlansModal";
+import { savePlan } from "@/utils/planStorage";
 const CarePlan: React.FC = () => {
   const { user } = useAuthContext();
   const { theme } = useTheme();
@@ -40,6 +42,8 @@ const CarePlan: React.FC = () => {
   const [generatedPlan, setGeneratedPlan] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
+  const [workoutAudioCues, setWorkoutAudioCues] = useState<AudioCue[] | null>(null);
+  const [showSavedPlans, setShowSavedPlans] = useState(false);
   const { t } = useTranslation();
   const handleGoalsSubmit = async () => {
     if (!goals.trim()) return;
@@ -56,15 +60,50 @@ const CarePlan: React.FC = () => {
     }
   };
 
+  function formatWorkoutPlan(plan: string): string {
+    // Remove JSON blocks
+    const cleanPlan = plan.replace(/```json[\s\S]*?```/g, '');
+    
+    // Add custom styling
+    return cleanPlan
+      .replace(/\*\*Form Tips:\*\*/g, '#### Form Tips:')
+      .replace(/\*\*Description:\*\*/g, '#### Description:')
+      .replace(/\*\*Sets:\*\*/g, '**🔄 Sets:**')
+      .replace(/\*\*Reps:\*\*/g, '**🔁 Reps:**')
+      .replace(/\*\*Duration:\*\*/g, '**⏱️ Duration:**')
+      .replace(/\*\*Rest:\*\*/g, '**💤 Rest:**');
+  }
+
   const handleAnswersSubmit = async () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
+      console.log('Submitting with:', {
+        planType,
+        goals,
+        answers
+      });
+  
       const plan = await generatePlan(planType!, goals, answers);
+      console.log('Generated plan:', plan);
+  
+      // If it's a workout plan, create audio cues
+      if (planType === 'workout') {
+        try {
+          const audioCues = parseWorkoutPlan(plan);
+          console.log('Generated audio cues:', audioCues);
+          setWorkoutAudioCues(audioCues);
+        } catch (parseError) {
+          console.error('Error parsing workout plan:', parseError);
+          // Continue even if audio cues fail
+        }
+      }
+      
       setGeneratedPlan(plan);
       setStep("plan");
     } catch (error) {
-      Alert.alert("Error", "Failed to generate the plan. Please try again.");
+      console.error("Full error generating plan:", error);
+      Alert.alert("Error", `Failed to generate the plan. Error: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +122,44 @@ const CarePlan: React.FC = () => {
     setGeneratedPlan("");
     setStep("select");
   }, []);
+
+  const handleSavePlan = async (name: string) => {
+    console.log('Starting plan save process...', {
+      userId: user?.uid,
+      planType,
+      hasAudioCues: planType === 'workout' ? !!workoutAudioCues : false,
+      planLength: generatedPlan.length
+    });
+  
+    if (!user?.uid) {
+      console.error('No user ID available');
+      Alert.alert('Error', 'User not authenticated');
+      return;
+    }
+  
+    if (!planType) {
+      console.error('No plan type specified');
+      Alert.alert('Error', 'Plan type not specified');
+      return;
+    }
+  
+    try {
+      console.log('Calling savePlan function...');
+      const savedPlanId = await savePlan(
+        user.uid,
+        planType,
+        name,
+        generatedPlan,
+        // Only include audioCues if they exist and it's a workout plan
+        planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined
+      );
+      console.log('Plan saved successfully with ID:', savedPlanId);
+      Alert.alert('Success', 'Plan saved successfully');
+    } catch (error) {
+      console.error('Error in handleSavePlan:', error);
+      Alert.alert('Error', `Failed to save plan: ${error.message}`);
+    }
+  };
 
   const renderHeader = () => (
     <View
@@ -119,6 +196,45 @@ const CarePlan: React.FC = () => {
           {step === "plan" && "Your Personalized Plan"}
       </Text>
       <View style={styles.headerActions}>
+
+      {step === "plan" && (
+        <TouchableOpacity
+        onPress={() => {
+          Alert.prompt(
+            'Save Plan',
+            'Enter a name for this plan:',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel'
+              },
+              {
+                text: 'Save',
+                onPress: (name) => {
+                  if (name) {
+                    handleSavePlan(name);
+                  } else {
+                    Alert.alert('Error', 'Please enter a name for the plan');
+                  }
+                }
+              }
+            ],
+            'plain-text',
+            '',
+            'default'
+          );
+        }}
+        style={styles.saveButton}
+      >
+        <AntDesign name="save" size={20} color="#007AFF" />
+      </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        onPress={() => setShowSavedPlans(true)}
+        style={styles.savedPlansButton}
+      >
+        <AntDesign name="folder1" size={20} color="#007AFF" />
+      </TouchableOpacity>
         {step !== "select" && (
           <TouchableOpacity
             style={{
@@ -451,21 +567,31 @@ const CarePlan: React.FC = () => {
             { backgroundColor: currentColors.background },
           ]}
         >
-          <Text
-            style={[styles.planTitle, { color: currentColors.textPrimary }]}
-          >
+          <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
             Your {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Plan
           </Text>
-          <View
-            style={[
-              styles.planContainer,
-              { backgroundColor: currentColors.surface },
-            ]}
-          >
+          
+          {/* Add Voice Guidance Player for workout plans */}
+          {planType === 'workout' && workoutAudioCues && (
+            <VoiceGuidancePlayer
+              exerciseCues={workoutAudioCues}
+              onComplete={() => {
+                // Handle workout completion
+                console.log('Workout completed');
+              }}
+            />
+          )}
+    
+          {planType === 'workout' ? (
+            <Markdown style={getMarkdownStyles(currentColors)}>
+              {formatWorkoutPlan(generatedPlan)}
+            </Markdown>
+          ) : (
             <Markdown style={getMarkdownStyles(currentColors)}>
               {generatedPlan}
             </Markdown>
-          </View>
+          )}
+            
           <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
             <AntDesign name="arrowleft" size={16} color="#000" />
             <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
@@ -540,6 +666,27 @@ const CarePlan: React.FC = () => {
       {renderHeader()}
       {renderContent()}
       {renderResetModal()}
+      
+      <SavedPlansModal
+        isVisible={showSavedPlans}
+        onClose={() => {
+          console.log('Closing saved plans modal'); // Add this log
+          setShowSavedPlans(false);
+        }}
+        onPlanSelect={(plan) => {
+          setGeneratedPlan(plan.plan);
+          setPlanType(plan.type);
+          
+          // Only set audioCues for workout plans
+          if (plan.type === 'workout' && plan.audioCues) {
+            setWorkoutAudioCues(plan.audioCues);
+          }
+          
+          setStep('plan');
+          setShowSavedPlans(false);
+        }}
+        userId={user!.uid}
+      />
     </SafeAreaView>
   );
 };
@@ -558,6 +705,14 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  saveButton: {
+    marginRight: 10,
+    padding: 5,
+  },
+  savedPlansButton: {
+    marginRight: 10,
+    padding: 5,
   },
   restrictedContainer: {
     flex: 1,
@@ -673,7 +828,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0)",
   },
-  // Additional modal and reset styles
   resetModalContent: {
     width: "100%",
     backgroundColor: "#f5f5f5",
@@ -830,6 +984,12 @@ const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     marginVertical: 12,
+  },
+  voiceGuidanceContainer: {
+    marginVertical: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 16,
   },
 });
 
