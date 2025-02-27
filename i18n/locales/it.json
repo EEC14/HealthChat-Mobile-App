@@ -29,7 +29,7 @@
       "limitReached": "Limite di messaggi raggiunto",
       "loadMore": "Carica altri messaggi",
       "startMessage": "Ciao, sono il Dr. Dave, il tuo specialista medico AI. Come posso aiutarti oggi?",
-      "disclaimer": "⚠️ Solo a scopo informativo. Non sostituisce il consiglio medico professionale. Consulta sempre il tuo medico.",
+      "disclaimer": "⚠️ Solo a scopo informativo. Non sostituisce il consiglio medico professionale. Consulta sempre il tuo medico. Le informazioni sono fornite senza garanzia di accuratezza e provengono da vari LLM.",
       "limit": {
         "freeLimit": "Limite del piano gratuito: ",
         "remaining": "messaggi rimanenti questo mese",

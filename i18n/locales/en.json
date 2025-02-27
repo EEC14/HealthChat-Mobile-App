@@ -29,7 +29,7 @@
       "limitReached": "Message limit reached",
       "loadMore": "Load more messages",
       "startMessage": "Hello, I'm Dr. Dave , your AI medical specialist. How can I help you today?",
-      "disclaimer": "⚠️ For informational purposes only. Not a substitute for professional medical advice. Always consult your healthcare provider.",
+      "disclaimer": "⚠️ For informational purposes only. Not a substitute for professional medical advice. Always consult your healthcare provider. Informations are provided without guarantee of accuracy and are sourced from various LLMs.",
       "limit":{
         "freeLimit": "Free Plan Limit: ",
         "remaining": "messages remaining this month",

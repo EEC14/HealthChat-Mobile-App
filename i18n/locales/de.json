@@ -29,7 +29,7 @@
       "limitReached": "Nachrichtenlimit erreicht",
       "loadMore": "Mehr Nachrichten laden",
       "startMessage": "Hallo, ich bin Dr. Dave, Ihr KI-Medizinspezialist. Wie kann ich Ihnen heute helfen?",
-      "disclaimer": "⚠️ Nur zu Informationszwecken. Kein Ersatz für professionelle medizinische Beratung. Konsultieren Sie immer Ihren Arzt.",
+      "disclaimer": "⚠️ Nur zu Informationszwecken. Kein Ersatz für professionelle medizinische Beratung. Konsultieren Sie immer Ihren Arzt. Die Informationen werden ohne Garantie auf Richtigkeit zur Verfügung gestellt und stammen von verschiedenen LLMs",
       "limit": {
         "freeLimit": "Limit des kostenlosen Plans: ",
         "remaining": "Nachrichten verbleiben diese Monat",
