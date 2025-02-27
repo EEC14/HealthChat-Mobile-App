@@ -16,7 +16,6 @@ export function GoogleAuthButton() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: '703134724815-49j2l06g01m5ijuhgamlga8mmeg518um.apps.googleusercontent.com',
     iosClientId: '703134724815-he6bcu5nm6jlfpatdrv2aofse4ocqlhq.apps.googleusercontent.com',
-    //expoClientId: '703134724815-kqjfjgdm7mravn9et36ptqt9tgjvn6rm.apps.googleusercontent.com',
   });
 
   React.useEffect(() => {
@@ -32,15 +31,12 @@ export function GoogleAuthButton() {
         
         if (userCredential.user) {
           clearError();
-          
-          // Try to get existing profile first
           try {
             const existingProfile = await getUserProfile(userCredential.user.uid);
             setUser(existingProfile);
             setIsAuthenticated(true);
             router.replace('/Home');
           } catch (error) {
-            // If profile doesn't exist, create new one
             await createUserProfile(userCredential.user.uid, userCredential.user.email || '');
             setUser({
               email: userCredential.user.email!,

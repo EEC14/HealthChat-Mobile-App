@@ -34,7 +34,7 @@ const CreateChallengeScreen: React.FC<CreateChallengeScreenProps> = ({ onBack })
       const challengeId = await createChallenge(prompt);
       Alert.alert('Success', `Challenge created with ID: ${challengeId}`);
       setPrompt('');
-      onBack(); // Navigate back after successful creation.
+      onBack();
     } catch (error) {
       Alert.alert('Error', 'Failed to create challenge. Please try again later.');
     } finally {

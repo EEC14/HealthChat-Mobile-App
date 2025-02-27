@@ -121,7 +121,6 @@ function SignIn() {
                     style={{
                       backgroundColor: currentColors.inputBackground,
                       color: currentColors.textPrimary,
-                      // borderWidth: 1,
                     }}
                     className={`px-6 py-4 rounded-lg focus:border-[1px] border- focus:border-blue-500 ${
                       errors.email ? "border-[1px] border-red-500" : ""

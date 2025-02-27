@@ -18,8 +18,6 @@ const ChallengesScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-
-  // Load challenges from Firestore using the modular SDK.
   const loadChallenges = async () => {
     setLoading(true);
     try {
@@ -33,7 +31,7 @@ const ChallengesScreen: React.FC = () => {
           description: data.description,
           goal: data.goal,
           currentProgress: data.currentProgress,
-          startDate: data.startDate.toDate(), // Assumes stored as Firestore Timestamp
+          startDate: data.startDate.toDate(),
           endDate: data.endDate.toDate(),
           reward: data.reward,
         };
@@ -50,7 +48,6 @@ const ChallengesScreen: React.FC = () => {
     loadChallenges();
   }, []);
 
-  // Render the Create Challenge screen.
   if (viewMode === 'create') {
     return (
       <CreateChallengeScreen
@@ -62,7 +59,6 @@ const ChallengesScreen: React.FC = () => {
     );
   }
 
-  // Render the detail view when a challenge is selected.
   if (viewMode === 'detail' && selectedChallengeId) {
     return (
       <ChallengeDetailScreen
@@ -70,13 +66,11 @@ const ChallengesScreen: React.FC = () => {
         onBack={() => {
           setSelectedChallengeId(null);
           setViewMode('list');
-          loadChallenges();  // Refresh the list when returning from detail view.
+          loadChallenges(); 
         }}
       />
     );
   }
-
-  // Render the list view with a progress bar on each challenge card.
   const renderItem = ({ item }: { item: Challenge }) => (
     <ChallengeCard
       challenge={item}
@@ -141,7 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   createButton: {
-    backgroundColor: '#007AFF', // Updated background color
+    backgroundColor: '#007AFF', 
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,

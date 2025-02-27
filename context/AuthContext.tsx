@@ -17,7 +17,6 @@ import {
 import { UserProfile } from "@/types";
 import { useRouter } from "expo-router";
 
-// Custom error handling type
 type AuthError = {
   code: string;
   message: string;
@@ -77,8 +76,6 @@ export const AuthContextProvider = ({
 
   const handleAuthError = (error: AuthError) => {
     let errorMessage = "An unexpected error occurred";
-    console.log(error.code);
-
     switch (error.code) {
       case "auth/wrong-password":
         errorMessage = "Incorrect password. Please try again.";
@@ -103,7 +100,6 @@ export const AuthContextProvider = ({
     }
 
     setError(errorMessage);
-    // Alert.alert("Authentication Error", errorMessage);
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -167,8 +163,6 @@ export const AuthContextProvider = ({
     setIsLoading(true);
     setError(null);
     try {
-      // The actual sign in happens in the GoogleAuthButton component
-      // This is just a placeholder for additional logic you might want to add
       return true;
     } catch (error) {
       handleAuthError(error as AuthError);
@@ -182,8 +176,6 @@ export const AuthContextProvider = ({
     setIsLoading(true);
     setError(null);
     try {
-      // The actual sign in happens in the GoogleAuthButton component
-      // This is just a placeholder for additional logic you might want to add
       return true;
     } catch (error) {
       handleAuthError(error as AuthError);
@@ -204,8 +196,8 @@ export const AuthContextProvider = ({
 
     try {
       setIsLoading(true);
-      const updatedProfile = await getUserProfile(user.uid); // Fetch updated user profile
-      setUser(updatedProfile); // Update the user state
+      const updatedProfile = await getUserProfile(user.uid);
+      setUser(updatedProfile);
     } catch (error) {
       handleAuthError(error as AuthError);
     } finally {

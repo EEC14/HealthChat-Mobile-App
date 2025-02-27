@@ -583,7 +583,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
   },
-  // Skeleton Styles
   skeletonItem: {
     backgroundColor: "white",
     marginBottom: 16,

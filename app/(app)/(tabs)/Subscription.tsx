@@ -124,14 +124,8 @@ const Subscription: React.FC = () => {
               if (!currentUser) {
                 throw new Error('No user found');
               }
-  
-              // Delete user data from Firestore
               await deleteDoc(doc(db, "users", currentUser.uid));
-  
-              // Delete user from Authentication
               await deleteUser(currentUser);
-  
-              // Call logout to clean up the app state
               await logout();
             } catch (error) {
               console.error("Error deleting account:", error);
@@ -652,7 +646,7 @@ const Subscription: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.infoBox,
-                { backgroundColor: '#DC2626' } // Red background for danger action
+                { backgroundColor: '#DC2626' }
               ]}
               onPress={handleDeleteAccount}
               disabled={loading}

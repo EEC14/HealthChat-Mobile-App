@@ -27,7 +27,7 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
   const colors = Colors[theme];
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [progressInput, setProgressInput] = useState<string>(''); // stores user input
+  const [progressInput, setProgressInput] = useState<string>('');
 
   const fetchChallengeDetail = async () => {
     try {
@@ -72,13 +72,8 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
         return;
       }
       try {
-        // First, update the challenge progress in Firestore.
         await updateChallengeProgress(challenge.id, parsedProgress);
-        console.log(`Progress updated to ${parsedProgress} for challenge ${challenge.id}`);
-        
-        // If progress meets or exceeds the goal, delete the challenge.
         if (parsedProgress >= challenge.goal) {
-          console.log(`Progress ${parsedProgress} >= goal ${challenge.goal}. Deleting challenge.`);
           await deleteChallenge(challenge.id);
           Alert.alert("Challenge Completed!", "This challenge has been completed and will be removed.");
           onBack();

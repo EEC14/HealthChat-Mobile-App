@@ -39,6 +39,7 @@ const characters = {
   cardiology: { name: "Cardiology Carl", specialization: "cardiologist" },
   dermatology: { name: "Dermatology Debrah", specialization: "dermatologist" },
   default: { name: "Health Assistant", specialization: "default" },
+  dentistry: { name: "Dentist Dana", specialization: "dentistry"}
 };
 
 function Home() {
@@ -47,7 +48,7 @@ function Home() {
   const currentColors = Colors[theme];
   const { user } = useAuthContext();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [conversationHistory, setConversationHistory] = useState<ChatMessage[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState<number>(0);
@@ -57,7 +58,8 @@ function Home() {
   const [isModalVisible, setModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [isModelModalVisible, setModelModalVisible] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("gpt-4o-mini"); 
+  const [selectedModel, setSelectedModel] = useState<"gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3">("gpt-4o-mini");
+
   const [isNewChat, setIsNewChat] = useState(true);
   const { t } = useTranslation();
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -97,7 +99,6 @@ function Home() {
 
   const handleReply = (message: Message) => {
     setReplyingTo(message);
-    // Optional: scroll to input
     if (flatListRef.current) {
       flatListRef.current.scrollToEnd({ animated: true });
     }
@@ -113,25 +114,20 @@ function Home() {
   }, [loadRemainingMessages, messages.length]);
 
   const handleNewChat = () => {
-    // Reset messages and conversation history
     setMessages([]);
     setConversationHistory([]);
-    
-    // Set isNewChat to true to trigger specialist selection
     setIsNewChat(true);
-    
-    // Reset to appropriate initial specialist
     if (user?.isDeluxe) {
-      setSelectedSpecialist(SpecializationType.DEFAULT);  // Health Assistant for Deluxe
+      setSelectedSpecialist(SpecializationType.DEFAULT);
     } else {
-      setSelectedSpecialist(SpecializationType.GENERAL);  // Dr. Dave for free/pro users
+      setSelectedSpecialist(SpecializationType.GENERAL);
     }
     
     setInput('');
   };
 
 
-  const handleModelSelection = (model: string) => {
+  const handleModelSelection = (model: "gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3") => {
     setSelectedModel(model);
     selectAIModel(user, model);
     setModelModalVisible(false);
@@ -158,7 +154,7 @@ function Home() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, limitMessage]);
-      await loadRemainingMessages(); // Update remaining messages count
+      await loadRemainingMessages();
       return;
     }
 
@@ -196,20 +192,17 @@ function Home() {
         selectedSpecialist,
         isNewChat,
         selectedModel,
-        // Update streaming handler to only append new content
         (chunk: string) => {
           setMessages(prev => {
             const newMessages = [...prev];
             const lastMessage = newMessages[newMessages.length - 1];
             if (lastMessage.isPartial) {
-              lastMessage.content = lastMessage.content + chunk;  // Append only new content
+              lastMessage.content = lastMessage.content + chunk;
             }
             return newMessages;
           });
         }
       );
-  
-      // Final message update
       setMessages(prev => {
         const newMessages = [...prev];
         const lastMessage = newMessages[newMessages.length - 1];
@@ -231,10 +224,15 @@ function Home() {
         return newMessages;
       });
   
-      setConversationHistory(response.updatedHistory);
+      setConversationHistory(response.updatedHistory.map(chatMessage => ({
+        id: Date.now(),
+        role: chatMessage.role,
+        content: chatMessage.content,
+        character: selectedSpecialist,
+        timestamp: new Date()
+      })));
       setIsNewChat(false);
       await loadRemainingMessages();
-      //console.log(remainingMessages)
     } catch (error: any) {
       const errorMessage: Message = {
         id: Date.now(),
@@ -451,7 +449,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "#fff", // Solid white for better visibility
+    backgroundColor: "#fff",
     padding: 20,
     borderRadius: 10,
     width: "80%",

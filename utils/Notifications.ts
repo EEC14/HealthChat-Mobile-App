@@ -18,8 +18,6 @@ export async function sendPushNotification(expoPushToken: string) {
     body: JSON.stringify(message),
   });
 }
-
-//
 export async function scheduledNotifications() {
   try {
     await Notifications.setNotificationChannelAsync("new_emails", {
@@ -36,8 +34,6 @@ export async function scheduledNotifications() {
       },
       trigger: null,
     });
-
-    console.log("Notification scheduled with ID:", identifier);
   } catch (error) {
     console.error("Error scheduling notification:", error);
   }

@@ -32,8 +32,6 @@ class VoiceGuidanceManager {
         rate: 0.9,
         onDone: () => {
           this.isSpeaking = false;
-          
-          // If duration is provided, start countdown timer for last 5 seconds
           if (duration && duration > 5) {
             const countdownStart = duration - 5;
             this.startCountdown(countdownStart);
@@ -55,12 +53,9 @@ class VoiceGuidanceManager {
   }
 
   private async startCountdown(delay: number) {
-    // Wait until it's time to start countdown
     await new Promise(resolve => setTimeout(resolve, delay * 1000));
-
-    // Start countdown from 5
     for (let i = 5; i > 0; i--) {
-      if (!this.isPlaying) break; // Stop if playback was stopped
+      if (!this.isPlaying) break;
       await Speech.speak(i.toString(), {
         language: 'en',
         pitch: 1.0,

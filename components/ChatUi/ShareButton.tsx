@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; // Icons for the buttons
+import { Ionicons } from "@expo/vector-icons"; 
 import { Message } from "@/types";
 import { useAuthContext } from "@/context/AuthContext";
 import { saveChatToDatabase } from "@/firebase";
@@ -29,14 +29,17 @@ const ShareButton = ({ messages }: { messages: ShareMessage[] }) => {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const processedMessages = messages.map(msg => ({
+    ...msg,
+    timestamp: msg.timestamp || new Date()
+  }));
+
   const handleShare = async () => {
     if (!user) {
       setError("Please log in to share chats");
       return;
     }
-
-    // Filter out system messages and empty content
-    const shareableMessages = messages.filter(m => 
+    const shareableMessages = processedMessages.filter(m => 
       m.role !== 'system' && m.content.trim().length > 0
     );
 

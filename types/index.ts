@@ -3,7 +3,7 @@ import { Timestamp } from "firebase/firestore";
 import { AudioCue } from "./voiceTypes";
 export interface Message {
   id: number;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   character: SpecializationType;
   timestamp: Date;
@@ -39,7 +39,8 @@ export enum SpecializationType {
   PSYCHOLOGY = 'psychology',
   CARDIOLOGY = 'cardiology',
   DERMATOLOGY = 'dermatology',
-  DEFAULT= 'default'
+  DEFAULT= 'default',
+  DENTISTRY = 'dentistry',
 };
 
 
@@ -56,7 +57,7 @@ export interface SavedPlan {
   id: string;
   userId: string;
   type: PlanType;
-  name: string; // We'll ask users to name their plans
+  name: string; 
   plan: string;
   audioCues?: AudioCue[];
   createdAt: number;

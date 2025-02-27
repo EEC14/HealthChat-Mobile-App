@@ -15,8 +15,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [theme, setTheme] = useState<Theme>("dark");
   const [isLoading, setIsLoading] = useState(true);
-
-  // Load theme from storage on initial render
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -33,8 +31,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
     loadTheme();
   }, []);
-
-  // Save theme to storage whenever it changes
   useEffect(() => {
     const saveTheme = async () => {
       try {
@@ -43,8 +39,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Error saving theme:", error);
       }
     };
-
-    // Only save theme after initial load is complete
     if (!isLoading) {
       saveTheme();
     }
@@ -53,10 +47,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };
-
-  // Don't render children until theme is loaded
   if (isLoading) {
-    return null; // Or you could return a loading component
+    return null;
   }
 
   return (

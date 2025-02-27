@@ -71,7 +71,7 @@ const Loading = () => {
   return (
     <View className="items-center justify-center flex-1 bg-white">
       <Image
-        source={require("@/assets/images/icon-app.png")} //
+        source={require("@/assets/images/icon-app.png")}
         style={{ width: 100, height: 100 }}
         className="mb-6"
       />

@@ -92,7 +92,6 @@ export default function SignUp() {
             shadowRadius: 20,
             elevation: 10,
           }}
-          // className="w-full max-w-md gap-6 shadow-lg dark:bg-gray-800 rounded-xl"
         >
           <View className="items-center gap-2">
             <AntDesign

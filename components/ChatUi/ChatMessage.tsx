@@ -15,50 +15,57 @@ interface ChatMessageProps {
 const SPECIALIST_VOICES = {
   [SpecializationType.DEFAULT]: {
     ios: [
-      'com.apple.ttsbundle.siri_Martha_en-GB_compact',    // British female Siri voice
-      'com.apple.voice.compact.en-US.Samantha'            // Fallback
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact',   
+      'com.apple.voice.compact.en-US.Samantha'            
     ],
     android: ['en-us-x-sfg-network']
   },
   [SpecializationType.GENERAL]: {
     ios: [
-      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    // British male Siri voice
-      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      // US male Siri voice
+      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact'    
     ],
     android: ['en-us-x-tpd-network']
   },
   [SpecializationType.ORTHOPEDIC]: {
     ios: [
-      'com.apple.ttsbundle.siri_Gordon_en-AU_compact',    // Australian male Siri voice
-      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      // Fallback
+      'com.apple.ttsbundle.siri_Gordon_en-AU_compact',    
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact'    
     ],
     android: ['en-US-Wavenet-B']
   },
   [SpecializationType.PHYSIOTHERAPY]: {
     ios: [
-      'com.apple.ttsbundle.siri_Aaron_en-US_compact',     // US male Siri voice
-      'com.apple.ttsbundle.siri_Arthur_en-GB_compact'     // Fallback
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact',     
+      'com.apple.ttsbundle.siri_Arthur_en-GB_compact'     
     ],
     android: ['en-US-Wavenet-C']
   },
   [SpecializationType.PSYCHOLOGY]: {
     ios: [
-      'com.apple.ttsbundle.siri_Catherine_en-AU_compact', // Australian female Siri voice
-      'com.apple.ttsbundle.siri_Martha_en-GB_compact'     // Fallback
+      'com.apple.ttsbundle.siri_Catherine_en-AU_compact',
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact'    
     ],
     android: ['en-us-x-sfg-local']
   },
   [SpecializationType.CARDIOLOGY]: {
     ios: [
-      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    // British male Siri voice
-      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      // Fallback
+      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      
     ],
     android: ['en-us-x-tpd-network']
   },
   [SpecializationType.DERMATOLOGY]: {
     ios: [
-      'com.apple.ttsbundle.siri_Nicky_en-US_compact',     // US female Siri voice
-      'com.apple.ttsbundle.siri_Martha_en-GB_compact'     // Fallback
+      'com.apple.ttsbundle.siri_Nicky_en-US_compact',     
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact'    
+    ],
+    android: ['en-us-x-sfg-network']
+  },
+  [SpecializationType.DENTISTRY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Nicky_en-US_compact',   
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact'   
     ],
     android: ['en-us-x-sfg-network']
   }
@@ -67,9 +74,6 @@ const SPECIALIST_VOICES = {
 const getBestVoiceForSpecialist = async (specialistType: SpecializationType) => {
   try {
     const voices = await Speech.getAvailableVoicesAsync();
-    console.log('Looking for voice for specialist:', specialistType);
-
-    // Get English Siri voices first, then any English voices
     const englishVoices = voices.filter(voice => 
       voice.language.startsWith('en') && voice.identifier
     );
@@ -77,23 +81,18 @@ const getBestVoiceForSpecialist = async (specialistType: SpecializationType) => 
     const siriVoices = englishVoices.filter(voice => 
       voice.identifier.includes('siri')
     );
-
-    // Get preferred voices for this specialist
     const preferredVoices = Platform.OS === 'ios' 
       ? SPECIALIST_VOICES[specialistType]?.ios 
       : SPECIALIST_VOICES[specialistType]?.android;
 
-    // Try to find preferred Siri voice
     const bestVoice = siriVoices.find(voice => 
       preferredVoices?.some(preferred => voice.identifier === preferred)
     );
 
     if (bestVoice) {
-      console.log('Found preferred Siri voice:', bestVoice.name);
       return bestVoice.identifier;
     }
 
-    // Fallback to any Siri voice based on gender
     const isFemaleSpecialist = [
       SpecializationType.DEFAULT,
       SpecializationType.PSYCHOLOGY,
@@ -108,13 +107,9 @@ const getBestVoiceForSpecialist = async (specialistType: SpecializationType) => 
     });
 
     if (genderMatchedSiriVoice) {
-      console.log('Using gender-matched Siri voice:', genderMatchedSiriVoice.name);
       return genderMatchedSiriVoice.identifier;
     }
-
-    // Final fallback to any English voice
     const fallbackVoice = englishVoices[0];
-    console.log('Using fallback voice:', fallbackVoice?.name);
     return fallbackVoice?.identifier;
 
   } catch (error) {
@@ -131,7 +126,8 @@ const profilePictures: Record<string, any> = {
   "Cardiology Carl": require("../../assets/images/cardiology_carl.png"),
   "Dermatology Debrah": require("../../assets/images/dermatology_debrah.png"),
   "user": require("../../assets/images/user_default.png"),
-  "Health Assistant": require("../../assets/images/icon.png"),
+  "Health Assistant": require("../../assets/images/nurse_naomi.png"),
+  "Dentist Dana": require("../../assets/images/dentist_dana.png"),
 };
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply }) => {
@@ -150,12 +146,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply }) => {
 
   const getProfilePicture = () => {
     if (!isBot) return profilePictures["user"];
-    
-    // Get the character name based on the message's character type
-    const characterName = getCharacterName();
-    console.log('Character name:', characterName); // For debugging
-    //console.log('Available pictures:', Object.keys(profilePictures)); // For debugging
-    
+    const characterName = getCharacterName();    
     return profilePictures[characterName] || profilePictures["Health Assistant"];
   };
   
@@ -174,13 +165,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply }) => {
       );
       return;
     }
-
+  
     if (isSpeaking) {
       await Speech.stop();
       setIsSpeaking(false);
       return;
     }
-
+  
     if (!message.character) {
       return;
     }
@@ -189,10 +180,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply }) => {
       
       Speech.speak(message.content, {
         language: 'en-US',
-        pitch: 1.0,           // Normal pitch
-        rate: 0.85,          // Slightly slower for better clarity
-        voice: voiceIdentifier,
-        quality: 'Enhanced',  // Try to use enhanced quality when available
+        pitch: 1.0, 
+        rate: 0.85, 
+        voice: voiceIdentifier || undefined,
         onStart: () => setIsSpeaking(true),
         onDone: () => setIsSpeaking(false),
         onError: () => setIsSpeaking(false),
@@ -226,7 +216,7 @@ const renderReplyPreview = () => {
     <View style={[
       styles.messageContainer,
       isBot ? styles.botMessage : styles.userMessage,
-      message.isPartial && styles.partialMessage // Add this
+      message.isPartial && styles.partialMessage
     ]}>
       <Image 
         source={getProfilePicture()} 
@@ -349,6 +339,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
+  partialMessage: {
+    opacity: 0.8
+  }
 });
 const replyStyles = StyleSheet.create({
   replyContainer: {
@@ -370,7 +363,7 @@ const replyStyles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   partialMessage: {
-    opacity: 0.8  // Slightly fade partial messages
+    opacity: 0.8
   }
 });
 

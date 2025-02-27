@@ -37,7 +37,7 @@ export async function hasReachedLimit(
 }
 
 async function getMonthlyMessages(): Promise<MonthlyMessages> {
-  const currentMonth = new Date().toISOString().slice(0, 7); // Format: YYYY-MM
+  const currentMonth = new Date().toISOString().slice(0, 7);
   const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
   if (!stored) {

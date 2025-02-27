@@ -1,4 +1,4 @@
-import { db } from '../firebase'; // Your Firebase config file
+import { db } from '../firebase'; 
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { SavedPlan } from '../types';
 import { PlanType } from '../types';
@@ -11,10 +11,7 @@ export async function savePlan(
     plan: string,
     audioCues?: AudioCue[]
   ): Promise<string> {
-    console.log('Starting savePlan with:', { userId, type, name, planLength: plan.length });
-    
     try {
-      // Create the base plan data
       const planData: Record<string, any> = {
         userId,
         type,
@@ -22,10 +19,7 @@ export async function savePlan(
         plan,
         createdAt: Date.now()
       };
-  
-      // Only add audioCues if they exist and are not undefined
       if (audioCues && Array.isArray(audioCues) && audioCues.length > 0) {
-        // Clean the audio cues to ensure no undefined values
         const cleanAudioCues = audioCues.map(cue => ({
           id: cue.id || String(Date.now()),
           type: cue.type || 'exercise',
@@ -35,25 +29,24 @@ export async function savePlan(
         }));
         planData.audioCues = cleanAudioCues;
       }
-  
-      // Remove any undefined values from the object
       Object.keys(planData).forEach(key => {
         if (planData[key] === undefined) {
           delete planData[key];
         }
       });
-  
-      console.log('Cleaned plan data:', planData);
-      console.log('Attempting to save plan to Firestore...');
-      
       const docRef = await addDoc(collection(db, 'savedPlans'), planData);
-      console.log('Plan saved successfully with ID:', docRef.id);
       return docRef.id;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Detailed save plan error:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      throw new Error(`Failed to save plan: ${error.message}`);
+      
+      if (error instanceof Error) {
+        console.error('Error code:', (error as any).code);
+        console.error('Error message:', error.message);
+        throw new Error(`Failed to save plan: ${error.message}`);
+      } else {
+        console.error('Unknown error type:', error);
+        throw new Error('Failed to save plan due to an unexpected error');
+      }
     }
 }
 

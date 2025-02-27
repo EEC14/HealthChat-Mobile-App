@@ -46,8 +46,6 @@ export const PlanQuestionnaire: React.FC<PlanQuestionnaireProps> = ({
     setIsLoading(true);
     try {
       const plan = await generatePlan(type, goals, answers);
-      
-      // If it's a workout plan, create audio cues
       if (type === 'workout') {
         const audioCues = parseWorkoutPlan(plan);
         onPlanGenerated(plan, audioCues);
@@ -61,8 +59,6 @@ export const PlanQuestionnaire: React.FC<PlanQuestionnaireProps> = ({
       setIsLoading(false);
     }
   };
-
-  // Goals input stage
   if (questions.length === 0) {
     return (
       <View className="p-4 space-y-4">
@@ -103,8 +99,6 @@ export const PlanQuestionnaire: React.FC<PlanQuestionnaireProps> = ({
       </View>
     );
   }
-
-  // Questions and answers stage
   return (
     <ScrollView className="p-4" keyboardShouldPersistTaps="handled">
       {questions.map((question, index) => (

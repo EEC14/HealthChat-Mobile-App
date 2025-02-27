@@ -33,8 +33,6 @@ class WorkoutVoiceQueueManager {
       currentCue.text, 
       currentCue.type === 'exercise' ? currentCue.duration : undefined
     );
-  
-    // Set timer for next cue
     this.timer = setTimeout(async () => {
       this.currentQueue!.currentIndex++;
       await this.playNextCue();

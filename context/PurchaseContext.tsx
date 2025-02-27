@@ -56,10 +56,6 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const updatePurchaseStatus = async (customerInfo: CustomerInfo) => {
-    console.log(
-      "Customer info updated in DB",
-      customerInfo.entitlements.active
-    );
     setCustomerInfo(customerInfo);
 
     const isPro = !!customerInfo.entitlements.active["pro"];
@@ -71,20 +67,11 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
           isPro,
           isDeluxe,
         });
-        console.log(
-          "Purchase successful: updated in DB",
-          "isPro:",
-          isPro,
-          "isDeluxe:",
-          isDeluxe
-        );
       } catch (error) {
         console.error("Error updating Firebase:", error);
       }
     }
   };
-
-  // custom handlePurchase function
   const handlePurchase = async (packageToPurchase: PurchasesPackage) => {
     try {
       setIsLoading(true);
@@ -101,7 +88,6 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoading(false);
     }
   };
-  // send push notifications for this device
   const handlePurchaseNotification = async (info: CustomerInfo) => {
     const previousEntitlements = customerInfo?.entitlements.active || {};
     const newEntitlements = info.entitlements.active;
@@ -116,8 +102,6 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
     }
-
-    // Check for expired subscriptions
     for (const entitlement in previousEntitlements) {
       if (!newEntitlements[entitlement]) {
         await Notifications.scheduleNotificationAsync({
@@ -178,8 +162,6 @@ export const PurchaseProvider: React.FC<{ children: React.ReactNode }> = ({
     </PurchaseContext.Provider>
   );
 };
-
-// Custom hook
 export const usePurchases = () => {
   const context = useContext(PurchaseContext);
   if (context === undefined) {

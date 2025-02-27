@@ -4,9 +4,7 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 export async function registerForPushNotificationsAsync() {
-  // console.log("registerForPushNotificationsAsync run");
   if (Platform.OS === "android") {
-    // console.log("android");
     await Notifications.setNotificationChannelAsync("default", {
       importance: Notifications.AndroidImportance.MAX,
       sound: "notification1.wav",
@@ -18,14 +16,11 @@ export async function registerForPushNotificationsAsync() {
   }
 
   if (Device.isDevice) {
-    // console.log("Device.isDevice", Device.isDevice);
     const { status: existingStatus } =
       await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== "granted") {
-      // console.log("granted");
       const { status } = await Notifications.requestPermissionsAsync();
-      // console.log(status);
       finalStatus = status;
     }
     if (finalStatus !== "granted") {
@@ -36,7 +31,6 @@ export async function registerForPushNotificationsAsync() {
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
-    // console.log(projectId);
     if (!projectId) {
       throw new Error("Project ID not found");
     }
@@ -46,7 +40,6 @@ export async function registerForPushNotificationsAsync() {
           projectId,
         })
       ).data;
-      // console.log(pushTokenString);
       return pushTokenString;
     } catch (e: unknown) {
       throw new Error(`${e}`);

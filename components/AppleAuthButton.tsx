@@ -28,17 +28,13 @@ export function AppleAuthButton() {
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
                     AppleAuthentication.AppleAuthenticationScope.EMAIL,
                 ],
-                state: nonce, // Using state instead of nonce
+                state: nonce,
             });
-
-            // Create OAuthProvider credentials
             const provider = new OAuthProvider('apple.com');
             const oAuthCredential = provider.credential({
                 idToken: credential.identityToken!,
-                rawNonce: nonce, // Use the generated nonce
+                rawNonce: nonce,
             });
-
-            // Sign in with Firebase
             const userCredential = await signInWithCredential(auth, oAuthCredential);
             
             if (userCredential.user) {
@@ -52,7 +48,6 @@ export function AppleAuthButton() {
                           router.replace('/Home');
                       }, []);
                 } catch (error) {
-                    // If profile doesn't exist, create new one
                     const email = userCredential.user.email || '';
                     await createUserProfile(
                         userCredential.user.uid,
@@ -73,11 +68,8 @@ export function AppleAuthButton() {
             }
         } catch (error) {
             if (error instanceof Error) {
-                // Type narrow to Error to access error.code
                 const err = error as { code?: string; message: string };
-                
                 if (err.code === 'ERR_CANCELED') {
-                    console.log('User cancelled Apple sign in');
                     return;
                 } else {
                     console.error('Sign in error:', err.message);
@@ -87,8 +79,6 @@ export function AppleAuthButton() {
             }
         }
     };
-
-    // Only show Apple Sign In on iOS
     if (Platform.OS !== 'ios') {
         return null;
     }

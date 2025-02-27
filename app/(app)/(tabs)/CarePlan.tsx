@@ -61,10 +61,7 @@ const CarePlan: React.FC = () => {
   };
 
   function formatWorkoutPlan(plan: string): string {
-    // Remove JSON blocks
     const cleanPlan = plan.replace(/```json[\s\S]*?```/g, '');
-    
-    // Add custom styling
     return cleanPlan
       .replace(/\*\*Form Tips:\*\*/g, '#### Form Tips:')
       .replace(/\*\*Description:\*\*/g, '#### Description:')
@@ -78,24 +75,14 @@ const CarePlan: React.FC = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      console.log('Submitting with:', {
-        planType,
-        goals,
-        answers
-      });
   
       const plan = await generatePlan(planType!, goals, answers);
-      console.log('Generated plan:', plan);
-  
-      // If it's a workout plan, create audio cues
       if (planType === 'workout') {
         try {
           const audioCues = parseWorkoutPlan(plan);
-          console.log('Generated audio cues:', audioCues);
           setWorkoutAudioCues(audioCues);
         } catch (parseError) {
           console.error('Error parsing workout plan:', parseError);
-          // Continue even if audio cues fail
         }
       }
       
@@ -103,7 +90,9 @@ const CarePlan: React.FC = () => {
       setStep("plan");
     } catch (error) {
       console.error("Full error generating plan:", error);
+      if (error instanceof Error) {
       Alert.alert("Error", `Failed to generate the plan. Error: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +100,7 @@ const CarePlan: React.FC = () => {
 
   const handlePlanSelect = (type: PlanType) => {
     setPlanType(type);
-    setStep("questionnaire"); // Go to profile step first
+    setStep("questionnaire");
   };
 
   const resetPlan = useCallback(() => {
@@ -123,14 +112,7 @@ const CarePlan: React.FC = () => {
     setStep("select");
   }, []);
 
-  const handleSavePlan = async (name: string) => {
-    console.log('Starting plan save process...', {
-      userId: user?.uid,
-      planType,
-      hasAudioCues: planType === 'workout' ? !!workoutAudioCues : false,
-      planLength: generatedPlan.length
-    });
-  
+  const handleSavePlan = async (name: string) => {  
     if (!user?.uid) {
       console.error('No user ID available');
       Alert.alert('Error', 'User not authenticated');
@@ -144,20 +126,19 @@ const CarePlan: React.FC = () => {
     }
   
     try {
-      console.log('Calling savePlan function...');
       const savedPlanId = await savePlan(
         user.uid,
         planType,
         name,
         generatedPlan,
-        // Only include audioCues if they exist and it's a workout plan
         planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined
       );
-      console.log('Plan saved successfully with ID:', savedPlanId);
       Alert.alert('Success', 'Plan saved successfully');
     } catch (error) {
       console.error('Error in handleSavePlan:', error);
+      if (error instanceof Error) {
       Alert.alert('Error', `Failed to save plan: ${error.message}`);
+      }
     }
   };
 
@@ -464,7 +445,6 @@ const CarePlan: React.FC = () => {
           <ScrollView contentContainerStyle={[styles.scrollContainer]}>
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
-              // keyboardVerticalOffset={Platform.OS === "ios" ? 36 : -50}
               style={{ flex: 1 }}
             >
               {questions.length === 0 ? (
@@ -576,8 +556,6 @@ const CarePlan: React.FC = () => {
             <VoiceGuidancePlayer
               exerciseCues={workoutAudioCues}
               onComplete={() => {
-                // Handle workout completion
-                console.log('Workout completed');
               }}
             />
           )}
@@ -670,14 +648,11 @@ const CarePlan: React.FC = () => {
       <SavedPlansModal
         isVisible={showSavedPlans}
         onClose={() => {
-          console.log('Closing saved plans modal'); // Add this log
           setShowSavedPlans(false);
         }}
         onPlanSelect={(plan) => {
           setGeneratedPlan(plan.plan);
           setPlanType(plan.type);
-          
-          // Only set audioCues for workout plans
           if (plan.type === 'workout' && plan.audioCues) {
             setWorkoutAudioCues(plan.audioCues);
           }
@@ -921,11 +896,9 @@ const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   },
   strong: {
     color: colors.textPrimary,
-    // fontWeight: "bold",
   },
   emphasis: {
     color: colors.textSecondary,
-    // fontStyle: "italic",
   },
   blockquote: {
     color: colors.textSecondary,
@@ -945,7 +918,6 @@ const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   },
   a: {
     color: colors.textPrimary,
-    // textDecorationLine: "underline",
   },
   listItem: {
     color: colors.textPrimary,

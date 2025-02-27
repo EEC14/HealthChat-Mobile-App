@@ -1,5 +1,3 @@
-// Create a new file: app/utils/dateFormatter.ts
-
 export function formatDate(date: Date): string {
     const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',

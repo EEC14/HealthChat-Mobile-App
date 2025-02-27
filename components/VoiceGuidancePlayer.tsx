@@ -1,5 +1,3 @@
-// In app/components/VoiceGuidancePlayer.tsx
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { workoutVoiceQueue } from '../utils/workoutVoiceQueue';
@@ -35,7 +33,6 @@ export const VoiceGuidancePlayer: React.FC<VoiceGuidancePlayerProps> = ({
       await workoutVoiceQueue.pauseQueue();
       setIsPlaying(false);
     } else {
-      // Filter cues if skip mode is enabled
       const queue = workoutVoiceQueue.createQueue(
         skipNonExercises 
           ? exerciseCues.filter(cue => cue.type === 'exercise' && cue.duration > 0)

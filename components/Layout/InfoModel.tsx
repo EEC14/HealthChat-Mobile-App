@@ -59,8 +59,6 @@ const CompanyInfo = () => {
       fontWeight: "600",
       color: currentColors.textPrimary,
     },
-
-    // Modal Styles
     overlay: {
       flex: 1,
       backgroundColor: currentColors.surface,

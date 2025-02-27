@@ -1,11 +1,9 @@
-// /src/components/Challenge/ProgressBar.tsx
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 
 interface ProgressBarProps {
-  progress: number; // current progress value
-  goal: number;     // target goal value
+  progress: number;
+  goal: number; 
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ progress, goal }) => {
