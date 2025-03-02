@@ -96,7 +96,8 @@ const getBestVoiceForSpecialist = async (specialistType: SpecializationType) => 
     const isFemaleSpecialist = [
       SpecializationType.DEFAULT,
       SpecializationType.PSYCHOLOGY,
-      SpecializationType.DERMATOLOGY
+      SpecializationType.DERMATOLOGY,
+      SpecializationType.DENTISTRY
     ].includes(specialistType);
 
     const genderMatchedSiriVoice = siriVoices.find(voice => {
@@ -290,10 +291,10 @@ const styles = StyleSheet.create({
     maxWidth: "80%",
     padding: 10,
     borderRadius: 10,
-    backgroundColor: "#2C2C2E",
   },
   text: {
     fontSize: 16,
+    color: "#FFFFFF"
   },
   botText: {
     color: "#000000",
