@@ -751,60 +751,116 @@ interface WorkoutExercise {
 export function parseWorkoutPlan(markdownPlan: string): AudioCue[] {
   const audioCues: AudioCue[] = [];
   let id = 1;
-  const jsonBlocks = markdownPlan.match(/```json\n([\s\S]*?)\n```/g);
-  if (!jsonBlocks) return [];
-
-  jsonBlocks.forEach(block => {
-    const exercise: WorkoutExercise = JSON.parse(
-      block.replace(/```json\n/, '').replace(/\n```/, '')
-    );
-
-    audioCues.push({
-      id: `${id++}`,
-      type: 'exercise',
-      text: `Next exercise: ${exercise.name}. ${exercise.description}`,
-      duration: 0,
-      priority: 1
-    });
-
-    exercise.formCues.forEach(cue => {
-      audioCues.push({
-        id: `${id++}`,
-        type: 'form',
-        text: cue,
-        duration: 0,
-        priority: 2
-      });
-    });
-
-    audioCues.push({
-      id: `${id++}`,
-      type: 'countdown',
-      text: `Starting in 3, 2, 1`,
-      duration: 0,
-      priority: 1
-    });
-
-    for (let set = 1; set <= exercise.sets; set++) {
-      audioCues.push({
-        id: `${id++}`,
-        type: 'exercise',
-        text: `Set ${set}: Begin ${exercise.name}`,
-        duration: exercise.duration,
-        priority: 1
-      });
-
-      if (set < exercise.sets) {
-        audioCues.push({
-          id: `${id++}`,
-          type: 'rest',
-          text: `Rest for ${exercise.rest} seconds`,
-          duration: exercise.rest,
-          priority: 1
-        });
+  
+  // Defensive approach - if no plan or not a string, return empty array
+  if (!markdownPlan || typeof markdownPlan !== 'string') {
+    console.warn('Invalid workout plan provided');
+    return [];
+  }
+  
+  try {
+    // Extract JSON blocks more carefully
+    const jsonBlocks = markdownPlan.match(/```json\n([\s\S]*?)\n```/g);
+    
+    if (!jsonBlocks || jsonBlocks.length === 0) {
+      console.warn('No JSON blocks found in workout plan');
+      return [];
+    }
+    
+    // Process each JSON block independently
+    for (const block of jsonBlocks) {
+      try {
+        // Extract the JSON content from between the backticks
+        const jsonContent = block.replace(/```json\n/, '').replace(/\n```/, '').trim();
+        
+        // Pre-process the JSON string to handle potential issues
+        // Replace any dash-only values or non-standard number formats
+        const sanitizedJson = jsonContent
+          .replace(/"sets":\s*"-"/g, '"sets": 1')  // Replace "-" with default value
+          .replace(/"reps":\s*"-"/g, '"reps": 10')
+          .replace(/"duration":\s*"-"/g, '"duration": 30')
+          .replace(/"rest":\s*"-"/g, '"rest": 30')
+          .replace(/"sets":\s*"(\d+)"/g, '"sets": $1')  // Convert string numbers to actual numbers
+          .replace(/"reps":\s*"(\d+)"/g, '"reps": $1')
+          .replace(/"duration":\s*"(\d+)"/g, '"duration": $1')
+          .replace(/"rest":\s*"(\d+)"/g, '"rest": $1')
+          .replace(/(\d+)-(\d+)/g, '$1');  // Take the first number from a range like "10-15"
+        
+        // For debugging
+        console.log('Sanitized JSON:', sanitizedJson);
+        
+        // Parse the sanitized JSON
+        const exercise = JSON.parse(sanitizedJson);
+        
+        // Create audio cues only if we have the minimum required fields
+        if (exercise.name) {
+          audioCues.push({
+            id: `${id++}`,
+            type: 'exercise',
+            text: `Next exercise: ${exercise.name}. ${exercise.description || ''}`,
+            duration: 0,
+            priority: 1
+          });
+          
+          // Handle form cues if they exist
+          if (Array.isArray(exercise.formCues) && exercise.formCues.length > 0) {
+            exercise.formCues.forEach(cue => {
+              if (cue && typeof cue === 'string') {
+                audioCues.push({
+                  id: `${id++}`,
+                  type: 'form',
+                  text: cue,
+                  duration: 0,
+                  priority: 2
+                });
+              }
+            });
+          }
+          
+          // Add countdown
+          audioCues.push({
+            id: `${id++}`,
+            type: 'countdown',
+            text: `Starting in 3, 2, 1`,
+            duration: 0,
+            priority: 1
+          });
+          
+          // Use safe defaults if properties are missing
+          const sets = typeof exercise.sets === 'number' ? exercise.sets : 1;
+          const rest = typeof exercise.rest === 'number' ? exercise.rest : 30;
+          const duration = typeof exercise.duration === 'number' ? exercise.duration : 30;
+          
+          // Generate sets
+          for (let set = 1; set <= sets; set++) {
+            audioCues.push({
+              id: `${id++}`,
+              type: 'exercise',
+              text: `Set ${set}: Begin ${exercise.name}`,
+              duration: duration,
+              priority: 1
+            });
+            
+            if (set < sets) {
+              audioCues.push({
+                id: `${id++}`,
+                type: 'rest',
+                text: `Rest for ${rest} seconds`,
+                duration: rest,
+                priority: 1
+              });
+            }
+          }
+        }
+      } catch (jsonError) {
+        console.error('Error parsing JSON block:', jsonError, 'Block:', block);
+        // Continue processing other blocks
       }
     }
-  });
-
-  return audioCues;
+    
+    return audioCues;
+  } catch (error) {
+    console.error('Error processing workout plan:', error);
+    return []; // Return empty array on error
+  }
 }

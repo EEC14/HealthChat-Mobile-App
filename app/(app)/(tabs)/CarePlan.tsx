@@ -28,8 +28,10 @@ import { FontAwesome6 } from "@expo/vector-icons";
 import { AudioCue } from "@/types/voiceTypes";
 import { useTranslation } from 'react-i18next';
 import { VoiceGuidancePlayer } from "@/components/VoiceGuidancePlayer";
-import { SavedPlansModal } from "@/components/SavedPlansModal";
-import { savePlan } from "@/utils/planStorage";
+import { SavedPlansModal } from "@/components/DietPlan/SavedPlansModal";
+import { PlanModifierToolbar } from "@/components/DietPlan/PlanModifierToolbar";
+import { savePlan, updatePlan } from "@/utils/planStorage";
+
 const CarePlan: React.FC = () => {
   const { user } = useAuthContext();
   const { theme } = useTheme();
@@ -44,7 +46,10 @@ const CarePlan: React.FC = () => {
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
   const [workoutAudioCues, setWorkoutAudioCues] = useState<AudioCue[] | null>(null);
   const [showSavedPlans, setShowSavedPlans] = useState(false);
+  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const { t } = useTranslation();
+
   const handleGoalsSubmit = async () => {
     if (!goals.trim()) return;
     setIsLoading(true);
@@ -87,6 +92,7 @@ const CarePlan: React.FC = () => {
       }
       
       setGeneratedPlan(plan);
+      setCurrentPlanId(null); // Reset current plan ID as this is a newly generated plan
       setStep("plan");
     } catch (error) {
       console.error("Full error generating plan:", error);
@@ -109,8 +115,36 @@ const CarePlan: React.FC = () => {
     setQuestions([]);
     setAnswers({});
     setGeneratedPlan("");
+    setWorkoutAudioCues(null);
+    setCurrentPlanId(null);
+    setIsEditing(false);
     setStep("select");
   }, []);
+
+  const handlePlanModification = (updatedPlan: string) => {
+    // Make sure we're not setting the same plan again
+    if (updatedPlan === generatedPlan) {
+      return;
+    }
+    
+    console.log('Plan modified, updating state');
+    
+    // First update the plan text
+    setGeneratedPlan(updatedPlan);
+    
+    // If this is a workout plan, we need to update the audio cues
+    if (planType === 'workout') {
+      try {
+        const updatedAudioCues = parseWorkoutPlan(updatedPlan);
+        setWorkoutAudioCues(updatedAudioCues);
+      } catch (error) {
+        console.error('Error parsing modified workout plan:', error);
+      }
+    }
+    
+    // Set editing mode
+    setIsEditing(true);
+  };
 
   const handleSavePlan = async (name: string) => {  
     if (!user?.uid) {
@@ -126,18 +160,33 @@ const CarePlan: React.FC = () => {
     }
   
     try {
-      const savedPlanId = await savePlan(
-        user.uid,
-        planType,
-        name,
-        generatedPlan,
-        planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined
-      );
-      Alert.alert('Success', 'Plan saved successfully');
+      // If we're editing an existing plan
+      if (currentPlanId) {
+        await updatePlan(currentPlanId, {
+          name: name,
+          plan: generatedPlan,
+          audioCues: planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined
+        });
+        Alert.alert('Success', 'Plan updated successfully');
+      } else {
+        // Creating a new plan
+        const savedPlanId = await savePlan(
+          user.uid,
+          planType,
+          name,
+          generatedPlan,
+          planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined
+        );
+        setCurrentPlanId(savedPlanId);
+        Alert.alert('Success', 'Plan saved successfully');
+      }
+      
+      // Reset editing state after saving
+      setIsEditing(false);
     } catch (error) {
       console.error('Error in handleSavePlan:', error);
       if (error instanceof Error) {
-      Alert.alert('Error', `Failed to save plan: ${error.message}`);
+        Alert.alert('Error', `Failed to save plan: ${error.message}`);
       }
     }
   };
@@ -179,36 +228,73 @@ const CarePlan: React.FC = () => {
       <View style={styles.headerActions}>
 
       {step === "plan" && (
-        <TouchableOpacity
-        onPress={() => {
-          Alert.prompt(
-            'Save Plan',
-            'Enter a name for this plan:',
-            [
-              {
-                text: 'Cancel',
-                style: 'cancel'
-              },
-              {
-                text: 'Save',
-                onPress: (name) => {
-                  if (name) {
-                    handleSavePlan(name);
-                  } else {
-                    Alert.alert('Error', 'Please enter a name for the plan');
-                  }
-                }
-              }
-            ],
-            'plain-text',
-            '',
-            'default'
-          );
-        }}
-        style={styles.saveButton}
-      >
-        <AntDesign name="save" size={20} color="#007AFF" />
-      </TouchableOpacity>
+        <>
+          {isEditing && (
+            <TouchableOpacity
+              onPress={() => {
+                Alert.prompt(
+                  'Save Plan',
+                  'Enter a name for this plan:',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel'
+                    },
+                    {
+                      text: 'Save',
+                      onPress: (name) => {
+                        if (name) {
+                          handleSavePlan(name);
+                        } else {
+                          Alert.alert('Error', 'Please enter a name for the plan');
+                        }
+                      }
+                    }
+                  ],
+                  'plain-text',
+                  currentPlanId ? 'Modified Plan' : '',
+                  'default'
+                );
+              }}
+              style={styles.saveButton}
+            >
+              <AntDesign name="save" size={20} color="#007AFF" />
+            </TouchableOpacity>
+          )}
+          
+          {!isEditing && (
+            <TouchableOpacity
+              onPress={() => {
+                Alert.prompt(
+                  'Save Plan',
+                  'Enter a name for this plan:',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel'
+                    },
+                    {
+                      text: 'Save',
+                      onPress: (name) => {
+                        if (name) {
+                          handleSavePlan(name);
+                        } else {
+                          Alert.alert('Error', 'Please enter a name for the plan');
+                        }
+                      }
+                    }
+                  ],
+                  'plain-text',
+                  '',
+                  'default'
+                );
+              }}
+              style={styles.saveButton}
+            >
+              <AntDesign name="save" size={20} color="#007AFF" />
+            </TouchableOpacity>
+          )}
+        </>
       )}
       <TouchableOpacity
         onPress={() => setShowSavedPlans(true)}
@@ -539,44 +625,62 @@ const CarePlan: React.FC = () => {
       );
     }
 
-    if (step === "plan") {
-      return (
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContainer,
-            { backgroundColor: currentColors.background },
-          ]}
-        >
-          <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
-            Your {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Plan
-          </Text>
+    // Replace the plan rendering section in the renderContent function with:
+
+if (step === "plan") {
+  return (
+    <View style={{flex: 1, position: 'relative'}}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { backgroundColor: currentColors.background },
+        ]}
+        style={{ marginBottom: 70 }} // Add space for the toolbar
+      >
+        <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
+          Your {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Plan
+        </Text>
+        
+        {/* Add Voice Guidance Player for workout plans */}
+        {planType === 'workout' && workoutAudioCues && (
+          <VoiceGuidancePlayer
+            exerciseCues={workoutAudioCues}
+            onComplete={() => {}}
+          />
+        )}
+  
+        {planType === 'workout' ? (
+          <Markdown style={getMarkdownStyles(currentColors)}>
+            {formatWorkoutPlan(generatedPlan)}
+          </Markdown>
+        ) : (
+          <Markdown style={getMarkdownStyles(currentColors)}>
+            {generatedPlan}
+          </Markdown>
+        )}
           
-          {/* Add Voice Guidance Player for workout plans */}
-          {planType === 'workout' && workoutAudioCues && (
-            <VoiceGuidancePlayer
-              exerciseCues={workoutAudioCues}
-              onComplete={() => {
-              }}
-            />
-          )}
-    
-          {planType === 'workout' ? (
-            <Markdown style={getMarkdownStyles(currentColors)}>
-              {formatWorkoutPlan(generatedPlan)}
-            </Markdown>
-          ) : (
-            <Markdown style={getMarkdownStyles(currentColors)}>
-              {generatedPlan}
-            </Markdown>
-          )}
-            
-          <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
-            <AntDesign name="arrowleft" size={16} color="#000" />
-            <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      );
-    }
+        <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
+          <AntDesign name="arrowleft" size={16} color="#000" />
+          <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
+        </TouchableOpacity>
+        
+        {/* Add extra space at the bottom */}
+        <View style={{ height: 30 }} />
+      </ScrollView>
+      
+      {/* Position the toolbar absolutely */}
+      <View style={styles.toolbarContainer}>
+        {planType && (
+          <PlanModifierToolbar
+            planType={planType}
+            currentPlan={generatedPlan}
+            onPlanChange={handlePlanModification}
+          />
+        )}
+      </View>
+    </View>
+  );
+}
 
     return null;
   };
@@ -653,6 +757,9 @@ const CarePlan: React.FC = () => {
         onPlanSelect={(plan) => {
           setGeneratedPlan(plan.plan);
           setPlanType(plan.type);
+          setCurrentPlanId(plan.id);
+          setIsEditing(false);
+          
           if (plan.type === 'workout' && plan.audioCues) {
             setWorkoutAudioCues(plan.audioCues);
           }
@@ -724,6 +831,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
+  },
+  toolbarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0, // Add safe area padding on iOS
   },
   backButton: { marginRight: 16 },
   headerTitle: {
@@ -856,6 +973,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
 const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   body: {
     color: colors.textSecondary,
@@ -965,4 +1083,4 @@ const getMarkdownStyles = (colors: ColorsType[Theme]) => ({
   },
 });
 
-export default CarePlan ;
+export default CarePlan;

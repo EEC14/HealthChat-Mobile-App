@@ -10,6 +10,7 @@ import { NotificationProvider } from "@/context/NotificationContext";
 import { PurchaseProvider } from "@/context/PurchaseContext";
 import i18n from '../i18n/config';
 import { I18nextProvider } from 'react-i18next';
+import 'react-native-gesture-handler';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
