@@ -58,7 +58,7 @@ function Home() {
   const [isModalVisible, setModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [isModelModalVisible, setModelModalVisible] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<"gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3">("gpt-4o-mini");
+  const [selectedModel, setSelectedModel] = useState<"perplexity-online"|"gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3">("perplexity-online");
 
   const [isNewChat, setIsNewChat] = useState(true);
   const { t } = useTranslation();
@@ -127,7 +127,7 @@ function Home() {
   };
 
 
-  const handleModelSelection = (model: "gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3") => {
+  const handleModelSelection = (model: "perplexity-online"|"gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3") => {
     setSelectedModel(model);
     selectAIModel(user, model);
     setModelModalVisible(false);
@@ -297,6 +297,7 @@ function Home() {
             onValueChange={(itemValue) => setSelectedModel(itemValue)}
             style={{ width: "100%", color: "black" }}
           >
+          <Picker.Item label="Perplexity" value="perplexity-online" color='black' />
           <Picker.Item label="GPT-4o" value="gpt-4o" color='black' />
           <Picker.Item label="GPT-4o Mini" value="gpt-4-turbo" color='black' />
           <Picker.Item label="Claude 3-5 Sonnet" value="claude-3-5-sonnet" color='black' />

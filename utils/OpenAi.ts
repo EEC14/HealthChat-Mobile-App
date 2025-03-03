@@ -16,6 +16,11 @@ const replicate = new Replicate({
   auth: process.env.EXPO_PUBLIC_REPLICATE_API_TOKEN,
 });
 
+const perplexity = {
+  apiKey: process.env.EXPO_PUBLIC_PERPLEXITY_API_KEY,
+  baseURL: 'https://api.perplexity.ai',
+};
+
 interface AIModel {
   name: string;
   maxTokens: number;
@@ -35,6 +40,27 @@ interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   character?: string;
+}
+
+interface PerplexityResponseData {
+  id: string;
+  model: string;
+  created: number;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  citations?: string[];
+  object: string;
+  choices: Array<{
+    index: number;
+    finish_reason: string | null;
+    message?: {
+      role: string;
+      content: string;
+    };
+  }>;
 }
 
 export function isValidModel(model: string): model is ModelName {
@@ -63,7 +89,12 @@ export const AI_MODELS = {
     provider: 'replicate',
     name: 'meta/meta-llama-3-8b-instruct',
     maxTokens: 2000,
-  }
+  },
+  'perplexity-online': {
+    provider: 'perplexity',
+    name: 'sonar',
+    maxTokens: 4000,
+  },
 };
 
 export const characters: Record<SpecializationType, Character> = {
@@ -190,16 +221,16 @@ Additional guidelines:
 7.ALWAYS ANSWER IN THE LANGUAGE USED BY THE USER.
 8. Include sources for your infromation in the answer.`;
 
-let selectedModel = "gpt-3.5-turbo"; 
+let selectedModel = "perplexity-online"; 
 
 export function selectAIModel(user: ExtendedUserProfile, chosenModel?: ModelName): ModelName {
   if (user.isDeluxe && chosenModel) {
     return chosenModel;
   }
   if (user.isPro) {
-    return 'gpt-4o';
+    return 'perplexity-online'
   }
-  return 'gpt-4o-mini';
+  return 'perplexity-online';
 }
 
 async function selectCharacterAI(
@@ -245,7 +276,7 @@ export async function getAIResponse(
 ): Promise<{ responseText: string; characterName: string; updatedHistory: ChatMessage[]; newSpecialist?: SpecializationType }>  {
   if (selectedModel === undefined || !isValidModel(selectedModel)) {
     console.error(`Invalid model selected: ${selectedModel}`);
-    selectedModel = 'gpt-4o-mini'; 
+    selectedModel = 'perplexity-online'; // Set Perplexity as default
   }
   try {
     let selectedSpecialization = currentSpecialist || SpecializationType.GENERAL;
@@ -273,6 +304,112 @@ export async function getAIResponse(
     const model = AI_MODELS[selectedModel as ModelName];
     let aiResponse = '';
     switch (model.provider) {
+      case 'perplexity': {
+        try {
+          console.log("Making Perplexity API request (non-streaming)");
+          
+          const response = await fetch(`${perplexity.baseURL}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${perplexity.apiKey}`
+            },
+            body: JSON.stringify({
+              model: model.name,
+              messages: messages,
+              temperature: 0.7,
+              max_tokens: model.maxTokens
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Perplexity API error response:", errorText);
+            let errorMsg = `Perplexity API error: ${response.status}`;
+            try {
+              const errorData = JSON.parse(errorText);
+              if (errorData.error) {
+                errorMsg += ` - ${errorData.error.message || errorData.error}`;
+              }
+            } catch (e) {
+              // If parsing fails, just use the status code and raw text
+              errorMsg += ` - ${errorText.substring(0, 100)}`;
+            }
+            throw new Error(errorMsg);
+          }
+          
+          const data = await response.json() as PerplexityResponseData;
+          console.log("Perplexity response received:", data.id);
+          
+          // Get initial response text
+          let responseText = data.choices[0]?.message?.content || 'No response generated';
+          
+          // Process and enhance citations
+          if (data.citations && data.citations.length > 0) {
+            // First, check if there are already citation markers in the text
+            const hasCitationMarkers = responseText.match(/\[\d+\]/g);
+            
+            // If there are no citation markers but we have citations, we need to add them
+            if (!hasCitationMarkers) {
+              console.log("No citation markers found in text, adding references section.");
+              responseText += '\n\n## References\n';
+              data.citations.forEach((citation, index) => {
+                responseText += `[${index + 1}] ${citation}\n`;
+              });
+            } 
+            // If there are citation markers, make sure they link to the actual URLs
+            else if (!responseText.toLowerCase().includes('references')) {
+              console.log("Citation markers found but no references section, adding one.");
+              responseText += '\n\n## References\n';
+              data.citations.forEach((citation, index) => {
+                responseText += `[${index + 1}] [${citation}](${citation})\n`;
+              });
+            }
+            // If there's already a references section, check if it includes clickable links
+            else {
+              console.log("Citations and references section found, ensuring links are clickable.");
+              // We'll try to enhance any existing references section to make links clickable
+              const referencesRegex = /## references\s+((?:\[\d+\](?:\s+|\s*[^[]+)\s*\n?)+)/i;
+              const referencesMatch = responseText.match(referencesRegex);
+              
+              if (referencesMatch) {
+                const referencesSection = referencesMatch[1];
+                let enhancedReferencesSection = referencesSection;
+                
+                // Try to make each citation a clickable link if it's not already
+                data.citations.forEach((citation, index) => {
+                  const citationMarker = `[${index + 1}]`;
+                  const citationLinkRegex = new RegExp(`${citationMarker}\\s+(${citation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+                  const citationLink = `${citationMarker} [${citation}](${citation})`;
+                  
+                  if (referencesSection.includes(citation) && !referencesSection.includes(`](${citation})`)) {
+                    enhancedReferencesSection = enhancedReferencesSection.replace(citationLinkRegex, citationLink);
+                  }
+                });
+                
+                // Replace the original references section with the enhanced one
+                responseText = responseText.replace(referencesMatch[0], `## References\n${enhancedReferencesSection}`);
+              }
+            }
+          }
+          
+          // Apply character persona formatting to ensure response starts correctly
+          if (character && !responseText.startsWith(character.name)) {
+            responseText = `${character.name} here! ${responseText}`;
+          }
+          
+          aiResponse = responseText;
+          
+          // If streaming was requested, just send the complete response at once
+          if (onStreamUpdate) {
+            onStreamUpdate(aiResponse);
+          }
+        } catch (error) {
+          console.error("Perplexity API error:", error);
+          throw error;
+        }
+        break;
+      }
       case 'openai': {
         if (onStreamUpdate) {
           try {
