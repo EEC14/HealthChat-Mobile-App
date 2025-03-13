@@ -8,15 +8,17 @@ import {
   Alert,
   TextInput,
   ScrollView,
+  Modal
 } from 'react-native';
-import { db } from "@/firebase";
 import { Challenge } from "../../types/challenge";
 import { doc, getDoc } from "firebase/firestore";
 import { updateChallengeProgress, deleteChallenge } from '../../utils/challengeService';
 import { Colors } from "@/constants/Colors";
 import ProgressBar from '../../components/Challenge/ProgressBar';
 import { Theme, useTheme } from '@/context/ThemeContext';
-
+import { db, auth } from "@/firebase";
+import { Badge } from "../../types/badge";
+import { trackChallengeCompletion, BADGES } from '../../utils/badgeService';
 interface ChallengeDetailScreenProps {
   challengeId: string;
   onBack: () => void;
@@ -28,6 +30,8 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [progressInput, setProgressInput] = useState<string>('');
+  const [newBadgesEarned, setNewBadgesEarned] = useState<string[]>([]);
+  const [showBadgeModal, setShowBadgeModal] = useState<boolean>(false);
 
   const fetchChallengeDetail = async () => {
     try {
@@ -72,21 +76,62 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
         return;
       }
       try {
+        console.log(`[DEBUG] Updating progress to: ${parsedProgress}, goal: ${challenge.goal}`);
         await updateChallengeProgress(challenge.id, parsedProgress);
+        
+        // Check if challenge is completed
         if (parsedProgress >= challenge.goal) {
-          await deleteChallenge(challenge.id);
-          Alert.alert("Challenge Completed!", "This challenge has been completed and will be removed.");
-          onBack();
+          console.log(`[DEBUG] Challenge completed! Goal reached.`);
+          const currentUser = auth.currentUser;
+          
+          // Track the completion and check for new badges if user is logged in
+          if (currentUser) {
+            console.log(`[DEBUG] User authenticated: ${currentUser.uid}`);
+            console.log(`[DEBUG] Calling trackChallengeCompletion`);
+            const earnedBadges = await trackChallengeCompletion(currentUser.uid);
+            console.log(`[DEBUG] Returned from trackChallengeCompletion with badges:`, earnedBadges);
+            
+            if (earnedBadges.length > 0) {
+              console.log(`[DEBUG] New badges earned:`, earnedBadges);
+              setNewBadgesEarned(earnedBadges);
+              setShowBadgeModal(true);
+            } else {
+              console.log(`[DEBUG] No new badges earned`);
+              // No new badges, just delete the challenge
+              await deleteChallenge(challenge.id);
+              Alert.alert("Challenge Completed!", "This challenge has been completed and will be removed.");
+              onBack();
+            }
+          } else {
+            console.log(`[DEBUG] User not authenticated, skipping badge checks`);
+            // User not logged in, just delete the challenge
+            await deleteChallenge(challenge.id);
+            Alert.alert("Challenge Completed!", "This challenge has been completed and will be removed.");
+            onBack();
+          }
         } else {
+          console.log(`[DEBUG] Progress updated but challenge not completed yet`);
           setChallenge({ ...challenge, currentProgress: parsedProgress });
           Alert.alert("Success", "Progress updated successfully.");
         }
       } catch (error) {
-        console.error("Error in progress update/delete flow:", error);
+        console.error("[DEBUG] Error in progress update/delete flow:", error);
         Alert.alert("Error", "Failed to update progress.");
       }
     }
   };
+
+  const handleBadgeModalClose = async () => {
+    setShowBadgeModal(false);
+    setNewBadgesEarned([]);
+    
+    // Delete the challenge after showing badges
+    if (challenge) {
+      await deleteChallenge(challenge.id);
+    }
+    onBack();
+  };
+
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
@@ -130,6 +175,46 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
       <View style={styles.backButtonContainer}>
         <Button title="Back" onPress={onBack} color={colors.secondary} />
       </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showBadgeModal}
+        onRequestClose={handleBadgeModalClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+              Challenge Complete!
+            </Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              You've earned new badges:
+            </Text>
+            
+            <View style={styles.badgesContainer}>
+              {newBadgesEarned.map(badgeId => (
+                <View key={badgeId} style={styles.badgeItem}>
+                  <Text style={styles.badgeIcon}>{BADGES[badgeId].icon}</Text>
+                  <Text style={[styles.badgeName, { color: colors.textPrimary }]}>
+                    {BADGES[badgeId].name}
+                  </Text>
+                  <Text style={[styles.badgeDesc, { color: colors.textSecondary }]}>
+                    {BADGES[badgeId].description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Awesome!"
+                onPress={handleBadgeModalClose}
+                color={colors.primary}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -198,6 +283,63 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   backButtonContainer: {
+    marginTop: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalContent: {
+    width: '85%',
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  badgesContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  badgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(118, 199, 192, 0.15)',
+  },
+  badgeIcon: {
+    fontSize: 30,
+    marginRight: 15,
+  },
+  badgeName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  badgeDesc: {
+    fontSize: 14,
+    flex: 1,
+  },
+  buttonContainer: {
+    width: '100%',
     marginTop: 10,
   },
 });

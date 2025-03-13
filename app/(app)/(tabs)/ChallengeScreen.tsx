@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, Button, TouchableOpacity } from 'react-native';
-import { db } from "@/firebase";
+import { db, auth } from "@/firebase";
 import { Challenge } from '../../../types/challenge';
 import { collection, getDocs } from "firebase/firestore";
 import ChallengeCard from '../../../components/Challenge/ChallengeCard';
@@ -9,6 +9,10 @@ import CreateChallengeScreen from '../../../components/Challenge/CreateChallenge
 import { Theme, useTheme } from "@/context/ThemeContext";
 import { Colors } from "@/constants/Colors";
 import { ColorsType } from "@/types";
+import { UserBadges } from '../../../types/badge';
+import BadgesDisplay from '../../../components/Badge/BadgesDisplay';
+import { getUserBadges } from '../../../utils/badgeService';
+
 type ViewMode = 'list' | 'detail' | 'create';
 
 const ChallengesScreen: React.FC = () => {
@@ -18,6 +22,22 @@ const ChallengesScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [userBadges, setUserBadges] = useState<UserBadges | null>(null);
+
+  const loadUserBadges = async () => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      try {
+        const badges = await getUserBadges(currentUser.uid);
+        setUserBadges(badges);
+      } catch (error) {
+        console.error("Error loading user badges:", error);
+      }
+    } else {
+      setUserBadges(null);
+    }
+  };
+
   const loadChallenges = async () => {
     setLoading(true);
     try {
@@ -44,8 +64,20 @@ const ChallengesScreen: React.FC = () => {
     }
   };
 
-  useEffect(() => {
+ useEffect(() => {
     loadChallenges();
+    loadUserBadges();
+    
+    // Listen for auth state changes to reload badges
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadUserBadges();
+      } else {
+        setUserBadges(null);
+      }
+    });
+    
+    return () => unsubscribe();
   }, []);
 
   if (viewMode === 'create') {
@@ -92,6 +124,10 @@ const ChallengesScreen: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: currentColors.background }]}>
       <Text style={[styles.header, { color: currentColors.textPrimary }]}>Fitness Challenges</Text>
+      
+      {/* Badge display section */}
+      <BadgesDisplay userBadges={userBadges} />
+      
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.createButton}
