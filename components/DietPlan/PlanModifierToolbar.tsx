@@ -236,6 +236,34 @@ export const PlanModifierToolbar: React.FC<PlanModifierToolbarProps> = ({
             }
           }
         }
+
+        else if (planType === 'habit') {
+          if (line.includes('minutes') || line.includes('minute')) {
+            const numMatch = line.match(/\d+/);
+            if (numMatch) {
+              const currentNum = parseInt(numMatch[0]);
+              const newNum = direction === 'increase' 
+                ? currentNum + 1 
+                : Math.max(1, currentNum - 1);
+              
+              // Replace only the number
+              lines[i] = line.replace(/\d+/, newNum.toString());
+              updated = true;
+            }
+          } else if (line.includes('seconds') || line.includes('second')) {
+            const numMatch = line.match(/\d+/);
+            if (numMatch) {
+              const currentNum = parseInt(numMatch[0]);
+              const newNum = direction === 'increase' 
+                ? currentNum + 15 
+                : Math.max(15, currentNum - 15);
+              
+              // Replace only the number
+              lines[i] = line.replace(/\d+/, newNum.toString());
+              updated = true;
+            }
+          }
+        }
       }
       
       if (!updated) {

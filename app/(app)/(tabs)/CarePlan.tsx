@@ -219,12 +219,15 @@ const CarePlan: React.FC = () => {
           />
         </TouchableOpacity>
       )}
-      <Text style={[styles.headerTitle, { color: currentColors.textPrimary }]}>
+        <Text style={[styles.headerTitle, { color: currentColors.textPrimary }]}>
           {step === "select" && "Choose a Plan"}
           {step === "questionnaire" &&
-            `${planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Questions`}
+            `${planType === "workout" ? "Workout" : 
+              planType === "diet" ? "Diet" : 
+              planType === "meditation" ? "Meditation" : 
+              "Habit Stacking"} Questions`}
           {step === "plan" && "Your Personalized Plan"}
-      </Text>
+        </Text>
       <View style={styles.headerActions}>
 
       {step === "plan" && (
@@ -519,6 +522,42 @@ const CarePlan: React.FC = () => {
               {t('dietPlan.questionnaire.medPl')}
             </Text>  
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              setPlanType("habit");
+              setStep("questionnaire");
+            }}
+            style={[
+              styles.card,
+              {
+                backgroundColor: currentColors.surface,
+                borderWidth: 1,
+                borderColor: currentColors.border,
+              },
+            ]}
+          >
+            <View style={styles.iconContainer}>
+              <FontAwesome5
+                name="link"
+                size={24}
+                color={currentColors.textPrimary}
+              />
+            </View>
+            <Text
+              style={[styles.cardTitle, { color: currentColors.textPrimary }]}
+            >
+              Habit Stacking Plan
+            </Text>
+            <Text
+              style={[
+                styles.cardSubtitle,
+                { color: currentColors.textSecondary },
+              ]}
+            >
+              Build sustainable habits with linked routines
+            </Text>
+          </TouchableOpacity>
         </View>
       );
     };
@@ -539,7 +578,10 @@ const CarePlan: React.FC = () => {
                     style={[styles.label, { color: currentColors.textPrimary }]}
                   >
                     What are your{" "}
-                    {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} goals?
+                    {planType === "workout" ? "Workout" : 
+                      planType === "diet" ? "Diet" : 
+                      planType === "meditation" ? "Meditation" : 
+                      "Habit Stacking"} goals?
                   </Text>
                   <TextInput
                     style={[
@@ -638,7 +680,10 @@ if (step === "plan") {
         style={{ marginBottom: 70 }} // Add space for the toolbar
       >
         <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
-          Your {planType === "workout" ? "Workout" : planType === "diet" ? "Diet" : "Meditation"} Plan
+          Your {planType === "workout" ? "Workout" : 
+            planType === "diet" ? "Diet" : 
+            planType === "meditation" ? "Meditation" : 
+            "Habit Stacking"} Plan
         </Text>
         
         {/* Add Voice Guidance Player for workout plans */}

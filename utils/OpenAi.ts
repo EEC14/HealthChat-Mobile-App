@@ -751,7 +751,9 @@ export async function generatePlanQuestions(
   const prompts = {
     workout: "You are a certified fitness trainer. Generate 5 relevant questions to create a personalized workout plan. Questions should cover fitness level, schedule, equipment access, and any limitations.DO NOT put examples in questions and end every question with a question mark.",
     diet: "You are a certified nutritionist. Generate 5 relevant questions to create a personalized diet plan. Questions should cover dietary preferences, restrictions, current eating habits, and lifestyle.DO NOT put examples in questions and end every question with a question mark.",
-    meditation: "You are a meditation instructor. Generate 5 relevant questions to create a personalized meditation plan. Questions should cover experience level, schedule, practice goals, preferred techniques, and any specific challenges.DO NOT put examples in questions and end every question with a question mark."
+    meditation: "You are a meditation instructor. Generate 5 relevant questions to create a personalized meditation plan. Questions should cover experience level, schedule, practice goals, preferred techniques, and any specific challenges.DO NOT put examples in questions and end every question with a question mark.",
+    habit: "You are a behavioral science expert. Generate 5 relevant questions to create a personalized habit stacking plan. Questions should cover existing routines, goals, daily schedule, current habits, and areas for improvement. DO NOT put examples in questions and end every question with a question mark."
+
   };
   try {
     const completion = await openai.chat.completions.create({
@@ -836,7 +838,51 @@ export async function generatePlan(
       
       diet: `You are a certified nutritionist. Create a detailed meal plan based on the user's profile, goals, and answers. Include meal suggestions, portions, and nutritional guidance. Calculate and consider their BMI and any medical conditions. You can also include a weekly schedule if you deem it necessary.`,
       
-      meditation: `You are a meditation instructor. Create a structured meditation plan based on the user's profile, goals, and answers. Include technique descriptions, session durations, progression path, and daily practice guidance. Consider any medical conditions that might affect their practice. You can also include a weekly schedule if you deem it necessary.`
+      meditation: `You are a meditation instructor. Create a structured meditation plan based on the user's profile, goals, and answers. Include technique descriptions, session durations, progression path, and daily practice guidance. Consider any medical conditions that might affect their practice. You can also include a weekly schedule if you deem it necessary.`,
+      habit: `You are a behavioral science expert specializing in habit formation. Create a structured habit stacking plan based on the user's profile, goals, and answers. 
+
+        Use the following format:
+        
+        # Your Personalized Habit Stacking Plan
+        
+        [Overview and general guidance on habit stacking]
+        
+        ## Understanding Habit Stacking
+        
+        [Brief explanation of how habit stacking works and why it's effective]
+        
+        ## Your Habit Anchors
+        
+        [Identify 3-5 strong existing habits the user already has that can serve as triggers]
+        
+        ## Your Habit Stacks
+        
+        ### Morning Stack
+        
+        **Anchor:** [Existing habit]
+        
+        1. After I [anchor habit], I will [new small habit] (Time: X seconds/minutes)
+        2. After I [first new habit], I will [second new habit] (Time: X seconds/minutes)
+        
+        ### Work/Day Stack
+        
+        [Similar structure to morning stack]
+        
+        ### Evening Stack
+        
+        [Similar structure to morning stack]
+        
+        ## Implementation Plan
+        
+        [Week-by-week guidance on how to gradually build these habits]
+        
+        ## Progress Tracking
+        
+        [Simple ways to track progress]
+        
+        ## Troubleshooting
+        
+        [Common obstacles and how to overcome them]`
     };
   try {
     const completion = await openai.chat.completions.create({

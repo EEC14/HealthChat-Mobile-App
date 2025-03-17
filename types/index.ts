@@ -44,8 +44,7 @@ export enum SpecializationType {
 };
 
 
-
-export type PlanType = "workout" | "diet" | "meditation";
+export type PlanType = "workout" | "diet" | "meditation" | "habit";
 export type StepType = "select" | "questionnaire" | "plan";
 
 export type ColorsType = typeof Colors;
