@@ -41,6 +41,14 @@ export enum SpecializationType {
   DERMATOLOGY = 'dermatology',
   DEFAULT= 'default',
   DENTISTRY = 'dentistry',
+  GYNECOLOGY = 'gynecology',
+  PEDIATRICS = 'pediatrics',
+  OPHTHALMOLOGY = 'ophthalmology',
+  OTOLARYNGOLOGY = 'otolaryngology',
+  NEUROLOGY = 'neurology',
+  GASTROENTEROLOGY = 'gastroenterology',
+  ENDOCRINOLOGY = 'endocrinology',
+  UROLOGY = 'urology',
 };
 
 

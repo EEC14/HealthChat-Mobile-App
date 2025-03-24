@@ -39,7 +39,15 @@ const characters = {
   cardiology: { name: "Cardiology Carl", specialization: "cardiologist" },
   dermatology: { name: "Dermatology Debrah", specialization: "dermatologist" },
   default: { name: "Health Assistant", specialization: "default" },
-  dentistry: { name: "Dentist Dana", specialization: "dentistry"}
+  dentistry: { name: "Dentist Dana", specialization: "dentistry"},
+  gynecology: { name: "Gynecology Gwen", specialization: "gynecology"},
+  pediatrics: { name: "Pediatrics Peter", specialization: "pediatrics"},
+  ophthalmology: { name: "Ophthalmology Olivia", specialization: "ophthalmology"},
+  otolaryngology: { name: "Otolaryngology Owen", specialization: "otolaryngology"},
+  neurology: { name: "Neurology Nora", specialization: "neurology"},
+  gastroenterology: { name: "Gastroenterology Greg", specialization: "gastroenterology"},
+  endocrinology: { name: "Endocrinology Emma", specialization: "endocrinology"},
+  urology: { name: "Urology Ugo", specialization: "urology"},
 };
 
 function Home() {

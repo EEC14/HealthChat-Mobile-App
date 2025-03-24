@@ -68,7 +68,63 @@ const SPECIALIST_VOICES = {
       'com.apple.ttsbundle.siri_Martha_en-GB_compact'   
     ],
     android: ['en-us-x-sfg-network']
-  }
+  },
+  [SpecializationType.PEDIATRICS]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      
+    ],
+    android: ['en-us-x-tpd-network']
+  },
+  [SpecializationType.OTOLARYNGOLOGY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      
+    ],
+    android: ['en-us-x-tpd-network']
+  },
+  [SpecializationType.GASTROENTEROLOGY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      
+    ],
+    android: ['en-us-x-tpd-network']
+  },
+  [SpecializationType.UROLOGY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Arthur_en-GB_compact',    
+      'com.apple.ttsbundle.siri_Aaron_en-US_compact'      
+    ],
+    android: ['en-us-x-tpd-network']
+  },
+  [SpecializationType.GYNECOLOGY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Nicky_en-US_compact',   
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact'   
+    ],
+    android: ['en-us-x-sfg-network']
+  },
+  [SpecializationType.OPHTHALMOLOGY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Nicky_en-US_compact',   
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact'   
+    ],
+    android: ['en-us-x-sfg-network']
+  },
+  [SpecializationType.NEUROLOGY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Nicky_en-US_compact',   
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact'   
+    ],
+    android: ['en-us-x-sfg-network']
+  },
+  [SpecializationType.ENDOCRINOLOGY]: {
+    ios: [
+      'com.apple.ttsbundle.siri_Nicky_en-US_compact',   
+      'com.apple.ttsbundle.siri_Martha_en-GB_compact'   
+    ],
+    android: ['en-us-x-sfg-network']
+  },
 };
 
 const getBestVoiceForSpecialist = async (specialistType: SpecializationType) => {
@@ -129,6 +185,14 @@ const profilePictures: Record<string, any> = {
   "user": require("../../assets/images/user_default.png"),
   "Health Assistant": require("../../assets/images/nurse_naomi.png"),
   "Dentist Dana": require("../../assets/images/dentist_dana.png"),
+  "Gynecology Gwen": require("../../assets/images/gynecology_gwen.png"),
+  "Pediatrics Peter": require("../../assets/images/pediatrics_peter.png"),
+  "Ophthalmology Olivia": require("../../assets/images/ophtalmology_olivia.png"),
+  "Otoloaringology Owen": require("../../assets/images/otolaryngology_owen.png"),
+  "Neurology Nora": require("../../assets/images/neurology_nora.png"),
+  "Gastroenterology Greg": require("../../assets/images/gastroenterology_greg.png"),
+  "Endocrinology Emma": require("../../assets/images/endocrinology_emma.png"),
+  "Urology Ugo": require("../../assets/images/urology_ugo.png")
 };
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply }) => {
