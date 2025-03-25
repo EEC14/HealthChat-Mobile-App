@@ -352,11 +352,11 @@ function Home() {
     <SafeAreaView style={{ flex: 1, backgroundColor: currentColors.background }}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
         style={{ flex: 1 }}
       >
           <View style={styles.highlight}>
-            <Text style={{ fontSize: 12 }}>
+            <Text style={{ fontSize: 10 }}>
                   {t('chat.disclaimer')}
             </Text>
           </View>
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#E6F7FF",
     padding: 8,
-    borderRadius: 8,
+    borderRadius: 4,
     borderLeftWidth: 4,
     borderLeftColor: "#007BFF",
     color: "rgb(161 98 7)",
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   },
   newChatButton: {
     backgroundColor: '#007AFF',
-    padding: 10,
+    padding: 5,
     borderRadius: 8,
     margin: 10,
   },

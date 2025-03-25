@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   joinButtonText: {
-    color: '#FFF',
+    color: '#000000',
     fontSize: 18,
     fontWeight: '600',
   },

@@ -19,7 +19,7 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
         backgroundColor: "#dbeafe",
         borderWidth: 1,
         borderColor: "#bfdbfe",
-        borderRadius: 14,
+        borderRadius: 10,
         padding: 8,
         marginHorizontal: 10,
         flexDirection: "row",
@@ -39,7 +39,7 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
         }}
       >
         <View style={{ flex: 1, marginRight: 0 }}>
-          <Text style={{ color: "#1e3a8a", fontSize: 14 }}>
+          <Text style={{ color: "#1e3a8a", fontSize: 10 }}>
           <Text style={{ fontWeight: "bold" }}>{t('chat.limit.freeLimit')}</Text>
           {remainingMessages} {t('chat.limit.remaining')}
           </Text>
@@ -54,7 +54,7 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
             <Text
               style={{
                 color: "#2563eb",
-                fontSize: 13,
+                fontSize: 8,
                 fontWeight: "500",
               }}
             >
@@ -62,7 +62,7 @@ export const ChatLimit: React.FC<ChatLimitProps> = ({ remainingMessages }) => {
             </Text>
             <FontAwesome6
               name="crown"
-              size={20}
+              size={12}
               color="gold"
               style={{ marginLeft: 0 }}
             />
