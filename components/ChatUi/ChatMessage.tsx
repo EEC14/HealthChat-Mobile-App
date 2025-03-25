@@ -191,7 +191,7 @@ const profilePictures: Record<string, any> = {
   "Otoloaringology Owen": require("../../assets/images/otolaryngology_owen.png"),
   "Neurology Nora": require("../../assets/images/neurology_nora.png"),
   "Gastroenterology Greg": require("../../assets/images/gastroenterology_greg.png"),
-  "Endocrinology Emma": require("../../assets/images/endocrinology_emma.png"),
+  "Endocrinology Emma": require("../../assets/images/endorcinology_emma.png"),
   "Urology Ugo": require("../../assets/images/urology_ugo.png")
 };
 

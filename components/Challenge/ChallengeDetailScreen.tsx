@@ -8,7 +8,8 @@ import {
   Alert,
   TextInput,
   ScrollView,
-  Modal
+  Modal,
+  TouchableOpacity
 } from 'react-native';
 import { Challenge } from "../../types/challenge";
 import { doc, getDoc } from "firebase/firestore";
@@ -19,6 +20,8 @@ import { Theme, useTheme } from '@/context/ThemeContext';
 import { db, auth } from "@/firebase";
 import { Badge } from "../../types/badge";
 import { trackChallengeCompletion, BADGES } from '../../utils/badgeService';
+import { CreateCommunityScreen } from './CreateCommunityScreen';
+
 interface ChallengeDetailScreenProps {
   challengeId: string;
   onBack: () => void;
@@ -32,6 +35,7 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
   const [progressInput, setProgressInput] = useState<string>('');
   const [newBadgesEarned, setNewBadgesEarned] = useState<string[]>([]);
   const [showBadgeModal, setShowBadgeModal] = useState<boolean>(false);
+  const [showShareScreen, setShowShareScreen] = useState<boolean>(false);
 
   const fetchChallengeDetail = async () => {
     try {
@@ -76,41 +80,32 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
         return;
       }
       try {
-        console.log(`[DEBUG] Updating progress to: ${parsedProgress}, goal: ${challenge.goal}`);
         await updateChallengeProgress(challenge.id, parsedProgress);
         
         // Check if challenge is completed
         if (parsedProgress >= challenge.goal) {
-          console.log(`[DEBUG] Challenge completed! Goal reached.`);
           const currentUser = auth.currentUser;
           
           // Track the completion and check for new badges if user is logged in
           if (currentUser) {
-            console.log(`[DEBUG] User authenticated: ${currentUser.uid}`);
-            console.log(`[DEBUG] Calling trackChallengeCompletion`);
             const earnedBadges = await trackChallengeCompletion(currentUser.uid);
-            console.log(`[DEBUG] Returned from trackChallengeCompletion with badges:`, earnedBadges);
             
             if (earnedBadges.length > 0) {
-              console.log(`[DEBUG] New badges earned:`, earnedBadges);
               setNewBadgesEarned(earnedBadges);
               setShowBadgeModal(true);
             } else {
-              console.log(`[DEBUG] No new badges earned`);
               // No new badges, just delete the challenge
               await deleteChallenge(challenge.id);
               Alert.alert("Challenge Completed!", "This challenge has been completed and will be removed.");
               onBack();
             }
           } else {
-            console.log(`[DEBUG] User not authenticated, skipping badge checks`);
             // User not logged in, just delete the challenge
             await deleteChallenge(challenge.id);
             Alert.alert("Challenge Completed!", "This challenge has been completed and will be removed.");
             onBack();
           }
         } else {
-          console.log(`[DEBUG] Progress updated but challenge not completed yet`);
           setChallenge({ ...challenge, currentProgress: parsedProgress });
           Alert.alert("Success", "Progress updated successfully.");
         }
@@ -131,6 +126,25 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
     }
     onBack();
   };
+
+  const handleShareToCommunity = () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      Alert.alert('Authentication Required', 'Please log in to share this challenge.');
+      return;
+    }
+    
+    setShowShareScreen(true);
+  };
+
+  if (showShareScreen) {
+    return (
+      <CreateCommunityScreen
+        challengeId={challengeId}
+        onBack={() => setShowShareScreen(false)}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -171,6 +185,13 @@ const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ challenge
           <Button title="Update" onPress={handleProgressUpdate} color={colors.primary} />
         </View>
       </View>
+
+      <TouchableOpacity
+        style={[styles.shareButton, { backgroundColor: colors.secondary }]}
+        onPress={handleShareToCommunity}
+      >
+        <Text style={styles.shareButtonText}>Share to Community</Text>
+      </TouchableOpacity>
 
       <View style={styles.backButtonContainer}>
         <Button title="Back" onPress={onBack} color={colors.secondary} />
@@ -281,6 +302,17 @@ const styles = StyleSheet.create({
   },
   updateButton: {
     marginTop: 5,
+  },
+  shareButton: {
+    marginVertical: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  shareButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   backButtonContainer: {
     marginTop: 10,

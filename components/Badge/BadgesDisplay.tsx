@@ -17,10 +17,7 @@ const BadgesDisplay: React.FC<BadgesDisplayProps> = ({ userBadges }) => {
     const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
   
-    console.log("[DEBUG] BadgesDisplay received userBadges:", userBadges);
-  
     if (!userBadges) {
-      console.log("[DEBUG] No userBadges data available");
       return (
         <View style={styles.container}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Your Badges</Text>
@@ -31,12 +28,7 @@ const BadgesDisplay: React.FC<BadgesDisplayProps> = ({ userBadges }) => {
       );
     }
   
-    console.log("[DEBUG] Rendering badges with data:", Object.keys(userBadges.badges).map(id => 
-      `${id}: ${userBadges.badges[id].earned ? 'earned' : 'not earned'}`
-    ));
-  
     const handleBadgePress = (badge: Badge) => {
-      console.log(`[DEBUG] Badge pressed: ${badge.id}`);
       setSelectedBadge(badge);
       setModalVisible(true);
     };
