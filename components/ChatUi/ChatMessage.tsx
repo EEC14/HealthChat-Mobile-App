@@ -11,6 +11,7 @@ import { characters } from "@/utils/OpenAi";
 interface ChatMessageProps {
   message: Message;
   onReply: (message: Message) => void;
+  motivationalMode?: boolean;
 }
 const SPECIALIST_VOICES = {
   [SpecializationType.DEFAULT]: {
@@ -195,7 +196,7 @@ const profilePictures: Record<string, any> = {
   "Urology Ugo": require("../../assets/images/urology_ugo.png")
 };
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply, motivationalMode = false }) => {
   const { user } = useAuthContext();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { theme } = useTheme();
@@ -281,15 +282,19 @@ const renderReplyPreview = () => {
     <View style={[
       styles.messageContainer,
       isBot ? styles.botMessage : styles.userMessage,
-      message.isPartial && styles.partialMessage
+      message.isPartial && styles.partialMessage,
+      motivationalMode && styles.motivationalMessage
     ]}>
-      <Image 
-        source={getProfilePicture()} 
-        style={styles.profilePicture} 
-      />
+        {!motivationalMode && (
+          <Image 
+            source={getProfilePicture()} 
+            style={styles.profilePicture} 
+          />
+        )}
       <View style={[
         styles.textContainer,
-        isBot ? styles.botContainer : styles.userContainer
+        isBot ? styles.botContainer : styles.userContainer,
+        motivationalMode && styles.motivationalTextContainer
       ]}>
         {/* Character name for bot messages */}
         {isBot && (
@@ -406,6 +411,12 @@ const styles = StyleSheet.create({
   },
   partialMessage: {
     opacity: 0.8
+  },
+  motivationalMessage: {
+    marginLeft: 10,
+  },
+  motivationalTextContainer: {
+    maxWidth: "90%",
   }
 });
 const replyStyles = StyleSheet.create({

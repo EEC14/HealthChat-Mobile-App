@@ -341,6 +341,24 @@ Additional guidelines:
 8. Include sources for your infromation in the answer.
 9. When possible include natural remedies in your answer. Indicate them with "Natural Remedy (make sure to consult a professional):".`;
 
+const MOTIVATIONAL_TRAINER_PROMPT = `
+You are now a motivational fitness and health trainer.
+Your job is to be enthusiastic, encouraging, and supportive.
+Focus on:
+1. Providing positive reinforcement
+2. Offering actionable fitness and health advice
+3. Using motivational language and personal encouragement
+4. Keeping responses concise and energetic
+5. Adding occasional motivational quotes
+6. Using emojis sparingly to add personality
+7. Acknowledging user's efforts and progress
+8. Avoiding medical diagnoses or overly technical language
+
+Your tone should be casual, friendly, and energizing, like a personal trainer.
+
+${COMMON_RULES}
+`;
+
 let selectedModel = "perplexity-online"; 
 
 export function selectAIModel(user: ExtendedUserProfile, chosenModel?: ModelName): ModelName {
@@ -392,7 +410,8 @@ export async function getAIResponse(
   currentSpecialist?: SpecializationType,
   isNewChat: boolean = false,
   selectedModel?: string,
-  onStreamUpdate?: (chunk: string) => void
+  onStreamUpdate?: (chunk: string) => void,
+  motivationalMode: boolean = false
 ): Promise<{ responseText: string; characterName: string; updatedHistory: ChatMessage[]; newSpecialist?: SpecializationType }>  {
   if (selectedModel === undefined || !isValidModel(selectedModel)) {
     console.error(`Invalid model selected: ${selectedModel}`);
@@ -408,13 +427,12 @@ export async function getAIResponse(
     }
 
     const character = characters[selectedSpecialization];
-    console.log('Debug - Final character selected:', character?.name);
     if (!character) {;
       selectedSpecialization = SpecializationType.GENERAL;
     }
 
     const safeCharacter = characters[selectedSpecialization];
-    const systemPrompt = character.systemPrompt;    
+    const systemPrompt = motivationalMode ? MOTIVATIONAL_TRAINER_PROMPT : character.systemPrompt;    
     const fullPrompt = `${systemPrompt}\n${COMMON_RULES}`;
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: "system", content: fullPrompt },
@@ -426,7 +444,6 @@ export async function getAIResponse(
     switch (model.provider) {
       case 'perplexity': {
         try {
-          console.log("Making Perplexity API request (non-streaming)");
           
           const response = await fetch(`${perplexity.baseURL}/chat/completions`, {
             method: 'POST',
@@ -459,7 +476,6 @@ export async function getAIResponse(
           }
           
           const data = await response.json() as PerplexityResponseData;
-          console.log("Perplexity response received:", data.id);
           
           // Get initial response text
           let responseText = data.choices[0]?.message?.content || 'No response generated';
@@ -471,7 +487,6 @@ export async function getAIResponse(
             
             // If there are no citation markers but we have citations, we need to add them
             if (!hasCitationMarkers) {
-              console.log("No citation markers found in text, adding references section.");
               responseText += '\n\n## References\n';
               data.citations.forEach((citation, index) => {
                 responseText += `[${index + 1}] ${citation}\n`;
@@ -479,7 +494,6 @@ export async function getAIResponse(
             } 
             // If there are citation markers, make sure they link to the actual URLs
             else if (!responseText.toLowerCase().includes('references')) {
-              console.log("Citation markers found but no references section, adding one.");
               responseText += '\n\n## References\n';
               data.citations.forEach((citation, index) => {
                 responseText += `[${index + 1}] [${citation}](${citation})\n`;
@@ -487,8 +501,6 @@ export async function getAIResponse(
             }
             // If there's already a references section, check if it includes clickable links
             else {
-              console.log("Citations and references section found, ensuring links are clickable.");
-              // We'll try to enhance any existing references section to make links clickable
               const referencesRegex = /## references\s+((?:\[\d+\](?:\s+|\s*[^[]+)\s*\n?)+)/i;
               const referencesMatch = responseText.match(referencesRegex);
               
@@ -1088,11 +1100,6 @@ export function parseWorkoutPlan(markdownPlan: string): AudioCue[] {
           .replace(/"duration":\s*"(\d+)"/g, '"duration": $1')
           .replace(/"rest":\s*"(\d+)"/g, '"rest": $1')
           .replace(/(\d+)-(\d+)/g, '$1');  // Take the first number from a range like "10-15"
-        
-        // For debugging
-        console.log('Sanitized JSON:', sanitizedJson);
-        
-        // Parse the sanitized JSON
         const exercise = JSON.parse(sanitizedJson);
         
         // Create audio cues only if we have the minimum required fields

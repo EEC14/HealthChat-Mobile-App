@@ -31,6 +31,7 @@ import { SpecializationType } from "@/types";
 import { Message } from "@/types";
 import { useTranslation } from 'react-i18next';
 import { AntDesign } from '@expo/vector-icons';
+
 const characters = {
   general: { name: "Dr. Dave", specialization: "general practitioner" },
   orthopedic: { name: "Ortho Oscar", specialization: "orthopedic specialist" },
@@ -67,6 +68,7 @@ function Home() {
   const flatListRef = useRef<FlatList>(null);
   const [isModelModalVisible, setModelModalVisible] = useState(false);
   const [selectedModel, setSelectedModel] = useState<"perplexity-online"|"gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3">("perplexity-online");
+  const [motivationalMode, setMotivationalMode] = useState(false);
 
   const [isNewChat, setIsNewChat] = useState(true);
   const { t } = useTranslation();
@@ -133,7 +135,6 @@ function Home() {
     
     setInput('');
   };
-
 
   const handleModelSelection = (model: "perplexity-online"|"gpt-4o-mini" | "gpt-4o" | "claude-3-5-sonnet" | "llama-3") => {
     setSelectedModel(model);
@@ -209,7 +210,8 @@ function Home() {
             }
             return newMessages;
           });
-        }
+        },
+        motivationalMode
       );
       setMessages(prev => {
         const newMessages = [...prev];
@@ -352,7 +354,7 @@ function Home() {
     <SafeAreaView style={{ flex: 1, backgroundColor: currentColors.background }}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
         style={{ flex: 1 }}
       >
           <View style={styles.highlight}>
@@ -366,7 +368,7 @@ function Home() {
         <View style={{ flex: 1 }}>
           {renderSpecialistPicker()}
           {renderModelPicker()}
-        {user?.isDeluxe ? (
+          {user?.isDeluxe && !motivationalMode ? (
             <View style={styles.customizationContainer}>
               <TouchableOpacity
                 style={styles.customButton}
@@ -388,6 +390,31 @@ function Home() {
               >
                 <Text style={styles.customButtonText}>New Chat</Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.customButton, motivationalMode ? styles.activeButton : {}]}
+                onPress={() => setMotivationalMode(prev => !prev)}
+              >
+                <Text style={styles.customButtonText}>
+                  {motivationalMode ? "Trainer Mode" : "Doctor Mode"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : user?.isDeluxe && motivationalMode ? (
+            <View style={styles.customizationContainer}>
+              <TouchableOpacity
+                style={styles.customButton}
+                onPress={handleNewChat}
+              >
+                <Text style={styles.customButtonText}>New Chat</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.customButton, styles.activeButton]}
+                onPress={() => setMotivationalMode(prev => !prev)}
+              >
+                <Text style={styles.customButtonText}>Trainer Mode</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity
@@ -405,6 +432,7 @@ function Home() {
               <ChatMessage 
                 message={item}
                 onReply={handleReply}
+                motivationalMode={motivationalMode}
               />
             )}
             contentContainerStyle={{ padding: 10, paddingBottom: 120 }}
@@ -451,6 +479,9 @@ function Home() {
 }
 
 const styles = StyleSheet.create({
+  activeButton: {
+    backgroundColor: '#00AA00',
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",

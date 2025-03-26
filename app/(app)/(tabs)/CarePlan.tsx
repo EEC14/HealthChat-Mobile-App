@@ -127,8 +127,6 @@ const CarePlan: React.FC = () => {
       return;
     }
     
-    console.log('Plan modified, updating state');
-    
     // First update the plan text
     setGeneratedPlan(updatedPlan);
     
