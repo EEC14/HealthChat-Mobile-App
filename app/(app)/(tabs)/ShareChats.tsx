@@ -25,7 +25,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { FontAwesome } from "@expo/vector-icons";
 import ExternalLinkHandler from "@/components/Layout/ExternalLinkHandler";
 import { useTranslation } from 'react-i18next';
-
+import ReferralPromoCard from "@/components/ReferralPromoCard";
 const SkeletonItem = ({ theme }: { theme: "light" | "dark" }) => {
   const fadeAnim = React.useRef(new Animated.Value(0.5)).current;
   const { t } = useTranslation();
@@ -310,6 +310,22 @@ const SharedChatsList = () => {
     </View>
   );
 
+  const renderFooter = () => (
+    <>
+      {chats.length === 0 && (
+        <View style={styles.emptyStateContainer}>
+          <Text style={[styles.emptyStateTitle, { color: currentColors.textPrimary }]}>
+            No Shared Chats Yet
+          </Text>
+          <Text style={[styles.emptyStateSubtitle, { color: currentColors.textSecondary }]}>
+            Share your interesting conversations to earn points
+          </Text>
+        </View>
+      )}
+      <ReferralPromoCard />
+    </>
+  );
+
   function renderChatItem({ item }: { item: Chat }) {
     return (
       <>
@@ -441,6 +457,7 @@ const SharedChatsList = () => {
         data={chats}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
         renderItem={({ item }) =>
           renderChatItem({
             item,

@@ -11,6 +11,7 @@ import { PurchaseProvider } from "@/context/PurchaseContext";
 import i18n from '../i18n/config';
 import { I18nextProvider } from 'react-i18next';
 import 'react-native-gesture-handler';
+import { ReferralProvider } from "@/context/ReferralContext"; // Import our new provider
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -59,7 +60,9 @@ export default function RootLayout() {
         <NotificationProvider>
         <I18nextProvider i18n={i18n}>
             <ThemeProvider>
-              <MainLayout />
+              <ReferralProvider>
+                <MainLayout />
+              </ReferralProvider>
             </ThemeProvider>
           </I18nextProvider>
         </NotificationProvider>
