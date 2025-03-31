@@ -16,6 +16,7 @@ import {
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
 import { PlanType } from '@/types';
 import { SectionEditor } from './SectionEditor';
+import { RecoveryToolbarExtension } from '../Recovery/RecoveryToolbarExtension';
 
 interface PlanModifierToolbarProps {
   planType: PlanType;
@@ -45,6 +46,82 @@ export const PlanModifierToolbar: React.FC<PlanModifierToolbarProps> = ({
     setIsAddSectionModalVisible(false);
     setSectionTitle('');
     setSectionContent('');
+  };
+
+  const handleAddRecoveryActivity = (type: string) => {
+    // Get activity details based on type
+    const activityDetails = getActivityDetails(type);
+    
+    // Format the activity as markdown and add it to the plan
+    const newActivity = `
+  ### ${activityDetails.title}
+  - **Duration:** ${activityDetails.duration} minutes
+  - **Description:** ${activityDetails.description}
+  `;
+  
+    // Find the "Recovery Activities" section to add after
+    const lines = currentPlan.split('\n');
+    let recoveryActivitiesIndex = -1;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('## Recovery Activities')) {
+        recoveryActivitiesIndex = i;
+        break;
+      }
+    }
+    
+    if (recoveryActivitiesIndex >= 0) {
+      // Find the end of the recovery activities section
+      let sectionEndIndex = lines.length - 1;
+      for (let i = recoveryActivitiesIndex + 1; i < lines.length; i++) {
+        if (lines[i].startsWith('## ')) {
+          sectionEndIndex = i - 1;
+          break;
+        }
+      }
+      
+      // Insert the new activity before the next section
+      lines.splice(sectionEndIndex + 1, 0, newActivity);
+      onPlanChange(lines.join('\n'));
+    } else {
+      // If no recovery activities section found, just append to the end
+      onPlanChange(currentPlan + newActivity);
+    }
+  };
+  
+  const getActivityDetails = (type: string): { title: string; duration: number; description: string } => {
+    switch (type) {
+      case 'stretching':
+        return {
+          title: 'Full Body Stretching Routine',
+          duration: 15,
+          description: 'Gentle static stretches for whole body'
+        };
+      case 'foam_rolling':
+        return {
+          title: 'Foam Rolling Session',
+          duration: 10,
+          description: 'Focus on major muscle groups with emphasis on trigger points'
+        };
+      case 'contrast_therapy':
+        return {
+          title: 'Contrast Shower',
+          duration: 10,
+          description: '30 seconds cold, 1 minute warm, repeat 5 times'
+        };
+      case 'meditation':
+        return {
+          title: 'Recovery Meditation',
+          duration: 10,
+          description: 'Guided relaxation focused on muscle recovery'
+        };
+      default:
+        return {
+          title: 'Recovery Activity',
+          duration: 15,
+          description: 'General recovery activity'
+        };
+    }
   };
 
   const adjustIntensity = (direction: 'increase' | 'decrease') => {
@@ -264,6 +341,41 @@ export const PlanModifierToolbar: React.FC<PlanModifierToolbarProps> = ({
             }
           }
         }
+
+        else if (planType === 'recovery') {
+          // Handle recovery score adjustments
+          if (line.includes('Recovery Score:')) {
+            const scoreMatch = line.match(/(\d+)\/100/);
+            if (scoreMatch) {
+              let currentScore = parseInt(scoreMatch[1]);
+              let newScore;
+              
+              if (direction === 'increase') {
+                newScore = Math.min(100, currentScore + 10);
+              } else {
+                newScore = Math.max(0, currentScore - 10);
+              }
+              
+              // Replace the score
+              lines[i] = line.replace(/(\d+)\/100/, `${newScore}/100`);
+              updated = true;
+            }
+          }
+          
+          // Handle recovery activity durations
+          if (line.includes('Duration:')) {
+            const durationMatch = line.match(/Duration: (\d+)/);
+            if (durationMatch) {
+              const currentDuration = parseInt(durationMatch[1]);
+              const newDuration = direction === 'increase' 
+                ? currentDuration + 5 
+                : Math.max(5, currentDuration - 5);
+              
+              lines[i] = line.replace(/Duration: \d+/, `Duration: ${newDuration}`);
+              updated = true;
+            }
+          }
+        }
       }
       
       if (!updated) {
@@ -346,6 +458,9 @@ export const PlanModifierToolbar: React.FC<PlanModifierToolbarProps> = ({
           </TouchableOpacity>
         </View>
       </View>
+      {planType === 'recovery' && (
+      <RecoveryToolbarExtension onAddActivity={handleAddRecoveryActivity} />
+      )}
 
       <Modal
         visible={isAddSectionModalVisible}

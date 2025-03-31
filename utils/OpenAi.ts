@@ -489,7 +489,8 @@ export async function getAIResponse(
             if (!hasCitationMarkers) {
               responseText += '\n\n## References\n';
               data.citations.forEach((citation, index) => {
-                responseText += `[${index + 1}] ${citation}\n`;
+                // Make sure links are properly formatted for Markdown parsing
+                responseText += `[${index + 1}] [${citation}](${citation})\n`;
               });
             } 
             // If there are citation markers, make sure they link to the actual URLs

@@ -7,6 +7,7 @@ import { Colors } from "@/constants/Colors";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { Message, SpecializationType } from "@/types";
 import { characters } from "@/utils/OpenAi";
+import Markdown from 'react-native-markdown-display';
 
 interface ChatMessageProps {
   message: Message;
@@ -304,9 +305,13 @@ const renderReplyPreview = () => {
         )}
         {renderReplyPreview()}
         {/* Message text */}
-        <Text style={styles.text}>
+        <Markdown style={{
+          body: styles.text,
+          link: { color: '#3498db' }, // Blue color for links
+          strong: { fontWeight: 'bold' }
+        }}>
           {message.content}
-        </Text>
+        </Markdown>
 
         {/* Bottom row with timestamp and speaker */}
         <View style={styles.bottomRow}>

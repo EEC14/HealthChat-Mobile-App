@@ -52,7 +52,7 @@ export enum SpecializationType {
 };
 
 
-export type PlanType = "workout" | "diet" | "meditation" | "habit";
+export type PlanType = "workout" | "diet" | "meditation" | "habit" | "recovery";
 export type StepType = "select" | "questionnaire" | "plan";
 
 export type ColorsType = typeof Colors;
@@ -63,9 +63,9 @@ export interface ExtendedUserProfile extends UserProfile {
 export interface SavedPlan {
   id: string;
   userId: string;
-  type: PlanType;
-  name: string; 
+  type: 'workout' | 'diet' | 'meditation' | 'habit' | 'recovery';
+  name: string;
   plan: string;
-  audioCues?: AudioCue[];
   createdAt: number;
+  audioCues?: AudioCue[];
 }

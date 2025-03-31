@@ -66,6 +66,7 @@
     "react-native-responsive-screen": "^1.4.2",
     "react-native-safe-area-context": "^5.0.0",
     "react-native-screens": "~4.1.0",
+    "react-native-svg": "^15.11.2",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "replicate": "^1.0.1",

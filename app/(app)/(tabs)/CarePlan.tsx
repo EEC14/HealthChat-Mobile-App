@@ -31,6 +31,17 @@ import { VoiceGuidancePlayer } from "@/components/VoiceGuidancePlayer";
 import { SavedPlansModal } from "@/components/DietPlan/SavedPlansModal";
 import { PlanModifierToolbar } from "@/components/DietPlan/PlanModifierToolbar";
 import { savePlan, updatePlan } from "@/utils/planStorage";
+import { RecoveryScoreCard } from '../../../components/Recovery/RecoveryScoreCard';
+import { generateRecoveryPlan, generateRecoveryPlanQuestions } from '../../../utils/recoveryPlanGenerator';
+
+const getRecoveryScoreFromPlan = (plan: string): number => {
+  // Extract score from the plan text
+  const scoreMatch = plan.match(/Your Recovery Score: (\d+)\/100/);
+  if (scoreMatch && scoreMatch[1]) {
+    return parseInt(scoreMatch[1]);
+  }
+  return 70;
+};
 
 const CarePlan: React.FC = () => {
   const { user } = useAuthContext();
@@ -54,6 +65,14 @@ const CarePlan: React.FC = () => {
     if (!goals.trim()) return;
     setIsLoading(true);
     try {
+      if (planType === "recovery") {
+        // For recovery, we can use pre-defined questions
+        const recoveryQuestions = generateRecoveryPlanQuestions();
+        setQuestions(recoveryQuestions);
+        setStep("questionnaire");
+        setIsLoading(false);
+        return;
+      }
       const generatedQuestions = await generatePlanQuestions(planType!, goals);
 
       setQuestions(generatedQuestions);
@@ -80,6 +99,13 @@ const CarePlan: React.FC = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
+      if (planType === "recovery") {
+        const plan = generateRecoveryPlan(goals, answers);
+        setGeneratedPlan(plan);
+        setStep("plan");
+        setIsLoading(false);
+        return;
+      }
   
       const plan = await generatePlan(planType!, goals, answers);
       if (planType === 'workout') {
@@ -400,12 +426,11 @@ const CarePlan: React.FC = () => {
   const renderContent = () => {
     if (step === "select") {
       return (
-        <View
-          style={[
-            styles.selectContainer,
-            { backgroundColor: currentColors.background },
-          ]}
-        >
+      <ScrollView
+        style={{ backgroundColor: currentColors.background, flex: 1 }}
+        contentContainerStyle={styles.selectContainer}
+        showsVerticalScrollIndicator={true}
+      >
           <View style={[styles.card, { backgroundColor: currentColors.warn }]}>
             <View style={styles.highlight}>
               <Text>
@@ -556,7 +581,43 @@ const CarePlan: React.FC = () => {
               Build sustainable habits with linked routines
             </Text>
           </TouchableOpacity>
-        </View>
+          <TouchableOpacity
+              onPress={() => {
+                setPlanType("recovery");
+                setStep("questionnaire");
+              }}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: currentColors.surface,
+                  borderWidth: 1,
+                  borderColor: currentColors.border,
+                },
+              ]}
+            >
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons
+                  name="heart-pulse"
+                  size={24}
+                  color={currentColors.textPrimary}
+                />
+              </View>
+              <Text
+                style={[styles.cardTitle, { color: currentColors.textPrimary }]}
+              >
+                Recovery Optimization
+              </Text>
+              <Text
+                style={[
+                  styles.cardSubtitle,
+                  { color: currentColors.textSecondary },
+                ]}
+              >
+                Optimize rest and recovery between workouts
+              </Text>
+            </TouchableOpacity>
+        <View style={{ height: 30 }} />
+      </ScrollView>
       );
     };
 
@@ -577,9 +638,10 @@ const CarePlan: React.FC = () => {
                   >
                     What are your{" "}
                     {planType === "workout" ? "Workout" : 
-                      planType === "diet" ? "Diet" : 
-                      planType === "meditation" ? "Meditation" : 
-                      "Habit Stacking"} goals?
+                    planType === "diet" ? "Diet" : 
+                    planType === "meditation" ? "Meditation" : 
+                    planType === "habit" ? "Habit Stacking":
+                    "Recovery"} goals?
                   </Text>
                   <TextInput
                     style={[
@@ -665,8 +727,6 @@ const CarePlan: React.FC = () => {
       );
     }
 
-    // Replace the plan rendering section in the renderContent function with:
-
 if (step === "plan") {
   return (
     <View style={{flex: 1, position: 'relative'}}>
@@ -681,7 +741,8 @@ if (step === "plan") {
           Your {planType === "workout" ? "Workout" : 
             planType === "diet" ? "Diet" : 
             planType === "meditation" ? "Meditation" : 
-            "Habit Stacking"} Plan
+            planType === "habit" ? "Habit Stacking":
+            "Recovery"} Plan
         </Text>
         
         {/* Add Voice Guidance Player for workout plans */}
@@ -701,6 +762,14 @@ if (step === "plan") {
             {generatedPlan}
           </Markdown>
         )}
+
+        {planType === 'recovery' && (
+          <RecoveryScoreCard 
+            score={getRecoveryScoreFromPlan(generatedPlan)} 
+            date={new Date()} 
+            colors={currentColors}
+          />
+        )}
           
         <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
           <AntDesign name="arrowleft" size={16} color="#000" />
@@ -709,6 +778,9 @@ if (step === "plan") {
         
         {/* Add extra space at the bottom */}
         <View style={{ height: 30 }} />
+        {planType === 'recovery' && (
+          <View style={{ height: 30 }} />
+        )}
       </ScrollView>
       
       {/* Position the toolbar absolutely */}
@@ -899,9 +971,9 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   selectContainer: {
-    flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
+    justifyContent: "flex-start", // Keep this
+    alignItems: "center", // Keep this
+    paddingVertical: 10, // Add padding for better spacing
   },
   card: {
     width: "90%",
