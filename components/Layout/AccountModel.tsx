@@ -493,51 +493,95 @@ const HeaderRight = React.memo(({}: {}) => {
                         </View>
                         
                         {/* How It Works Section */}
-                        <Text style={[styles.howItWorksTitle, { color: currentColors.textPrimary }]}>
-                          How It Works
-                        </Text>
-                        
-                        <View style={styles.stepContainer}>
-                          <View style={[styles.stepBadge, { backgroundColor: currentColors.primary }]}>
-                            <Text style={[styles.stepNumber, { color: currentColors.secondary }]}>1</Text>
+                          <Text style={[styles.howItWorksTitle, { color: currentColors.textPrimary }]}>
+                            How It Works
+                          </Text>
+
+                          <View style={styles.stepContainer}>
+                            <View style={[styles.stepBadge, { backgroundColor: currentColors.primary }]}>
+                              <Text style={[styles.stepNumber, { color: currentColors.secondary }]}>1</Text>
+                            </View>
+                            <View style={styles.stepTextContainer}>
+                              <Text style={[styles.stepTitle, { color: currentColors.textPrimary }]}>
+                                Share Your Code
+                              </Text>
+                              <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
+                                Share your unique referral code with friends and family via social media or messaging apps.
+                              </Text>
+                            </View>
                           </View>
-                          <View style={styles.stepTextContainer}>
-                            <Text style={[styles.stepTitle, { color: currentColors.textPrimary }]}>
-                              Share Your Code
+
+                          <View style={styles.stepContainer}>
+                            <View style={[styles.stepBadge, { backgroundColor: currentColors.primary }]}>
+                              <Text style={[styles.stepNumber, { color: currentColors.secondary }]}>2</Text>
+                            </View>
+                            <View style={styles.stepTextContainer}>
+                              <Text style={[styles.stepTitle, { color: currentColors.textPrimary }]}>
+                                Friends Sign Up
+                              </Text>
+                              <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
+                                When they create an account using your code, they'll receive a 1-week Deluxe trial and 50 bonus points.
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.stepContainer}>
+                            <View style={[styles.stepBadge, { backgroundColor: currentColors.primary }]}>
+                              <Text style={[styles.stepNumber, { color: currentColors.secondary }]}>3</Text>
+                            </View>
+                            <View style={styles.stepTextContainer}>
+                              <Text style={[styles.stepTitle, { color: currentColors.textPrimary }]}>
+                                Earn Rewards
+                              </Text>
+                              <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
+                                You'll earn 100 points for each friend who signs up with your code. Refer 10 friends to get Pro access for 1 month, or 50 friends for Deluxe access!
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Rewards Explanation Box */}
+                          <View style={[
+                            styles.rewardsBox, 
+                            { 
+                              backgroundColor: currentColors.primary + '10', 
+                              borderColor: currentColors.primary + '30'
+                            }
+                          ]}>
+                            <Text style={[styles.rewardsBoxTitle, { color: currentColors.textPrimary }]}>
+                              Referral Rewards
                             </Text>
-                            <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
-                              Share your unique referral code with friends and family via social media or messaging apps.
+                            
+                            <View style={styles.rewardItem}>
+                              <Text style={[styles.rewardLabel, { color: currentColors.textPrimary }]}>
+                                For your friends:
+                              </Text>
+                              <Text style={[styles.rewardValue, { color: currentColors.textSecondary }]}>
+                                • 1-week Deluxe membership trial
+                              </Text>
+                              <Text style={[styles.rewardValue, { color: currentColors.textSecondary }]}>
+                                • 50 bonus points
+                              </Text>
+                            </View>
+                            
+                            <View style={[styles.rewardItem, { marginTop: 8 }]}>
+                              <Text style={[styles.rewardLabel, { color: currentColors.textPrimary }]}>
+                                For you:
+                              </Text>
+                              <Text style={[styles.rewardValue, { color: currentColors.textSecondary }]}>
+                                • 100 points per successful referral
+                              </Text>
+                              <Text style={[styles.rewardValue, { color: currentColors.textSecondary }]}>
+                                • Pro account for 1 month (10 referrals)
+                              </Text>
+                              <Text style={[styles.rewardValue, { color: currentColors.textSecondary }]}>
+                                • Deluxe account for 1 month (50 referrals)
+                              </Text>
+                            </View>
+                            
+                            <Text style={[styles.rewardNote, { color: currentColors.textSecondary }]}>
+                              Note: Each user can only use one referral code, either during signup or later in their account.
                             </Text>
                           </View>
-                        </View>
-                        
-                        <View style={styles.stepContainer}>
-                          <View style={[styles.stepBadge, { backgroundColor: currentColors.primary }]}>
-                            <Text style={[styles.stepNumber, { color: currentColors.secondary }]}>2</Text>
-                          </View>
-                          <View style={styles.stepTextContainer}>
-                            <Text style={[styles.stepTitle, { color: currentColors.textPrimary }]}>
-                              Friends Sign Up
-                            </Text>
-                            <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
-                              When they create an account using your code, they'll receive bonus points.
-                            </Text>
-                          </View>
-                        </View>
-                        
-                        <View style={styles.stepContainer}>
-                          <View style={[styles.stepBadge, { backgroundColor: currentColors.primary }]}>
-                            <Text style={[styles.stepNumber, { color: currentColors.secondary }]}>3</Text>
-                          </View>
-                          <View style={styles.stepTextContainer}>
-                            <Text style={[styles.stepTitle, { color: currentColors.textPrimary }]}>
-                              Earn Rewards
-                            </Text>
-                            <Text style={[styles.stepDescription, { color: currentColors.textSecondary }]}>
-                              You'll earn points for each friend who successfully signs up with your code.
-                            </Text>
-                          </View>
-                        </View>
                       </>
                     )}
                     
@@ -922,6 +966,35 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: "center",
     justifyContent: "center",
+  },
+  rewardsBox: {
+    marginTop: 16,
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+  },
+  rewardsBoxTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  rewardItem: {
+    marginTop: 8,
+  },
+  rewardLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  rewardValue: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginLeft: 8,
+  },
+  rewardNote: {
+    fontSize: 12,
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   profileText: {
     fontWeight: "bold",

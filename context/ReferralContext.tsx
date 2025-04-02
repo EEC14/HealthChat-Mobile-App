@@ -12,10 +12,13 @@ import {
   doc, 
   getDoc, 
   serverTimestamp,
-  arrayUnion 
+  arrayUnion,
+  setDoc 
 } from 'firebase/firestore';
 import { useAuthContext } from '@/context/AuthContext';
 import { generateReferralCode } from '../utils/referralUtils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
 // Define the reward tiers
 const REWARD_TIERS = {
@@ -51,17 +54,24 @@ interface UserReferralStats {
 }
 
 interface ReferralContextType {
-  userReferralStats: UserReferralStats | null;
-  loading: boolean;
-  error: string | null;
-  referralCode: string | null;
-  rewardNotification: 'pro' | 'deluxe' | null;
-  clearRewardNotification: () => void;
-  generateNewReferralCode: () => Promise<string>;
-  applyReferralCode: (code: string) => Promise<boolean>;
-  shareReferralCode: () => Promise<void>;
-  refreshReferralData: () => Promise<void>;
-}
+    userReferralStats: UserReferralStats | null;
+    loading: boolean;
+    error: string | null;
+    referralCode: string | null;
+    rewardNotification: 'pro' | 'deluxe' | null;
+    clearRewardNotification: () => void;
+    generateNewReferralCode: () => Promise<string>;
+    applyReferralCode: (code: string) => Promise<boolean>;
+    shareReferralCode: () => Promise<void>;
+    refreshReferralData: () => Promise<void>;
+    showExpirationAlert: boolean;
+    expirationInfo: {
+      type: 'pro' | 'deluxe';
+      date: Date;
+      source: 'referral_trial' | 'referral_reward';
+    } | null;
+    handleCloseExpirationAlert: () => void;
+  }
 
 const ReferralContext = createContext<ReferralContextType | undefined>(undefined);
 
@@ -73,10 +83,17 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [error, setError] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [rewardNotification, setRewardNotification] = useState<'pro' | 'deluxe' | null>(null);
+  const [showExpirationAlert, setShowExpirationAlert] = useState<boolean>(false);
+    const [expirationInfo, setExpirationInfo] = useState<{
+    type: 'pro' | 'deluxe';
+    date: Date;
+    source: 'referral_trial' | 'referral_reward';
+    } | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchUserReferralData();
+      checkSubscriptionExpiration(user);
     } else {
       setUserReferralStats(null);
       setReferralCode(null);
@@ -84,8 +101,117 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    
+    const checkInterval = setInterval(async () => {
+      const userRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.isDeluxe && userData.deluxeExpiresAt) {
+          const expirationDate = new Date(userData.deluxeExpiresAt);
+          const now = new Date();
+          
+          if (now > expirationDate) {
+            console.log("Background check: Found expired subscription");
+            await revokeExpiredSubscription(user.uid);
+          }
+        }
+      }
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(checkInterval);
+  }, [user]);
+
   const clearRewardNotification = () => {
     setRewardNotification(null);
+  };
+
+  /**
+ * Check the user's subscription status and show expiration alerts if needed
+ */
+const checkSubscriptionExpiration = async (userData: any) => {
+    // Skip if user has no subscriptions
+    if (!userData) return;
+    if (!user) return;
+    const now = new Date();
+    let shouldShowAlert = false;
+    let expirationType: 'pro' | 'deluxe' = 'pro';
+    let expirationDate = new Date();
+    let source: 'referral_trial' | 'referral_reward' = 'referral_trial';
+    
+    // Check Deluxe first (higher priority)
+    if (userData.isDeluxe && userData.deluxeExpiresAt) {
+      const deluxeExpirationDate = new Date(userData.deluxeExpiresAt);
+      
+      // Calculate days until expiration
+      const secondsUntilExpiration = Math.ceil(
+        (deluxeExpirationDate.getTime() - now.getTime()) / 1000
+      );
+      
+      // Show alerts for: day of expiration, 1 day before, 3 days before
+      if (secondsUntilExpiration <= 30 || secondsUntilExpiration <= 0) {
+
+        shouldShowAlert = true;
+        expirationType = 'deluxe';
+        expirationDate = deluxeExpirationDate;
+        source = userData.subscriptionSource === 'referral_trial' 
+          ? 'referral_trial' 
+          : 'referral_reward';
+        
+        // Check if we already showed this alert today
+        const lastAlertShown = await AsyncStorage.getItem('lastExpirationAlert');
+        const today = now.toDateString();
+        
+        if (lastAlertShown === today) {
+          shouldShowAlert = false;
+        } else {
+          // Set the last alert date to today
+          await AsyncStorage.setItem('lastExpirationAlert', today);
+        }
+      }
+    } 
+    // Check Pro only if not already showing Deluxe alert
+    else if (!shouldShowAlert && userData.isPro && userData.proExpiresAt) {
+      const proExpirationDate = new Date(userData.proExpiresAt);
+      
+      // Calculate days until expiration
+      const secondsUntilExpiration = Math.ceil(
+        (proExpirationDate.getTime() - now.getTime()) / 1000
+      );
+      
+      // Show alerts for: day of expiration, 1 day before, 3 days before
+      if (secondsUntilExpiration <= 30 || secondsUntilExpiration <= 0) {
+        shouldShowAlert = true;
+        expirationType = 'pro';
+        expirationDate = proExpirationDate;
+        source = 'referral_reward'; // Pro is only from referral rewards, not trials
+        
+        // Check if we already showed this alert today
+        const lastAlertShown = await AsyncStorage.getItem('lastExpirationAlert');
+        const today = now.toDateString();
+        
+        if (lastAlertShown === today) {
+          shouldShowAlert = false;
+        } else {
+          // Set the last alert date to today
+          await AsyncStorage.setItem('lastExpirationAlert', today);
+        }
+      }
+    }
+    
+    // Set the state to show the alert if needed
+    if (shouldShowAlert) {
+      setExpirationInfo({
+        type: expirationType,
+        date: expirationDate,
+        source: source
+      });
+      setShowExpirationAlert(true);
+      await revokeExpiredSubscription(user.uid);
+    }
   };
 
   /**
@@ -247,12 +373,12 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     setLoading(true);
     try {
-      // Get user profile to check if they have referral points
-      const userProfileRef = doc(db, "UserProfiles", user.uid);
-      const userProfileSnap = await getDoc(userProfileRef);
+      // Get user profile from the correct collection
+      const userRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userRef);
       
-      if (userProfileSnap.exists()) {
-        const userData = userProfileSnap.data();
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
         
         // If user already has referral stats
         if (userData.referralPoints !== undefined) {
@@ -277,16 +403,20 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               setRewardNotification(rewardResult === 'PRO_TIER' ? 'pro' : 'deluxe');
               
               // Update the last reward tier in Firestore
-              await updateDoc(userProfileRef, {
+              await updateDoc(userRef, {
                 lastRewardTier: rewardResult
               });
               
               // Refresh user auth data to reflect subscription changes
-              // Change from refreshUser to fetchUserDetails
               if (fetchUserDetails) {
                 await fetchUserDetails();
               }
             }
+          }
+          await checkSubscriptionExpiration(userData);
+          if (userData.referralCode == null && userData.referralPoints !== undefined) {
+            const newCode = await generateNewReferralCode();
+            setReferralCode(newCode);
           }
         } else {
           // Initialize referral stats if not present
@@ -305,7 +435,6 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(false);
     }
   };
-
   const generateNewReferralCode = async (): Promise<string> => {
     if (!user) throw new Error("User not authenticated");
     
@@ -370,6 +499,19 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!code) throw new Error("Invalid referral code");
     
     try {
+      // Find the user document in the correct collection
+      const userRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      // Check if user already has a referral code
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.usedReferralCode) {
+          Alert.alert("Error", "You have already used a referral code");
+          return false;
+        }
+      }
+      
       // Validate code is not user's own code
       if (code === referralCode) {
         Alert.alert("Error", "You cannot use your own referral code");
@@ -409,15 +551,15 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       
       // Update referrer stats (who created the code)
-      const referrerProfileRef = doc(db, "UserProfiles", referralData.referrerId);
-      const referrerProfile = await getDoc(referrerProfileRef);
+      const referrerRef = doc(db, "users", referralData.referrerId);
+      const referrerDoc = await getDoc(referrerRef);
       
-      if (referrerProfile.exists()) {
-        const referrerData = referrerProfile.data();
+      if (referrerDoc.exists()) {
+        const referrerData = referrerDoc.data();
         const newTotalReferred = (referrerData.totalReferred || 0) + 1;
         const newPoints = (referrerData.referralPoints || 0) + referralData.rewards.referrerReward;
         
-        await updateDoc(referrerProfileRef, {
+        await updateDoc(referrerRef, {
           totalReferred: newTotalReferred,
           referralPoints: newPoints
         });
@@ -426,37 +568,98 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await checkAndApplyReferralRewards(referralData.referrerId, newTotalReferred);
       }
       
-      // Update current user (referee) profile with bonus points
-      const userProfileRef = doc(db, "UserProfiles", user.uid);
-      const userProfileSnap = await getDoc(userProfileRef);
+      // Calculate trial expiration date (1 week from now)
+      const trialExpirationDate = new Date();
+    trialExpirationDate.setMinutes(trialExpirationDate.getMinutes() + 1);
       
-      if (userProfileSnap.exists()) {
-        await updateDoc(userProfileRef, {
-          referralPoints: userProfileSnap.data()?.referralPoints + referralData.rewards.refereeReward || referralData.rewards.refereeReward,
-          usedReferralCode: code
+      // Update current user (referee) profile with bonus points and Deluxe trial
+      if (userDoc.exists()) {
+        await updateDoc(userRef, {
+          referralPoints: userDoc.data()?.referralPoints + referralData.rewards.refereeReward || referralData.rewards.refereeReward,
+          usedReferralCode: code,
+          isDeluxe: true,
+          deluxeExpiresAt: trialExpirationDate.toISOString(),
+          subscriptionSource: 'referral_trial'
         });
       } else {
-        // Create profile if it doesn't exist
-        await addDoc(collection(db, "UserProfiles"), {
-          id: user.uid,
+        // Create user profile if it doesn't exist
+        await setDoc(doc(db, "users", user.uid), {
+          email: user.email,
           referralPoints: referralData.rewards.refereeReward,
-          usedReferralCode: code
+          usedReferralCode: code,
+          isDeluxe: true,
+          deluxeExpiresAt: trialExpirationDate.toISOString(),
+          subscriptionSource: 'referral_trial',
+          createdAt: serverTimestamp()
         });
       }
       
+      // Log subscription change
+      await addDoc(collection(db, "SubscriptionChanges"), {
+        userId: user.uid,
+        changeType: 'deluxe_trial',
+        source: 'referral_reward',
+        previousStatus: 'free',
+        newStatus: 'deluxe',
+        duration: '1 week',
+        timestamp: serverTimestamp()
+      });
+      
       Alert.alert(
         "Success!", 
-        `You've earned ${referralData.rewards.refereeReward} points from this referral!`
+        "You've earned 50 points and a 1-week Deluxe membership trial!"
       );
       
       // Refresh the user stats
       await fetchUserReferralData();
+      
+      // Refresh user auth data to reflect subscription changes
+      if (fetchUserDetails) {
+        await fetchUserDetails();
+      }
+      
       return true;
     } catch (err) {
       console.error("Error applying referral code:", err);
       Alert.alert("Error", "Failed to apply referral code");
       return false;
     }
+  };
+
+  const revokeExpiredSubscription = async (userId: string) => {
+  try {
+    console.log("Revoking expired subscription for user:", userId);
+    const userRef = doc(db, "users", userId);
+    
+    await updateDoc(userRef, {
+      isDeluxe: false,
+      subscriptionSource: 'expired_trial'
+    });
+    
+    // Log the change
+    await addDoc(collection(db, "SubscriptionChanges"), {
+      userId,
+      changeType: 'trial_expired',
+      source: 'system',
+      previousStatus: 'deluxe',
+      newStatus: 'free',
+      timestamp: serverTimestamp()
+    });
+    
+    console.log("Subscription successfully revoked");
+    
+    // Force refresh the user data
+    await fetchUserDetails();
+    
+    // Also refresh referral data to update UI
+    await refreshReferralData();
+  } catch (error) {
+    console.error("Error revoking subscription:", error);
+  }
+};
+
+  const handleCloseExpirationAlert = () => {
+    setShowExpirationAlert(false);
   };
 
   const shareReferralCode = async () => {
@@ -490,6 +693,9 @@ export const ReferralProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         applyReferralCode,
         shareReferralCode,
         refreshReferralData,
+        showExpirationAlert,
+        expirationInfo,
+        handleCloseExpirationAlert,
       }}
     >
       {children}

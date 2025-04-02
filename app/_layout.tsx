@@ -12,6 +12,8 @@ import i18n from '../i18n/config';
 import { I18nextProvider } from 'react-i18next';
 import 'react-native-gesture-handler';
 import { ReferralProvider } from "@/context/ReferralContext"; // Import our new provider
+import SubscriptionExpirationAlert from '@/components/SubscriptionExpirationAlert';
+import { useReferralContext } from '@/context/ReferralContext';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,6 +31,11 @@ const MainLayout = () => {
   const { isAuthenticated } = useAuthContext();
   const segments = useSegments();
   const router = useRouter();
+  const { 
+    showExpirationAlert, 
+    expirationInfo, 
+    handleCloseExpirationAlert 
+  } = useReferralContext();
 
   useEffect(() => {
     if (typeof isAuthenticated === "undefined") return;
@@ -49,6 +56,16 @@ const MainLayout = () => {
     <View style={{ flex: 1, backgroundColor: color.background }}>
       <StatusBar style={themes.find((i) => i !== theme)} />
       <Slot />
+
+      {showExpirationAlert && expirationInfo && (
+        <SubscriptionExpirationAlert
+          isVisible={showExpirationAlert}
+          onClose={handleCloseExpirationAlert}
+          expirationDate={expirationInfo.date}
+          subscriptionType={expirationInfo.type}
+          source={expirationInfo.source}
+        />
+      )}
     </View>
   );
 };

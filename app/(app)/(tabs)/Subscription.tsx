@@ -198,6 +198,30 @@ const Subscription: React.FC = () => {
     Linking.openURL('https://healthchat-patient.esbhealthcare.com/privacy');
   };
 
+  const formatTrialTimeRemaining = (expiryDateString: string) => {
+    const expiryDate = new Date(expiryDateString);
+    const now = new Date();
+    
+    // Calculate difference in milliseconds
+    const diffTime = expiryDate.getTime() - now.getTime();
+    
+    // If already expired
+    if (diffTime <= 0) return "Expired";
+    
+    // Calculate days, hours, minutes
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''} remaining`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} remaining`;
+    } else {
+      return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} remaining`;
+    }
+  };
+
   return (
     <>
       <View>
@@ -255,39 +279,89 @@ const Subscription: React.FC = () => {
             </View>
           </View>
           {user?.isPro || user?.isDeluxe ? (
-            <MotiView
-              from={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring" }}
-              style={{ alignItems: "center", gap: 30 }}
-            >
-              <View style={{ alignItems: "center", gap: 2 }}>
-                <Animated.View style={animatedCrownStyle}>
-                  <FontAwesome6 name="crown" size={64} color="gold" />
-                </Animated.View>
+          <MotiView
+            from={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring" }}
+            style={{ alignItems: "center", gap: 30 }}
+          >
+            <View style={{ alignItems: "center", gap: 2 }}>
+              <Animated.View style={animatedCrownStyle}>
+                <FontAwesome6 name="crown" size={64} color="gold" />
+              </Animated.View>
+              <MotiText
+                from={{ translateY: 20, opacity: 0 }}
+                animate={{ translateY: 0, opacity: 1 }}
+                transition={{ delay: 200 }}
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  color: currentColors.textPrimary,
+                  marginTop: 10,
+                }}
+              >
+                You're a {user.isPro ? "Pro" : "Deluxe"} Member!
+              </MotiText>
+              
+              {/* Add trial information if applicable */}
+              {user.subscriptionSource === 'referral_trial' && user.deluxeExpiresAt && (
                 <MotiText
                   from={{ translateY: 20, opacity: 0 }}
                   animate={{ translateY: 0, opacity: 1 }}
-                  transition={{ delay: 200 }}
-                  style={{
-                    fontSize: 24,
-                    fontWeight: "bold",
-                    color: currentColors.textPrimary,
-                    marginTop: 10,
+                  transition={{ delay: 250 }}
+                  style={{ 
+                    color: currentColors.textSecondary,
+                    fontSize: 16,
+                    marginTop: 5
                   }}
                 >
-                  You're a {user.isPro ? "Pro" : "Deluxe"} Member!
+                  Trial - {formatTrialTimeRemaining(user.deluxeExpiresAt)}
                 </MotiText>
-                <MotiText
-                  from={{ translateY: 20, opacity: 0 }}
-                  animate={{ translateY: 0, opacity: 1 }}
-                  transition={{ delay: 300 }}
-                  style={{ color: currentColors.textSecondary }}
-                >
-                  {t('layout.accountModel.enjoy')} {user.isPro ? "Pro" : "Deluxe"}{" "}
-                  features
-                </MotiText>
-              </View>
+              )}
+              
+              {user.subscriptionSource === 'referral_reward' && (
+                <>
+                  {user.isPro && user.proExpiresAt && (
+                    <MotiText
+                      from={{ translateY: 20, opacity: 0 }}
+                      animate={{ translateY: 0, opacity: 1 }}
+                      transition={{ delay: 250 }}
+                      style={{
+                        color: currentColors.textSecondary,
+                        fontSize: 16,
+                        marginTop: 5
+                      }}
+                    >
+                      Referral Reward - {formatTrialTimeRemaining(user.proExpiresAt)}
+                    </MotiText>
+                  )}
+                  {user.isDeluxe && user.deluxeExpiresAt && (
+                    <MotiText
+                      from={{ translateY: 20, opacity: 0 }}
+                      animate={{ translateY: 0, opacity: 1 }}
+                      transition={{ delay: 250 }}
+                      style={{
+                        color: currentColors.textSecondary,
+                        fontSize: 16,
+                        marginTop: 5
+                      }}
+                    >
+                      Referral Reward - {formatTrialTimeRemaining(user.deluxeExpiresAt)}
+                    </MotiText>
+                  )}
+                </>
+              )}
+              
+              <MotiText
+                from={{ translateY: 20, opacity: 0 }}
+                animate={{ translateY: 0, opacity: 1 }}
+                transition={{ delay: 300 }}
+                style={{ color: currentColors.textSecondary }}
+              >
+                {t('layout.accountModel.enjoy')} {user.isPro ? "Pro" : "Deluxe"}{" "}
+                features
+              </MotiText>
+            </View>
 
               <View
                 style={{
@@ -338,6 +412,42 @@ const Subscription: React.FC = () => {
                   )}
                 </TouchableOpacity>
               </View>
+              {user?.subscriptionSource === 'referral_trial' && user?.deluxeExpiresAt && (
+              <View 
+                style={{
+                  backgroundColor: currentColors.primary + '10',
+                  borderColor: currentColors.primary + '30',
+                  borderWidth: 1,
+                  borderRadius: 10,
+                  padding: 16,
+                  marginTop: 20,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <AntDesign name="clockcircle" size={20} color={currentColors.primary} style={{ marginRight: 8 }} />
+                  <Text style={{ fontWeight: 'bold', fontSize: 16, color: currentColors.textPrimary }}>
+                    Your Deluxe Trial
+                  </Text>
+                </View>
+                <Text style={{ color: currentColors.textSecondary, marginBottom: 10 }}>
+                  Your trial ends in {formatTrialTimeRemaining(user.deluxeExpiresAt)}. Subscribe now to keep enjoying Deluxe features!
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: currentColors.primary,
+                    paddingVertical: 10,
+                    paddingHorizontal: 16,
+                    borderRadius: 8,
+                    alignSelf: 'flex-start',
+                  }}
+                  onPress={() => handleSubscribe('deluxe')}
+                >
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                    Upgrade to Deluxe
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
             </MotiView>
           ) : (
             <View style={{ alignSelf: "stretch" }}>

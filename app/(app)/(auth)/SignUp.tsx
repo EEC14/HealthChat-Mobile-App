@@ -17,12 +17,15 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { z } from "zod";
 import { Link, useRouter } from "expo-router";
 import { useAuthContext } from "@/context/AuthContext";
+import { useReferralContext } from "@/context/ReferralContext"; // Import referral context
 import { MotiView } from "moti";
 import Octicons from "@expo/vector-icons/Octicons";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/context/ThemeContext";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 import { AppleAuthButton } from "@/components/AppleAuthButton";
+import { validateReferralCodeFormat } from "@/utils/referralUtils"; // Import validation utility
+
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
@@ -35,6 +38,7 @@ const signUpSchema = z.object({
       /[!@#$%^&*()]/,
       "Password must contain at least one special character"
     ),
+  referralCode: z.string().optional(),
 });
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
@@ -43,9 +47,11 @@ export default function SignUp() {
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const { register, isLoading, error, clearError } = useAuthContext();
+  const { applyReferralCode } = useReferralContext(); // Get referral code application function
   const [termsModalVisible, setTermsModalVisible] = useState(false);
   const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [referralCodeError, setReferralCodeError] = useState<string | null>(null);
   const router = useRouter();
 
   const {
@@ -63,9 +69,30 @@ export default function SignUp() {
       return;
     }
 
+    // Validate referral code if provided
+    if (data.referralCode && data.referralCode.trim() !== '') {
+      if (!validateReferralCodeFormat(data.referralCode)) {
+        setReferralCodeError("Invalid referral code format");
+        return;
+      }
+      setReferralCodeError(null);
+    }
+
+    // Register the user
     const success = await register(data.email, data.password);
     if (success) {
       clearError();
+      
+      // Apply referral code if provided
+      if (data.referralCode && data.referralCode.trim() !== '') {
+        try {
+          await applyReferralCode(data.referralCode);
+        } catch (err) {
+          console.error("Error applying referral code:", err);
+          // Continue to the app even if referral code application fails
+        }
+      }
+      
       router.replace("/Home");
     }
   };
@@ -190,8 +217,57 @@ export default function SignUp() {
               )}
             </View>
 
-            {/* Terms of Service Checkbox */}
+            {/* Referral Code Field */}
+            <View>
+              <Controller
+                name="referralCode"
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={{
+                      backgroundColor: currentColors.inputBackground,
+                      color: currentColors.textPrimary,
+                    }}
+                    className={`px-6 py-4 rounded-lg focus:border-[1px] focus:border-blue-500 ${
+                      referralCodeError ? "border-[1px] border-red-500" : ""
+                    }`}
+                    placeholder="Referral Code (Optional)"
+                    placeholderTextColor={currentColors.placeholderText}
+                    value={value}
+                    onChangeText={(text) => {
+                      onChange(text.toUpperCase());
+                      setReferralCodeError(null);
+                    }}
+                    autoCapitalize="characters"
+                    maxLength={6}
+                  />
+                )}
+              />
+              {referralCodeError && (
+                <Text className="mt-1 text-sm text-red-500">
+                  {referralCodeError}
+                </Text>
+              )}
+              <View style={{ marginTop: 6, backgroundColor: 'rgba(79, 70, 229, 0.1)', borderRadius: 8, padding: 10 }}>
+                <Text style={{ color: currentColors.textPrimary, fontWeight: '500', fontSize: 13, marginBottom: 4 }}>
+                  Enter a friend's referral code and get:
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: currentColors.textSecondary, marginRight: 6 }} />
+                  <Text style={{ color: currentColors.textSecondary, fontSize: 12 }}>
+                    1-week Deluxe membership trial
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: currentColors.textSecondary, marginRight: 6 }} />
+                  <Text style={{ color: currentColors.textSecondary, fontSize: 12 }}>
+                    50 bonus points to use in the app
+                  </Text>
+                </View>
+              </View>
+            </View>
 
+            {/* Terms of Service Checkbox */}
             <View className="flex-row items-center gap-2">
               <TouchableOpacity
                 onPress={() => setTermsAccepted(!termsAccepted)}
@@ -360,7 +436,7 @@ export default function SignUp() {
                 <Text className="text-gray-600 dark:text-gray-400">
                   1. Introduction This Privacy Policy outlines the practices and
                   principles regarding the collection, processing, and storage
-                  of data when interacting with HealthChat (the “Service”). By
+                  of data when interacting with HealthChat (the "Service"). By
                   using the Service, users agree to the processing of their data
                   as outlined in this policy. 2. Data Collection We may collect
                   the following types of data: User Data: Includes, but is not
@@ -371,7 +447,7 @@ export default function SignUp() {
                   Device identifiers, IP addresses, browsing behaviors, cookies,
                   and other metadata. 3. Purpose of Data Use The data collected
                   may be used for purposes including, but not limited to:
-                  Enhancing the Service’s functionality and user experience.
+                  Enhancing the Service's functionality and user experience.
                   Developing and commercializing insights derived from user
                   interactions. Ensuring compliance with applicable laws and
                   regulations. Marketing and advertising, subject to applicable

@@ -31,6 +31,9 @@ export interface UserProfile {
   subscriptionId?: string;
   expoPushToken?: string;
   fullName?: string;
+  subscriptionSource?: 'referral_trial' | 'referral_reward' | string;
+  deluxeExpiresAt?: string;
+  proExpiresAt?: string;
 }
 export enum SpecializationType {
   ORTHOPEDIC = 'orthopedic',
