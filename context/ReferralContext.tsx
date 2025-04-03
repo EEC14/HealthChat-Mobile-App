@@ -147,12 +147,13 @@ const checkSubscriptionExpiration = async (userData: any) => {
       const deluxeExpirationDate = new Date(userData.deluxeExpiresAt);
       
       // Calculate days until expiration
-      const secondsUntilExpiration = Math.ceil(
-        (deluxeExpirationDate.getTime() - now.getTime()) / 1000
+      const daysUntilExpiration = Math.ceil(
+        (deluxeExpirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );
       
       // Show alerts for: day of expiration, 1 day before, 3 days before
-      if (secondsUntilExpiration <= 30 || secondsUntilExpiration <= 0) {
+      if (daysUntilExpiration <= 3) {
+
 
         shouldShowAlert = true;
         expirationType = 'deluxe';
@@ -178,12 +179,12 @@ const checkSubscriptionExpiration = async (userData: any) => {
       const proExpirationDate = new Date(userData.proExpiresAt);
       
       // Calculate days until expiration
-      const secondsUntilExpiration = Math.ceil(
-        (proExpirationDate.getTime() - now.getTime()) / 1000
+      const daysUntilExpiration = Math.ceil(
+        (proExpirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );
       
       // Show alerts for: day of expiration, 1 day before, 3 days before
-      if (secondsUntilExpiration <= 30 || secondsUntilExpiration <= 0) {
+      if (daysUntilExpiration <= 3) {
         shouldShowAlert = true;
         expirationType = 'pro';
         expirationDate = proExpirationDate;
@@ -570,7 +571,7 @@ const checkSubscriptionExpiration = async (userData: any) => {
       
       // Calculate trial expiration date (1 week from now)
       const trialExpirationDate = new Date();
-    trialExpirationDate.setMinutes(trialExpirationDate.getMinutes() + 1);
+      trialExpirationDate.setDate(trialExpirationDate.getDate() + 7);
       
       // Update current user (referee) profile with bonus points and Deluxe trial
       if (userDoc.exists()) {
