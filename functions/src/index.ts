@@ -248,8 +248,6 @@ function createUserNotifications(
         type: type,
         url: `/health/${type}`,
       },
-      // Add a badge number for better notification management
-      badge: 1,
     });
   }
   return messages;
