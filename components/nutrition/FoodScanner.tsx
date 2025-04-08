@@ -5,12 +5,11 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   ActivityIndicator,
-  Image,
   Alert,
   FlatList,
   TextInput
 } from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { Camera, CameraView, CameraType, BarcodeScanningResult } from 'expo-camera';
 import { 
   getNutritionInfo, 
   scanBarcode 
@@ -36,7 +35,7 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
   
   useEffect(() => {
     (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
+        const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     })();
   }, []);
@@ -60,8 +59,10 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
     }
   }, [searchText]);
 
-  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = async (scanningResult: BarcodeScanningResult) => {
     if (scanned || isProcessing) return;
+    
+    const { data } = scanningResult;
     
     setScanned(true);
     setIsProcessing(true);
@@ -162,27 +163,32 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
             />
           ) : (
             <View style={styles.scannerContainer}>
-              <BarCodeScanner
-                onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+                <CameraView
                 style={StyleSheet.absoluteFillObject}
-                barCodeTypes={[
-                  BarCodeScanner.Constants.BarCodeType.upc_a,
-                  BarCodeScanner.Constants.BarCodeType.upc_e,
-                  BarCodeScanner.Constants.BarCodeType.ean13,
-                  BarCodeScanner.Constants.BarCodeType.ean8,
-                ]}
-              />
-              <View style={styles.overlay}>
-                <View style={[styles.scannerBox, { borderColor: PRIMARY_COLOR }]}>
-                  <Text style={styles.scanInstructions}>
-                    Scan a barcode or search above
-                  </Text>
+                facing="back"
+                barcodeScannerSettings={{
+                    barcodeTypes: [
+                    'upc_a', 
+                    'upc_e', 
+                    'ean13', 
+                    'ean8'
+                    ]
+                }}
+                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                >
+                <View style={styles.overlay}>
+                    <View style={[styles.scannerBox, { borderColor: PRIMARY_COLOR }]}>
+                    <Text style={styles.scanInstructions}>
+                        Scan a barcode or search above
+                    </Text>
+                    </View>
                 </View>
-              </View>
+                </CameraView>
             </View>
           )}
         </>
       ) : (
+        // Rest of the component remains the same as in the original file
         <View style={styles.detailsContainer}>
           <View style={styles.foodDetails}>
             <Text style={styles.foodName}>{selectedFood.name}</Text>
