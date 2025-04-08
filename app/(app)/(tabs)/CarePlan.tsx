@@ -33,6 +33,12 @@ import { PlanModifierToolbar } from "@/components/DietPlan/PlanModifierToolbar";
 import { savePlan, updatePlan } from "@/utils/planStorage";
 import { RecoveryScoreCard } from '../../../components/Recovery/RecoveryScoreCard';
 import { generateRecoveryPlan, generateRecoveryPlanQuestions } from '../../../utils/recoveryPlanGenerator';
+import NutritionScannerScreen from '@/components/nutrition/NutritionScannerScreen';
+import WearableIntegrationScreen from '@/components/wearable/WearableIntegrationScreen';
+import useHealthData from '@/utils/useHealthData';
+
+// Define primary color fallback
+const PRIMARY_COLOR = Colors.light ? Colors.light.primary : '#2196F3';
 
 const getRecoveryScoreFromPlan = (plan: string): number => {
   // Extract score from the plan text
@@ -59,6 +65,9 @@ const CarePlan: React.FC = () => {
   const [showSavedPlans, setShowSavedPlans] = useState(false);
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [dietView, setDietView] = useState<'plan' | 'scanner'>('plan');
+  const [showWearableSetup, setShowWearableSetup] = useState(false);
+  const { isLoading: isHealthDataLoading, healthData, recoveryStatus } = useHealthData();
   const { t } = useTranslation();
 
   const handleGoalsSubmit = async () => {
@@ -100,14 +109,37 @@ const CarePlan: React.FC = () => {
     setIsLoading(true);
     try {
       if (planType === "recovery") {
-        const plan = generateRecoveryPlan(goals, answers);
+        const plan = generateRecoveryPlan(goals, answers, recoveryStatus);
         setGeneratedPlan(plan);
         setStep("plan");
         setIsLoading(false);
         return;
       }
-  
-      const plan = await generatePlan(planType!, goals, answers);
+      const enhancedAnswers = { ...answers };
+      let additionalData = {};
+      if (healthData) {
+        if (planType === 'workout' && recoveryStatus) {
+          enhancedAnswers['__healthData__'] = 
+            `Recovery Status: ${recoveryStatus.score}/100. ${recoveryStatus.recommendation}`;
+          
+          if (healthData.workouts && healthData.workouts.length > 0) {
+            const recentWorkouts = healthData.workouts.slice(0, 3).map(w => 
+              `${w.type} on ${new Date(w.startTime.toDate()).toLocaleDateString()}`
+            ).join(', ');
+            enhancedAnswers['__recentWorkouts__'] = `Recent workouts: ${recentWorkouts}`;
+          }
+        } 
+        else if (planType === 'diet') {
+          if (healthData.caloriesBurned?.length > 0) {
+            const activityLevel = healthData.caloriesBurned[0].value > 2000 ? 'high' : 'moderate';
+            enhancedAnswers['__activityLevel__'] = 
+              `Activity level based on wearable data: ${activityLevel}`;
+          }
+        }
+      }
+      
+      // Call the original function with the enhanced answers
+      const plan = await generatePlan(planType!, goals, enhancedAnswers);  
       if (planType === 'workout') {
         try {
           const audioCues = parseWorkoutPlan(plan);
@@ -254,7 +286,7 @@ const CarePlan: React.FC = () => {
         </Text>
       <View style={styles.headerActions}>
 
-      {step === "plan" && (
+      {step === "plan" && !showWearableSetup &&(
         <>
           {isEditing && (
             <TouchableOpacity
@@ -320,6 +352,15 @@ const CarePlan: React.FC = () => {
             >
               <AntDesign name="save" size={20} color="#007AFF" />
             </TouchableOpacity>
+          )}
+
+          {(planType === 'workout' || planType === 'recovery') && (
+          <TouchableOpacity
+            onPress={() => setShowWearableSetup(true)}
+            style={styles.wearableButton}
+          >
+            <MaterialCommunityIcons name="watch" size={20} color="#007AFF" />
+          </TouchableOpacity>
           )}
         </>
       )}
@@ -498,7 +539,7 @@ const CarePlan: React.FC = () => {
             <Text
               style={[styles.cardTitle, { color: currentColors.textPrimary }]}
             >
-              Diet Plan
+              Diet & Nutrition Plan
             </Text>
             <Text
               style={[
@@ -728,6 +769,9 @@ const CarePlan: React.FC = () => {
     }
 
 if (step === "plan") {
+  if (showWearableSetup) {
+    return <WearableIntegrationScreen />;
+  }
   return (
     <View style={{flex: 1, position: 'relative'}}>
       <ScrollView
@@ -793,6 +837,84 @@ if (step === "plan") {
           />
         )}
       </View>
+    </View>
+  );
+}
+
+if (step === "plan" && planType === "diet") {
+  return (
+    <View style={{flex: 1, position: 'relative'}}>
+      {/* Add tabs to switch between plan and scanner */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[
+            styles.tabButton, 
+            dietView === 'plan' && [styles.activeTab, { borderBottomColor: PRIMARY_COLOR }]
+          ]}
+          onPress={() => setDietView('plan')}
+        >
+          <Text style={[
+            styles.tabText, 
+            dietView === 'plan' && { color: PRIMARY_COLOR, fontWeight: 'bold' }
+          ]}>
+            Diet Plan
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[
+            styles.tabButton, 
+            dietView === 'scanner' && [styles.activeTab, { borderBottomColor: PRIMARY_COLOR }]
+          ]}
+          onPress={() => setDietView('scanner')}
+        >
+          <Text style={[
+            styles.tabText, 
+            dietView === 'scanner' && { color: PRIMARY_COLOR, fontWeight: 'bold' }
+          ]}>
+            Nutrition Scanner
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
+      {dietView === 'plan' ? (
+        // Show the regular diet plan view
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContainer,
+            { backgroundColor: currentColors.background },
+          ]}
+          style={{ marginBottom: 70 }}
+        >
+          <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
+            Your Diet Plan
+          </Text>
+          
+          <Markdown style={getMarkdownStyles(currentColors)}>
+            {generatedPlan}
+          </Markdown>
+          
+          <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
+            <AntDesign name="arrowleft" size={16} color="#000" />
+            <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
+          </TouchableOpacity>
+          
+          <View style={{ height: 30 }} />
+        </ScrollView>
+      ) : (
+        // Show the nutrition scanner
+        <NutritionScannerScreen />
+      )}
+      
+      {/* Keep the toolbar for the plan view */}
+      {dietView === 'plan' && (
+        <View style={styles.toolbarContainer}>
+          <PlanModifierToolbar
+            planType={planType}
+            currentPlan={generatedPlan}
+            onPlanChange={handlePlanModification}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -1086,6 +1208,28 @@ const styles = StyleSheet.create({
   resetModalConfirmButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e1e1',
+    backgroundColor: '#fff',
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  wearableButton: {
+    marginRight: 10,
+    padding: 5,
   },
 });
 

@@ -39,6 +39,10 @@ export const db = getFirestore(app);
 
 export const userRef = collection(db, "users");
 export const chatRef = collection(db, "chats");
+export const healthDataRef = collection(db, "healthData");
+export const nutritionLogsRef = collection(db, "nutritionLogs");
+export const dietPlansRef = collection(db, "dietPlans");
+export const wearableConnectionsRef = collection(db, "wearableConnections");
 
 export const loginUser = async (email: string, password: string) => {
   const userCredential = await signInWithEmailAndPassword(
@@ -72,10 +76,14 @@ export const createUserProfile = async (uid: string, email: string, fullName?: s
     isPro: false,
     isDeluxe: false,
     createdAt: serverTimestamp(),
+    privacySettings: {
+      shareHealthData: false,
+      retentionPeriodDays: 90,
+      consentTimestamp: null
+    },
     ...(fullName ? { fullName } : {})
   });
 };
-
 export const getUserProfile = async (
   uid: string
 ): Promise<UserProfile | null> => {
@@ -97,8 +105,15 @@ export const getUserProfile = async (
       typeof userSnap.data().stripeCustomerId === "object"
         ? userSnap.data().stripeCustomerId.id
         : userSnap.data().stripeCustomerId,
+    connectedWearables: userSnap.data().connectedWearables || [],
+    privacySettings: userSnap.data().privacySettings || {
+      shareHealthData: false,
+      retentionPeriodDays: 90,
+      consentTimestamp: null
+    },
   };
 };
+
 
 export const updateUserProfile = async (
   uid: string,

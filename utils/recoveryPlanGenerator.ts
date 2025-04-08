@@ -1,5 +1,5 @@
 import { RecoveryInputData, calculateRecoveryScore } from './recoveryCalculator';
-
+import { RecoveryStatus } from '../types/WearableTypes';
 export const generateRecoveryPlanQuestions = (): string[] => {
   return [
     "How intense was your most recent workout on a scale from 1-10?",
@@ -10,7 +10,10 @@ export const generateRecoveryPlanQuestions = (): string[] => {
   ];
 };
 
-export const generateRecoveryPlan = (goals: string, answers: Record<string, string>): string => {
+export const generateRecoveryPlan = (
+  goals: string, 
+  answers: Record<string, string>,
+  recoveryStatus?: RecoveryStatus | null): string => {
   // Parse the answers
   const workoutIntensity = parseInt(answers["How intense was your most recent workout on a scale from 1-10?"] || "5");
   const sleepHours = parseFloat(answers["How many hours of sleep did you get last night?"] || "7");
@@ -53,6 +56,13 @@ ${recommendations.nutritionTips.map(tip => `- ${tip}`).join('\n')}
 
   // Add personalized goal-based content
   let personalizedContent = '';
+  if (recoveryStatus) {
+    personalizedContent += `
+## Wearable Recovery Insights
+- **Wearable Recovery Score:** ${recoveryStatus.score}/100
+- **Status:** ${recoveryStatus.recommendation}
+`;
+  }
   
   if (goals.toLowerCase().includes('performance')) {
     personalizedContent += `

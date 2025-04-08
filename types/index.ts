@@ -34,6 +34,12 @@ export interface UserProfile {
   subscriptionSource?: 'referral_trial' | 'referral_reward' | string;
   deluxeExpiresAt?: string;
   proExpiresAt?: string;
+  connectedWearables?: string[]; // IDs of connected wearable devices
+  privacySettings?: {
+    shareHealthData: boolean;
+    retentionPeriodDays: number;
+    consentTimestamp: number;
+  };
 }
 export enum SpecializationType {
   ORTHOPEDIC = 'orthopedic',
@@ -72,3 +78,7 @@ export interface SavedPlan {
   createdAt: number;
   audioCues?: AudioCue[];
 }
+
+// Export our new types
+export * from './NutritionTypes';
+export * from './WearableTypes';
