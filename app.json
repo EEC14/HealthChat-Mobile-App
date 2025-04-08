@@ -15,7 +15,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.healthchatdev.HealthChat"
+      "bundleIdentifier": "com.healthchatdev.HealthChat",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "This app requires access to health data for tracking fitness activities and recovery metrics.",
+        "NSHealthUpdateUsageDescription": "This app requires permission to write workout and health metrics data."
+      }
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -27,7 +31,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000"
       },
-      "package": "com.healthchatdev.HealthChat"
+      "package": "com.healthchatdev.HealthChat",
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -69,7 +78,21 @@
           "androidChannelName": "Default Channel"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "react-native-health",
+        {
+          "isClinicalDataEnabled": true,
+          "healthSharePermission": "This app requires access to health data for tracking fitness activities and recovery metrics.",
+          "healthUpdatePermission": "This app requires permission to write workout and health metrics data."
+        }
+      ],
+      [
+        "react-native-google-fit",
+        {
+          "googleFitPermission": "This app requires permission to access your fitness data to provide personalized recommendations."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
