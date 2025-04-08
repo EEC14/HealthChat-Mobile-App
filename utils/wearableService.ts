@@ -1,165 +1,150 @@
+import { Platform } from 'react-native';
 import { 
-    collection, 
-    addDoc, 
-    updateDoc, 
-    getDoc, 
-    getDocs, 
-    doc, 
-    query, 
-    where, 
-    serverTimestamp, 
-    Timestamp,
-    DocumentData
-  } from 'firebase/firestore';
-  import { Platform } from 'react-native';
-  import { db } from '../firebase';
-  import { 
-    WearableConnection, 
-    UserHealthData, 
-    HealthMetric, 
-    RecoveryStatus 
-  } from '../types/WearableTypes';
-  
-  // Collection references
-  const wearableConnectionsRef = collection(db, 'wearableConnections');
-  const healthDataRef = collection(db, 'healthData');
-  
-  // Health data source handlers
-  let AppleHealthKit: any = null;
-  let GoogleFit: any = null;
-  
-  // Dynamically import platform-specific health modules
-  if (Platform.OS === 'ios') {
+  collection, 
+  addDoc, 
+  updateDoc, 
+  getDoc, 
+  getDocs, 
+  doc, 
+  query, 
+  where, 
+  serverTimestamp, 
+  Timestamp 
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import { 
+  WearableConnection, 
+  UserHealthData, 
+  HealthMetric, 
+  RecoveryStatus 
+} from '../types/WearableTypes';
+
+console.log('Platform OS:', Platform.OS);
+
+// Collection references
+const wearableConnectionsRef = collection(db, 'wearableConnections');
+const healthDataRef = collection(db, 'healthData');
+
+// Import health services conditionally
+let AppleHealthKit: any = null;
+let GoogleFit: any = null;
+
+// We need to handle imports conditionally to avoid issues with React Native's bundling
+if (Platform.OS === 'ios') {
     try {
+      console.log('Attempting to import AppleHealthKit...');
+      // Import with require to avoid issues with tree shaking
       AppleHealthKit = require('react-native-health').default;
-    } catch (error) {
-      console.error('Failed to load Apple HealthKit module:', error);
+      console.log('AppleHealthKit import success:', !!AppleHealthKit);
+    } catch (e) {
+      console.error('Failed to import HealthKit:', e);
     }
-  } else if (Platform.OS === 'android') {
+  }
+  
+  if (Platform.OS === 'android') {
     try {
       GoogleFit = require('react-native-google-fit').default;
-    } catch (error) {
-      console.error('Failed to load Google Fit module:', error);
+    } catch (e) {
+      console.error('Failed to import Google Fit:', e);
     }
   }
-  
-  // HealthKit permission options
-  const HEALTHKIT_OPTIONS = {
-    permissions: {
-      read: [
-        'StepCount', 
-        'DistanceWalking', 
-        'DistanceCycling',
-        'ActiveEnergyBurned',
-        'BasalEnergyBurned',
-        'HeartRate',
-        'RestingHeartRate',
-        'HeartRateVariabilitySDNN',
-        'SleepAnalysis',
-        'Workout'
-      ],
-      write: []
-    }
-  };
 
-// Update the interface definitions to match actual data structures
-interface HealthKitStepData {
-    value: number;
-    date?: string;
-    endDate: string;
-  }
-  
-  interface HealthKitHeartRateData {
-    value: number;
-    date?: string;
-    endDate: string;
-  }
-  
-  interface HealthKitSleepData {
-    value: string;
-    startDate: string;
-    endDate: string;
-  }
-  
-  interface HealthKitWorkoutData {
-    activityName: string;
-    start: string;
-    end: string;
-    calories: number;
-    distance?: number;
-    metadata?: {
-      average_heart_rate?: number;
-      max_heart_rate?: number;
+  const getHealthKitOptions = () => {
+    if (!AppleHealthKit || !AppleHealthKit.Constants) {
+      console.error('AppleHealthKit or Constants not available when creating options');
+      // Fallback options with string permissions
+      return {
+        permissions: {
+          read: [
+            'Steps', 
+            'StepCount', 
+            'DistanceWalkingRunning', 
+            'HeartRate', 
+            'SleepAnalysis', 
+            'ActiveEnergyBurned',
+            'Workout'
+          ],
+          write: [
+            'Steps', 
+            'StepCount', 
+            'DistanceWalkingRunning', 
+            'HeartRate', 
+            'SleepAnalysis', 
+            'ActiveEnergyBurned',
+            'Workout'
+          ]
+        }
+      };
+    }
+    
+    // When constants are available
+    return {
+      permissions: {
+        read: [
+          AppleHealthKit.Constants.Permissions.Steps,
+          AppleHealthKit.Constants.Permissions.StepCount,
+          AppleHealthKit.Constants.Permissions.DistanceWalkingRunning,
+          AppleHealthKit.Constants.Permissions.HeartRate,
+          AppleHealthKit.Constants.Permissions.SleepAnalysis,
+          AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
+          AppleHealthKit.Constants.Permissions.Workout
+        ],
+        write: [
+          AppleHealthKit.Constants.Permissions.Steps,
+          AppleHealthKit.Constants.Permissions.StepCount,
+          AppleHealthKit.Constants.Permissions.DistanceWalkingRunning,
+          AppleHealthKit.Constants.Permissions.HeartRate,
+          AppleHealthKit.Constants.Permissions.SleepAnalysis,
+          AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
+          AppleHealthKit.Constants.Permissions.Workout
+        ]
+      }
     };
-  }
+  };
   
-  interface HealthKitCaloriesData {
-    value: number;
-    date?: string;
-    endDate: string;
-  }
-  
-  interface GoogleFitStepData {
-    value: number;
-    date: number | string;
-  }
-  
-  interface GoogleFitHeartRateData {
-    value: number;
-    startDate?: number | string;
-    endDate: number | string;
-  }
-  
-  interface GoogleFitSleepData {
-    sleepStage: number;
-    startDate: number | string;
-    endDate: number | string;
-  }
-  
-  interface GoogleFitWorkoutData {
-    activityName?: string;
-    type?: number;
-    start: number | string;
-    end: number | string;
-    calories?: number;
-    distance?: number;
-  }
-  
-  interface GoogleFitCaloriesData {
-    calorie: number;
-    startDate?: number | string;
-    endDate: number | string;
-  }
-  
-  // Wearable Connection Functions
-  export const connectWearable = async (connection: Omit<WearableConnection, 'id' | 'lastSynced'>) => {
+
+// Google Fit configuration
+const GOOGLEFIT_OPTIONS = {
+  scopes: [
+    'https://www.googleapis.com/auth/fitness.activity.read',
+    'https://www.googleapis.com/auth/fitness.body.read',
+    'https://www.googleapis.com/auth/fitness.heart_rate.read',
+    'https://www.googleapis.com/auth/fitness.sleep.read'
+  ]
+};
+
+// Connect to wearable
+export const connectWearable = async (connection: Omit<WearableConnection, 'id' | 'lastSynced'>): Promise<string> => {
     try {
-      // First, request permissions for the specified wearable
+      console.log(`Connecting ${connection.type} for user ${connection.userId}`);
+      console.log('Platform:', Platform.OS);
+      console.log('AppleHealthKit available:', !!AppleHealthKit);
+      console.log('GoogleFit available:', !!GoogleFit);
+      
       let permissionGranted = false;
       
       if (connection.type === 'appleHealth' && Platform.OS === 'ios') {
+        // Request Apple HealthKit permissions
         if (!AppleHealthKit) {
-          throw new Error('Apple HealthKit module not available');
+          console.error('AppleHealthKit not available when connecting');
+          throw new Error('HealthKit is not available on this device');
         }
-        
-        permissionGranted = await requestAppleHealthPermissions(connection.permissions);
+        permissionGranted = await initializeHealthKit();
       } 
       else if (connection.type === 'googleFit' && Platform.OS === 'android') {
+        // Request Google Fit permissions
         if (!GoogleFit) {
-          throw new Error('Google Fit module not available');
+          console.error('GoogleFit not available when connecting');
+          throw new Error('Google Fit is not available on this device');
         }
-        
-        permissionGranted = await requestGoogleFitPermissions(connection.permissions);
+        permissionGranted = await initializeGoogleFit();
       }
-      else if (connection.type === 'fitbit' || connection.type === 'garmin') {
-        // For third-party services, this would involve OAuth
-        // This is a placeholder for future implementation
-        permissionGranted = false;
-        throw new Error(`${connection.type} integration not implemented yet`);
+      else {
+        throw new Error(`${connection.type} is not supported on ${Platform.OS}`);
       }
       
-      // Only add to database if permissions were granted
       if (permissionGranted) {
+        // Add connection to Firestore
         const docRef = await addDoc(wearableConnectionsRef, {
           ...connection,
           isConnected: true,
@@ -167,7 +152,7 @@ interface HealthKitStepData {
           createdAt: serverTimestamp()
         });
         
-        // Sync data immediately after connecting
+        // Sync health data immediately
         await syncHealthData(connection.userId, connection.type);
         
         return docRef.id;
@@ -180,63 +165,54 @@ interface HealthKitStepData {
     }
   };
   
-  // Request Apple HealthKit permissions
-  const requestAppleHealthPermissions = async (permissions: string[]): Promise<boolean> => {
-    if (!AppleHealthKit) {
-      throw new Error('Apple HealthKit module not available');
-    }
-    
+
+// Initialize HealthKit
+const initializeHealthKit = (): Promise<boolean> => {
     return new Promise((resolve, reject) => {
-      AppleHealthKit.initHealthKit(HEALTHKIT_OPTIONS, (error: Error) => {
+      if (!AppleHealthKit) {
+        console.error('HealthKit not available when initializing');
+        reject(new Error('HealthKit not available'));
+        return;
+      }
+      
+      const options = getHealthKitOptions();
+      console.log('Starting HealthKit initialization with options:', JSON.stringify(options));
+      
+      AppleHealthKit.initHealthKit(options, (error: Error) => {
         if (error) {
-          console.error('Error initializing HealthKit:', error);
+          console.error('HealthKit initialization error:', error);
           reject(error);
           return;
         }
         
+        console.log('HealthKit initialized successfully');
         resolve(true);
       });
     });
   };
   
-  // Request Google Fit permissions
-  const requestGoogleFitPermissions = async (permissions: string[]): Promise<boolean> => {
-    if (!GoogleFit) {
-      throw new Error('Google Fit module not available');
+// Initialize Google Fit
+const initializeGoogleFit = async (): Promise<boolean> => {
+  if (!GoogleFit) {
+    throw new Error('Google Fit not available');
+  }
+  
+  try {
+    const { success, message } = await GoogleFit.authorize(GOOGLEFIT_OPTIONS);
+    
+    if (!success) {
+      throw new Error(message);
     }
     
-    try {
-      const options = {
-        scopes: [
-          GoogleFit.Scopes.FITNESS_ACTIVITY_READ,
-          GoogleFit.Scopes.FITNESS_BODY_READ,
-          GoogleFit.Scopes.FITNESS_HEART_RATE_READ,
-          GoogleFit.Scopes.FITNESS_SLEEP_READ,
-        ]
-      };
-      
-      const authResult = await GoogleFit.authorize(options);
-      return authResult.success;
-    } catch (error) {
-      console.error('Error requesting Google Fit permissions:', error);
-      throw error;
-    }
-  };
-  
-  export const updateWearableConnection = async (id: string, updates: Partial<WearableConnection>) => {
-    try {
-      const docRef = doc(wearableConnectionsRef, id);
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: serverTimestamp()
-      });
-    } catch (error) {
-      console.error('Error updating wearable connection:', error);
-      throw error;
-    }
-  };
-  
-  export const getUserWearableConnections = async (userId: string) => {
+    return true;
+  } catch (error) {
+    console.error('Error initializing Google Fit:', error);
+    throw error;
+  }
+};
+
+// Get user's wearable connections
+export const getUserWearableConnections = async (userId: string): Promise<WearableConnection[]> => {
     try {
       const q = query(wearableConnectionsRef, where('userId', '==', userId));
       const querySnapshot = await getDocs(q);
@@ -246,162 +222,65 @@ interface HealthKitStepData {
         ...doc.data()
       })) as WearableConnection[];
     } catch (error) {
-      console.error('Error getting user wearable connections:', error);
+      console.error('Error getting wearable connections:', error);
       throw error;
     }
   };
-  
-  // Sync health data from wearable
-  export const syncHealthData = async (userId: string, wearableType: string) => {
+
+// Sync health data from connected wearable
+export const syncHealthData = async (userId: string, wearableType: string): Promise<Partial<UserHealthData>> => {
     try {
+      console.log(`Syncing ${wearableType} data for user ${userId}`);
+      console.log('Platform:', Platform.OS);
+      console.log('AppleHealthKit available:', !!AppleHealthKit);
+      
+      // Initialize the data structure with empty arrays
       let healthData: Partial<UserHealthData> = {
         userId,
-        lastUpdated: Timestamp.now()
+        lastUpdated: Timestamp.now(),
+        steps: [],
+        heartRate: [],
+        sleepData: [],
+        caloriesBurned: [],
+        workouts: []
       };
       
-      if (wearableType === 'appleHealth' && Platform.OS === 'ios') {
+      // Normalize the wearable type to handle various inputs
+      const normalizedType = wearableType.toLowerCase().trim();
+      
+      // Get data from appropriate health service
+      if ((normalizedType === 'applehealth' || normalizedType === 'apple health') && Platform.OS === 'ios') {
         if (!AppleHealthKit) {
-          throw new Error('Apple HealthKit module not available');
-        }
-        
-        // Fetch steps data
-        const stepsData = await fetchAppleHealthSteps();
-        healthData.steps = stepsData.map(item => ({
-          value: item.value,
-          timestamp: Timestamp.fromDate(new Date(item.endDate)),
-          source: 'AppleHealth'
-        }));
-        
-        // Fetch heart rate data
-        const heartRateData = await fetchAppleHealthHeartRate();
-        healthData.heartRate = heartRateData.map(item => ({
-          value: item.value,
-          timestamp: Timestamp.fromDate(new Date(item.endDate)),
-          source: 'AppleHealth'
-        }));
-        
-        // Fetch sleep data
-        const sleepData = await fetchAppleHealthSleep();
-        healthData.sleepData = sleepData.map(item => ({
-          startTime: Timestamp.fromDate(new Date(item.startDate)),
-          endTime: Timestamp.fromDate(new Date(item.endDate)),
-          quality: item.value.toLowerCase() as 'deep' | 'light' | 'rem' | 'awake',
-          duration: Math.round((new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) / 60000)
-        }));
-        
-        // Fetch workout data
-        const workoutData = await fetchAppleHealthWorkouts();
-        healthData.workouts = workoutData.map(item => ({
-          type: item.activityName || 'Unknown',
-          startTime: Timestamp.fromDate(new Date(item.start)),
-          endTime: Timestamp.fromDate(new Date(item.end)),
-          calories: item.calories || 0,
-          heartRateAvg: item.metadata?.average_heart_rate,
-          heartRateMax: item.metadata?.max_heart_rate,
-          distance: item.distance
-        }));
-        
-        // Fetch calories burned data
-        const caloriesData = await fetchAppleHealthCalories();
-        healthData.caloriesBurned = caloriesData.map(item => ({
-          value: item.value,
-          timestamp: Timestamp.fromDate(new Date(item.endDate)),
-          source: 'AppleHealth'
-        }));
-      } 
-      else if (wearableType === 'googleFit' && Platform.OS === 'android') {
-        if (!GoogleFit) {
-          throw new Error('Google Fit module not available');
-        }
-        
-        // Fetch steps data
-        const stepsData = await fetchGoogleFitSteps();
-        healthData.steps = stepsData.map(item => ({
-          value: item.value,
-          timestamp: Timestamp.fromDate(typeof item.date === 'string' ? new Date(item.date) : new Date(item.date)),
-          source: 'GoogleFit'
-        }));
-        
-        // Fetch heart rate data
-        const heartRateData = await fetchGoogleFitHeartRate();
-        healthData.heartRate = heartRateData.map(item => ({
-          value: item.value,
-          timestamp: Timestamp.fromDate(typeof item.endDate === 'string' ? new Date(item.endDate) : new Date(item.endDate)),
-          source: 'GoogleFit'
-        }));
-        
-        // Fetch sleep data
-        const sleepData = await fetchGoogleFitSleep();
-        
-        // Convert Google's sleep values to our quality format
-        const sleepQualityMap: {[key: number]: 'deep' | 'light' | 'rem' | 'awake'} = {
-          1: 'awake',   // Awake
-          2: 'light',   // Sleep
-          3: 'deep',    // Out of bed
-          4: 'deep',    // Deep sleep
-          5: 'rem'      // REM
-        };
-        
-        healthData.sleepData = sleepData.map(item => ({
-          startTime: Timestamp.fromDate(typeof item.startDate === 'string' ? new Date(item.startDate) : new Date(item.startDate)),
-          endTime: Timestamp.fromDate(typeof item.endDate === 'string' ? new Date(item.endDate) : new Date(item.endDate)),
-          quality: sleepQualityMap[item.sleepStage] || 'light',
-          duration: Math.round((
-            (typeof item.endDate === 'string' ? new Date(item.endDate).getTime() : new Date(item.endDate).getTime()) - 
-            (typeof item.startDate === 'string' ? new Date(item.startDate).getTime() : new Date(item.startDate).getTime())
-          ) / 60000)
-        }));
-        
-        // Fetch workout data
-        const workoutData = await fetchGoogleFitWorkouts();
-        
-        healthData.workouts = workoutData.map(item => {
-          // Get activity name from Google Fit activity type
-          let activityName = 'Unknown';
-          
-          // Map Google Fit activity types to readable names
-          if (typeof item.type === 'number' && GoogleFit.Activities) {
-            switch (item.type) {
-              case GoogleFit.Activities.WALKING:
-                activityName = 'Walking';
-                break;
-              case GoogleFit.Activities.RUNNING:
-                activityName = 'Running';
-                break;
-              case GoogleFit.Activities.BIKING:
-                activityName = 'Biking';
-                break;
-              case GoogleFit.Activities.STILL:
-                activityName = 'Still';
-                break;
-              default:
-                activityName = item.activityName || `Activity ${item.type}`;
-            }
-          } else {
-            activityName = item.activityName || 'Unknown';
+          // Try to load again as a last resort
+          try {
+            console.log('Attempting to re-import AppleHealthKit...');
+            AppleHealthKit = require('react-native-health').default;
+            console.log('Re-imported AppleHealthKit:', !!AppleHealthKit);
+          } catch (e) {
+            console.error('Failed to re-import AppleHealthKit:', e);
           }
-          
-          return {
-            type: activityName, // Always ensure type is a string
-            startTime: Timestamp.fromDate(typeof item.start === 'string' ? new Date(item.start) : new Date(item.start)),
-            endTime: Timestamp.fromDate(typeof item.end === 'string' ? new Date(item.end) : new Date(item.end)),
-            calories: item.calories || 0,
-            heartRateAvg: undefined, // Google Fit may not directly provide this
-            heartRateMax: undefined,
-            distance: item.distance
-          };
-        });
+        }
         
-        // Fetch calories burned data
-        const caloriesData = await fetchGoogleFitCalories();
-        healthData.caloriesBurned = caloriesData.map(item => ({
-          value: item.calorie,
-          timestamp: Timestamp.fromDate(typeof item.endDate === 'string' ? new Date(item.endDate) : new Date(item.endDate)),
-          source: 'GoogleFit'
-        }));
+        if (!AppleHealthKit) {
+          throw new Error('AppleHealthKit module is not loaded. Check installation and imports.');
+        }
+        
+        healthData = await getAppleHealthData();
+        healthData.userId = userId;
+      } 
+      else if ((normalizedType === 'googlefit' || normalizedType === 'google fit') && Platform.OS === 'android') {
+        if (!GoogleFit) {
+          throw new Error('GoogleFit module not available. Check installation and permissions.');
+        }
+        
+        healthData = await getGoogleFitData();
+        healthData.userId = userId;
+      }
+      else {
+        throw new Error(`${wearableType} is not supported on ${Platform.OS}. AppleHealthKit=${!!AppleHealthKit}, GoogleFit=${!!GoogleFit}`);
       }
       
-      // Save the fetched data to Firestore
+      // Save to Firestore
       await createOrUpdateHealthData(userId, healthData);
       
       // Update the lastSynced timestamp
@@ -420,742 +299,926 @@ interface HealthKitStepData {
       
       return healthData;
     } catch (error) {
-      console.error(`Error syncing health data from ${wearableType}:`, error);
+      console.error(`Error syncing ${wearableType} data:`, error);
       throw error;
     }
   };
-  
-  // Apple HealthKit data fetching functions
-  // Apple HealthKit data fetching functions
-const fetchAppleHealthSteps = async (): Promise<HealthKitStepData[]> => {
+
+// Get data from Apple HealthKit
+const getAppleHealthData = async (): Promise<Partial<UserHealthData>> => {
     if (!AppleHealthKit) {
-      throw new Error('Apple HealthKit module not available');
+      throw new Error('HealthKit not available');
     }
     
-    const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-      endDate: new Date().toISOString(),
+    // Initialize health data with empty arrays
+    const healthData: Partial<UserHealthData> = {
+      userId: '',
+      steps: [],
+      heartRate: [],
+      sleepData: [],
+      caloriesBurned: [],
+      workouts: [],
+      lastUpdated: Timestamp.now()
     };
     
-    return new Promise((resolve, reject) => {
-      AppleHealthKit.getDailyStepCountSamples(options, (error: Error, results: HealthKitStepData[]) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        
-        resolve(results);
-      });
-    });
-  };
-  
-  const fetchAppleHealthHeartRate = async (): Promise<HealthKitHeartRateData[]> => {
-    if (!AppleHealthKit) {
-      throw new Error('Apple HealthKit module not available');
-    }
+    // Time period (7 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
     
     const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-      endDate: new Date().toISOString(),
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     };
     
-    return new Promise((resolve, reject) => {
-      AppleHealthKit.getHeartRateSamples(options, (error: Error, results: HealthKitHeartRateData[]) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        
-        resolve(results);
-      });
-    });
-  };
-  
-  const fetchAppleHealthSleep = async (): Promise<HealthKitSleepData[]> => {
-    if (!AppleHealthKit) {
-      throw new Error('Apple HealthKit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-      endDate: new Date().toISOString(),
-    };
-    
-    return new Promise((resolve, reject) => {
-      AppleHealthKit.getSleepSamples(options, (error: Error, results: HealthKitSleepData[]) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        
-        resolve(results);
-      });
-    });
-  };
-  
-  const fetchAppleHealthWorkouts = async (): Promise<HealthKitWorkoutData[]> => {
-    if (!AppleHealthKit) {
-      throw new Error('Apple HealthKit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
-      endDate: new Date().toISOString(),
-    };
-    
-    return new Promise((resolve, reject) => {
-      AppleHealthKit.getWorkouts(options, (error: Error, results: HealthKitWorkoutData[]) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        
-        resolve(results);
-      });
-    });
-  };
-  
-  const fetchAppleHealthCalories = async (): Promise<HealthKitCaloriesData[]> => {
-    if (!AppleHealthKit) {
-      throw new Error('Apple HealthKit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-      endDate: new Date().toISOString(),
-    };
-    
-    return new Promise((resolve, reject) => {
-      AppleHealthKit.getDailyCaloriesBurned(options, (error: Error, results: HealthKitCaloriesData[]) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        
-        resolve(results);
-      });
-    });
-  };
-  
-  // Google Fit data fetching functions
-  const fetchGoogleFitSteps = async (): Promise<GoogleFitStepData[]> => {
-    if (!GoogleFit) {
-      throw new Error('Google Fit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 *.60 * 1000), // 7 days ago
-      endDate: new Date(),
-      bucketUnit: 'DAY',
-      bucketInterval: 1
-    };
-    
+    // Get steps data
     try {
-      const res = await GoogleFit.getDailyStepCountSamples(options);
+      const stepsData = await new Promise<any[]>((resolve, reject) => {
+        AppleHealthKit.getDailyStepCountSamples(options, (err: Error, results: any[]) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(results);
+        });
+      });
       
-      // Find the data source with most complete data
-      let stepData: GoogleFitStepData[] = [];
+      healthData.steps = stepsData.map((item: any) => ({
+        value: item.value || 0,
+        timestamp: Timestamp.fromDate(new Date(item.endDate)),
+        source: 'HealthKit'
+      }));
+      console.log(`Found ${healthData.steps?.length || 0} step records`);
+    } catch (error) {
+      console.error('Error getting steps data:', error);
+      healthData.steps = [];
+    }
+    
+    // Get heart rate data
+    try {
+      const heartRateData = await new Promise<any[]>((resolve, reject) => {
+        AppleHealthKit.getHeartRateSamples(options, (err: Error, results: any[]) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(results);
+        });
+      });
       
-      if (res && res.length > 0) {
-        for (const source of res) {
-          if (source.steps && source.steps.length > 0) {
-            stepData = source.steps;
+      healthData.heartRate = heartRateData.map((item: any) => ({
+        value: item.value || 0,
+        timestamp: Timestamp.fromDate(new Date(item.endDate)),
+        source: 'HealthKit'
+      }));
+      console.log(`Found ${healthData.heartRate?.length || 0} heart rate records`);
+    } catch (error) {
+      console.error('Error getting heart rate data:', error);
+      healthData.heartRate = [];
+    }
+    
+    // Get sleep data
+    try {
+      const sleepData = await new Promise<any[]>((resolve, reject) => {
+        AppleHealthKit.getSleepSamples(options, (err: Error, results: any[]) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(results);
+        });
+      });
+      
+      // Map HealthKit sleep values to our format
+      const sleepQualityMap: {[key: string]: 'deep' | 'light' | 'rem' | 'awake'} = {
+        'INBED': 'light',
+        'ASLEEP': 'deep',
+        'AWAKE': 'awake',
+        'DEEP': 'deep',
+        'CORE': 'deep',
+        'REM': 'rem'
+      };
+      
+      healthData.sleepData = sleepData.map((item: any) => ({
+        startTime: Timestamp.fromDate(new Date(item.startDate)),
+        endTime: Timestamp.fromDate(new Date(item.endDate)),
+        quality: sleepQualityMap[item.value] || 'light',
+        duration: Math.round((new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) / 60000)
+      }));
+      console.log(`Found ${healthData.sleepData?.length || 0} sleep records`);
+    } catch (error) {
+      console.error('Error getting sleep data:', error);
+      healthData.sleepData = [];
+    }
+    
+    // Get workout data
+    try {
+      const workoutData = await new Promise<any[]>((resolve, reject) => {
+        AppleHealthKit.getWorkouts(options, (err: Error, results: any[]) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(results);
+        });
+      });
+      
+      healthData.workouts = workoutData.map((item: any) => ({
+        type: item.activityName || 'Unknown',
+        startTime: Timestamp.fromDate(new Date(item.start)),
+        endTime: Timestamp.fromDate(new Date(item.end)),
+        calories: item.totalEnergyBurned || 0,
+        heartRateAvg: item.metadata?.averageHeartRate,
+        heartRateMax: item.metadata?.maxHeartRate,
+        distance: item.totalDistance
+      }));
+      console.log(`Found ${healthData.workouts?.length || 0} workout records`);
+    } catch (error) {
+      console.error('Error getting workout data:', error);
+      healthData.workouts = [];
+    }
+    
+    // Get calories data
+    try {
+      const caloriesData = await new Promise<any[]>((resolve, reject) => {
+        AppleHealthKit.getActiveEnergyBurned(options, (err: Error, results: any[]) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(results);
+        });
+      });
+      
+      healthData.caloriesBurned = caloriesData.map((item: any) => ({
+        value: item.value || 0,
+        timestamp: Timestamp.fromDate(new Date(item.endDate)),
+        source: 'HealthKit'
+      }));
+      console.log(`Found ${healthData.caloriesBurned?.length || 0} calorie burn records`);
+    } catch (error) {
+      console.error('Error getting calories data:', error);
+      healthData.caloriesBurned = [];
+    }
+    
+    return healthData;
+  };
+
+// Get data from Google Fit
+const getGoogleFitData = async (): Promise<Partial<UserHealthData>> => {
+  if (!GoogleFit) {
+    throw new Error('Google Fit not available');
+  }
+  
+  const healthData: Partial<UserHealthData> = {
+    steps: [],
+    heartRate: [],
+    sleepData: [],
+    caloriesBurned: [],
+    workouts: []
+  };
+  
+  // Time period (7 days)
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 7);
+  
+  const timeOptions = {
+    startDate,
+    endDate
+  };
+  
+  // Get steps data
+  try {
+    const stepsResponse = await GoogleFit.getDailyStepCountSamples(timeOptions);
+    
+    // Find the data source with steps
+    let stepsData: any[] = [];
+    if (stepsResponse.length > 0) {
+      for (const source of stepsResponse) {
+        if (source.steps && source.steps.length > 0) {
+          stepsData = source.steps;
+          break;
+        }
+      }
+    }
+    
+    healthData.steps = stepsData.map(item => ({
+      value: item.value,
+      timestamp: Timestamp.fromDate(new Date(item.date)),
+      source: 'GoogleFit'
+    }));
+  } catch (error) {
+    console.error('Error getting steps data:', error);
+  }
+  
+  // Get heart rate data
+  try {
+    const heartRateData = await GoogleFit.getHeartRateSamples(timeOptions);
+    
+    healthData.heartRate = heartRateData.map(item => ({
+      value: item.value,
+      timestamp: Timestamp.fromDate(new Date(item.endDate || item.date)),
+      source: 'GoogleFit'
+    }));
+  } catch (error) {
+    console.error('Error getting heart rate data:', error);
+  }
+  
+  // Get sleep data
+  try {
+    const sleepData = await GoogleFit.getSleepSamples(timeOptions);
+    
+    // Map Google Fit sleep stages to our format
+    const sleepQualityMap: {[key: number]: 'deep' | 'light' | 'rem' | 'awake'} = {
+      1: 'awake', // Awake
+      2: 'light', // Sleep
+      3: 'deep',  // Out of bed
+      4: 'deep',  // Deep sleep
+      5: 'rem'    // REM
+    };
+    
+    healthData.sleepData = sleepData.map(item => ({
+      startTime: Timestamp.fromDate(new Date(item.startDate)),
+      endTime: Timestamp.fromDate(new Date(item.endDate)),
+      quality: sleepQualityMap[item.sleepStage] || 'light',
+      duration: Math.round((new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) / 60000)
+    }));
+  } catch (error) {
+    console.error('Error getting sleep data:', error);
+  }
+  
+  // Get workout data
+  try {
+    const workoutData = await GoogleFit.getActivitySamples(timeOptions);
+    
+    healthData.workouts = workoutData.map(item => {
+      // Map Google Fit activity types to readable names
+      let activityName = 'Unknown';
+      if (GoogleFit.ActivityTypes) {
+        switch (item.activityType || item.type) {
+          case GoogleFit.ActivityTypes.Walking:
+            activityName = 'Walking';
             break;
-          }
+          case GoogleFit.ActivityTypes.Running:
+            activityName = 'Running';
+            break;
+          case GoogleFit.ActivityTypes.Biking:
+            activityName = 'Biking';
+            break;
+          case GoogleFit.ActivityTypes.Still:
+            activityName = 'Still';
+            break;
+          default:
+            activityName = item.activityName || `Activity ${item.type}`;
         }
-      }
-      
-      return stepData;
-    } catch (error) {
-      console.error('Error fetching Google Fit steps:', error);
-      throw error;
-    }
-  };
-  
-  const fetchGoogleFitHeartRate = async (): Promise<GoogleFitHeartRateData[]> => {
-    if (!GoogleFit) {
-      throw new Error('Google Fit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      endDate: new Date(),
-      bucketUnit: 'HOUR',
-      bucketInterval: 1
-    };
-    
-    try {
-      const res = await GoogleFit.getHeartRateSamples(options);
-      return res as GoogleFitHeartRateData[];
-    } catch (error) {
-      console.error('Error fetching Google Fit heart rate:', error);
-      throw error;
-    }
-  };
-  
-  const fetchGoogleFitSleep = async (): Promise<GoogleFitSleepData[]> => {
-    if (!GoogleFit) {
-      throw new Error('Google Fit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      endDate: new Date()
-    };
-    
-    try {
-      const res = await GoogleFit.getSleepSamples(options);
-      return res as GoogleFitSleepData[];
-    } catch (error) {
-      console.error('Error fetching Google Fit sleep data:', error);
-      throw error;
-    }
-  };
-  
-  const fetchGoogleFitWorkouts = async (): Promise<GoogleFitWorkoutData[]> => {
-    if (!GoogleFit) {
-      throw new Error('Google Fit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
-      endDate: new Date()
-    };
-    
-    try {
-      const res = await GoogleFit.getActivitySamples(options);
-      return res as GoogleFitWorkoutData[];
-    } catch (error) {
-      console.error('Error fetching Google Fit workouts:', error);
-      throw error;
-    }
-  };
-  
-  const fetchGoogleFitCalories = async (): Promise<GoogleFitCaloriesData[]> => {
-    if (!GoogleFit) {
-      throw new Error('Google Fit module not available');
-    }
-    
-    const options = {
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      endDate: new Date(),
-      basalCalculation: true
-    };
-    
-    try {
-      const res = await GoogleFit.getDailyCalorieSamples(options);
-      return res as GoogleFitCaloriesData[];
-    } catch (error) {
-      console.error('Error fetching Google Fit calories:', error);
-      throw error;
-    }
-  };
-  
-  // Health Data Functions
-  export const createOrUpdateHealthData = async (userId: string, healthData: Partial<UserHealthData>) => {
-    try {
-      // First check if there's an existing document
-      const q = query(healthDataRef, where('userId', '==', userId));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        // Create new health data document
-        await addDoc(healthDataRef, {
-          userId,
-          ...healthData,
-          lastUpdated: serverTimestamp()
-        });
-      } else {
-        // Update existing document
-        const docRef = doc(healthDataRef, querySnapshot.docs[0].id);
-        await updateDoc(docRef, {
-          ...healthData,
-          lastUpdated: serverTimestamp()
-        });
-      }
-    } catch (error) {
-      console.error('Error creating/updating health data:', error);
-      throw error;
-    }
-  };
-  
-  export const getUserHealthData = async (userId: string): Promise<UserHealthData | null> => {
-    try {
-      // Check if user has any connected wearables
-      const wearables = await getUserWearableConnections(userId);
-      const activeWearable = wearables.find(w => w.isConnected);
-      
-      // If there's an active wearable, try to sync latest data
-      if (activeWearable) {
-        try {
-          // If last sync was more than 1 hour ago, sync new data
-          const lastSyncTime = activeWearable.lastSynced?.toDate()?.getTime() || 0;
-          const oneHourAgo = Date.now() - (60 * 60 * 1000);
-          
-          if (lastSyncTime < oneHourAgo) {
-            await syncHealthData(userId, activeWearable.type);
-          }
-        } catch (syncError) {
-          console.error('Error syncing latest health data:', syncError);
-          // Continue with existing data if sync fails
-        }
-      }
-      
-      // Get user health data from Firestore
-      const q = query(healthDataRef, where('userId', '==', userId));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        return null;
-      }
-      
-      const docData = querySnapshot.docs[0].data();
-      const userData = {
-        id: querySnapshot.docs[0].id,
-        userId: docData.userId,
-        steps: docData.steps || [],
-        heartRate: docData.heartRate || [],
-        sleepData: docData.sleepData || [],
-        caloriesBurned: docData.caloriesBurned || [],
-        workouts: docData.workouts || [],
-        lastUpdated: docData.lastUpdated
-      } as UserHealthData;
-      
-      return userData;
-    } catch (error) {
-      console.error('Error getting user health data:', error);
-      throw error;
-    }
-  };
-  
-  // Add metrics (steps, heart rate, etc.) - for manual entry if needed
-  export const addHealthMetrics = async (
-    userId: string, 
-    metricType: keyof Omit<UserHealthData, 'userId' | 'lastUpdated' | 'workouts' | 'sleepData'>, 
-    metrics: HealthMetric[]
-  ) => {
-    try {
-      const userData = await getUserHealthData(userId);
-      
-      if (!userData) {
-        // Create a new document with these metrics
-        const initialData: Partial<UserHealthData> = {
-          userId,
-          [metricType]: metrics
-        };
-        await createOrUpdateHealthData(userId, initialData);
-        return;
-      }
-      
-      // Update existing document with new metrics
-      const updatedMetrics = [...(userData[metricType] || []), ...metrics];
-      await createOrUpdateHealthData(userId, { [metricType]: updatedMetrics });
-    } catch (error) {
-      console.error(`Error adding health metrics (${metricType}):`, error);
-      throw error;
-    }
-  };
-  
-  // Calculate recovery status based on health data
-  export const calculateRecoveryStatus = async (userId: string): Promise<RecoveryStatus | null> => {
-    try {
-      const userData = await getUserHealthData(userId);
-      
-      if (!userData || !userData.sleepData || userData.sleepData.length === 0) {
-        return null;
-      }
-      
-      // Sort sleep data by end time (most recent first)
-      const recentSleep = userData.sleepData
-        .sort((a, b) => b.endTime.toMillis() - a.endTime.toMillis())
-        .slice(0, 3);
-      
-      // Calculate deep sleep percentage
-      const totalSleepDuration = recentSleep.reduce((acc, sleep) => acc + sleep.duration, 0);
-      const deepSleepDuration = recentSleep
-        .filter(sleep => sleep.quality === 'deep')
-        .reduce((acc, sleep) => acc + sleep.duration, 0);
-      
-      const deepSleepPercent = totalSleepDuration > 0
-        ? (deepSleepDuration / totalSleepDuration) * 100
-        : 0;
-      
-      // Get recent heart rate average
-      const recentHeartRate = userData.heartRate?.length > 0
-        ? userData.heartRate
-            .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis())
-            .slice(0, 10)
-            .reduce((acc, hr) => acc + hr.value, 0) / 
-            Math.min(10, userData.heartRate.length)
-        : 70; // Default value if no heart rate data
-      
-      // Calculate activity intensity from recent workouts
-      const recentWorkouts = userData.workouts?.length > 0
-        ? userData.workouts
-            .filter(w => {
-              const workoutDate = w.endTime.toDate();
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              return workoutDate > yesterday;
-            })
-        : [];
-      
-      // Calculate activity score based on recent workouts
-      // Lower score means more recovery needed
-      const activityScore = recentWorkouts.length > 0
-        ? Math.min(100, Math.max(0, 100 - (recentWorkouts.reduce((acc, w) => 
-            acc + (w.calories || 0), 0) / 20)))
-        : 100; // Full recovery if no recent workouts
-      
-      // Calculate overall score
-      const sleepScore = Math.min(100, Math.max(0, deepSleepPercent * 2));
-      const heartRateScore = Math.min(100, Math.max(0, 
-        recentHeartRate < 60 ? 100 : 
-        recentHeartRate < 70 ? 85 : 
-        recentHeartRate < 80 ? 70 : 
-        recentHeartRate < 90 ? 50 : 30
-      ));
-      
-      const overallScore = Math.round((sleepScore * 0.4) + (heartRateScore * 0.3) + (activityScore * 0.3));
-      
-      // Generate recommendation
-      let recommendation = '';
-      if (overallScore < 40) {
-        recommendation = 'Your body needs rest. Consider a recovery day.';
-      } else if (overallScore < 60) {
-        recommendation = 'Low-intensity activity is recommended today.';
-      } else if (overallScore < 80) {
-        recommendation = 'Your body is ready for moderate training.';
-      } else {
-        recommendation = 'You are well recovered for high-intensity training.';
       }
       
       return {
-        score: overallScore,
-        recommendation,
-        contributingFactors: {
-          sleepQuality: Math.round(deepSleepPercent),
-          restingHeartRate: Math.round(recentHeartRate),
-          heartRateVariability: userData.heartRate?.length > 2 ? calculateHRV(userData.heartRate) : undefined,
-          recentActivityLevel: Math.round(activityScore)
-        }
+        type: activityName,
+        startTime: Timestamp.fromDate(new Date(item.start)),
+        endTime: Timestamp.fromDate(new Date(item.end)),
+        calories: item.calories || 0,
+        heartRateAvg: undefined, // Google Fit doesn't provide this directly
+        heartRateMax: undefined,
+        distance: item.distance
       };
-    } catch (error) {
-      console.error('Error calculating recovery status:', error);
-      throw error;
-    }
-  };
+    });
+  } catch (error) {
+    console.error('Error getting workout data:', error);
+  }
   
-  // Helper function to calculate heart rate variability
+  // Get calories data
+  try {
+    const caloriesData = await GoogleFit.getDailyCalorieSamples(timeOptions);
+    
+    healthData.caloriesBurned = caloriesData.map(item => ({
+      value: item.calorie || item.value,
+      timestamp: Timestamp.fromDate(new Date(item.endDate || item.date)),
+      source: 'GoogleFit'
+    }));
+  } catch (error) {
+    console.error('Error getting calories data:', error);
+  }
+  
+  return healthData;
+};
+
+// Create or update health data
+export const createOrUpdateHealthData = async (userId: string, healthData: Partial<UserHealthData>) => {
+  try {
+    // Check if there's an existing document
+    const q = query(healthDataRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      // Create new document
+      await addDoc(healthDataRef, {
+        ...healthData,
+        lastUpdated: serverTimestamp()
+      });
+    } else {
+      // Update existing document
+      const docRef = doc(healthDataRef, querySnapshot.docs[0].id);
+      await updateDoc(docRef, {
+        ...healthData,
+        lastUpdated: serverTimestamp()
+      });
+    }
+  } catch (error) {
+    console.error('Error creating/updating health data:', error);
+    throw error;
+  }
+};
+
+// Get user health data with fallback
+export const getUserHealthData = async (userId: string): Promise<UserHealthData | null> => {
+  try {
+    // Check if the user has any wearable connections
+    const connections = await getUserWearableConnections(userId);
+    const activeConnection = connections.find(c => c.isConnected);
+    
+    // If there's an active connection, try to sync data if it's been a while
+    if (activeConnection) {
+      try {
+        // If last sync was more than 1 hour ago, sync again
+        const lastSyncTime = activeConnection.lastSynced?.toDate()?.getTime() || 0;
+        const oneHourAgo = Date.now() - (60 * 60 * 1000);
+        
+        if (lastSyncTime < oneHourAgo) {
+          await syncHealthData(userId, activeConnection.type);
+        }
+      } catch (syncError) {
+        console.error('Error during auto-sync:', syncError);
+        // Continue with existing data if sync fails
+      }
+    }
+    
+    // Get data from Firestore
+    const q = query(healthDataRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      // No data exists yet
+      if (!activeConnection) {
+        return null; // No connection, no data
+      }
+      
+      // Try to sync data if we have a connection but no data
+      try {
+        await syncHealthData(userId, activeConnection.type);
+        
+        // Check again after sync
+        const newQuery = query(healthDataRef, where('userId', '==', userId));
+        const newSnapshot = await getDocs(newQuery);
+        
+        if (newSnapshot.empty) {
+          return null; // Still no data after sync attempt
+        }
+        
+        const docData = newSnapshot.docs[0].data();
+        return {
+          userId: docData.userId,
+          steps: docData.steps || [],
+          heartRate: docData.heartRate || [],
+          sleepData: docData.sleepData || [],
+          caloriesBurned: docData.caloriesBurned || [],
+          workouts: docData.workouts || [],
+          lastUpdated: docData.lastUpdated
+        } as UserHealthData;
+        
+      } catch (error) {
+        console.error('Error syncing on first access:', error);
+        return null;
+      }
+    }
+    
+    // Return existing data
+    const docData = querySnapshot.docs[0].data();
+    
+    return {
+      userId: docData.userId,
+      steps: docData.steps || [],
+      heartRate: docData.heartRate || [],
+      sleepData: docData.sleepData || [],
+      caloriesBurned: docData.caloriesBurned || [],
+      workouts: docData.workouts || [],
+      lastUpdated: docData.lastUpdated
+    } as UserHealthData;
+  } catch (error) {
+    console.error('Error getting health data:', error);
+    throw error;
+  }
+};
+
+// Calculate recovery status
+export const calculateRecoveryStatus = async (userId: string): Promise<RecoveryStatus | null> => {
+  try {
+    const userData = await getUserHealthData(userId);
+    
+    if (!userData || !userData.sleepData || userData.sleepData.length === 0) {
+      return null;
+    }
+    
+    // Sort sleep data by end time (most recent first)
+    const recentSleep = userData.sleepData
+      .sort((a, b) => b.endTime.toMillis() - a.endTime.toMillis())
+      .slice(0, 3);
+    
+    // Calculate deep sleep percentage
+    const totalSleepDuration = recentSleep.reduce((acc, sleep) => acc + sleep.duration, 0);
+    const deepSleepDuration = recentSleep
+      .filter(sleep => sleep.quality === 'deep')
+      .reduce((acc, sleep) => acc + sleep.duration, 0);
+    
+    const deepSleepPercent = totalSleepDuration > 0
+      ? (deepSleepDuration / totalSleepDuration) * 100
+      : 0;
+    
+    // Get recent heart rate average
+    const recentHeartRate = userData.heartRate?.length > 0
+      ? userData.heartRate
+          .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis())
+          .slice(0, 10)
+          .reduce((acc, hr) => acc + hr.value, 0) / 
+          Math.min(10, userData.heartRate.length)
+      : 70; // Default value if no heart rate data
+    
+    // Calculate activity intensity from recent workouts
+    const recentWorkouts = userData.workouts?.length > 0
+      ? userData.workouts
+          .filter(w => {
+            const workoutDate = w.endTime.toDate();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            return workoutDate > yesterday;
+          })
+      : [];
+    
+    // Calculate activity score based on recent workouts
+    // Lower score means more recovery needed
+    const activityScore = recentWorkouts.length > 0
+      ? Math.min(100, Math.max(0, 100 - (recentWorkouts.reduce((acc, w) => 
+          acc + (w.calories || 0), 0) / 20)))
+      : 100; // Full recovery if no recent workouts
+    
+    // Calculate overall score
+    const sleepScore = Math.min(100, Math.max(0, deepSleepPercent * 2));
+    const heartRateScore = Math.min(100, Math.max(0, 
+      recentHeartRate < 60 ? 100 : 
+      recentHeartRate < 70 ? 85 : 
+      recentHeartRate < 80 ? 70 : 
+      recentHeartRate < 90 ? 50 : 30
+    ));
+    
+    const overallScore = Math.round((sleepScore * 0.4) + (heartRateScore * 0.3) + (activityScore * 0.3));
+    
+    // Generate recommendation
+    let recommendation = '';
+    if (overallScore < 40) {
+      recommendation = 'Your body needs rest. Consider a recovery day.';
+    } else if (overallScore < 60) {
+      recommendation = 'Low-intensity activity is recommended today.';
+    } else if (overallScore < 80) {
+      recommendation = 'Your body is ready for moderate training.';
+    } else {
+      recommendation = 'You are well recovered for high-intensity training.';
+    }
+    
+    return {
+      score: overallScore,
+      recommendation,
+      contributingFactors: {
+        sleepQuality: Math.round(deepSleepPercent),
+        restingHeartRate: Math.round(recentHeartRate),
+        heartRateVariability: userData.heartRate?.length > 2 ? calculateHRV(userData.heartRate) : undefined,
+        recentActivityLevel: Math.round(activityScore)
+      }
+    };
+  } catch (error) {
+    console.error('Error calculating recovery status:', error);
+    throw error;
+  }
+};
+
 // Helper function to calculate heart rate variability
 const calculateHRV = (heartRateData: HealthMetric[]): number => {
-    if (heartRateData.length < 5) {
-      return 50; // Default value
-    }
-    
-    // Sort by timestamp
-    const sortedData = [...heartRateData]
-      .sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
-    
-    // Calculate differences between consecutive heart rates
-    const differences = [];
-    for (let i = 1; i < sortedData.length; i++) {
-      differences.push(Math.abs(sortedData[i].value - sortedData[i-1].value));
-    }
-    
-    // Calculate RMSSD (Root Mean Square of Successive Differences)
-    const squaredDiffs = differences.map(diff => diff * diff);
-    const meanSquaredDiff = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
-    const rmssd = Math.sqrt(meanSquaredDiff);
-    
-    // Convert RMSSD to a score between 0-100
-    // Higher HRV is generally better for recovery
-    return Math.min(100, Math.max(0, rmssd * 2));
-  };
+  if (heartRateData.length < 5) {
+    return 50; // Default value
+  }
   
-  // Function to check if health services are available
-  export const isHealthServiceAvailable = (serviceType: 'appleHealth' | 'googleFit'): boolean => {
-    try {
-      if (serviceType === 'appleHealth') {
-        return Platform.OS === 'ios' && !!AppleHealthKit;
-      } else if (serviceType === 'googleFit') {
-        return Platform.OS === 'android' && !!GoogleFit;
-      }
-      return false;
-    } catch (error) {
-      console.error(`Error checking ${serviceType} availability:`, error);
-      return false;
-    }
-  };
+  // Sort by timestamp
+  const sortedData = [...heartRateData]
+    .sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
   
-  // Disconnect a wearable
-  export const disconnectWearable = async (connectionId: string) => {
+  // Calculate differences between consecutive heart rates
+  const differences: number[] = [];
+  for (let i = 1; i < sortedData.length; i++) {
+    differences.push(Math.abs(sortedData[i].value - sortedData[i-1].value));
+  }
+  
+  // Calculate RMSSD (Root Mean Square of Successive Differences)
+  const squaredDiffs = differences.map(diff => diff * diff);
+  const meanSquaredDiff = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
+  const rmssd = Math.sqrt(meanSquaredDiff);
+  
+  // Convert RMSSD to a score between 0-100
+  // Higher HRV is generally better for recovery
+  return Math.min(100, Math.max(0, rmssd * 2));
+};
+
+// Disconnect a wearable
+export const disconnectWearable = async (connectionId: string): Promise<boolean> => {
+  try {
+    const docRef = doc(wearableConnectionsRef, connectionId);
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      throw new Error('Wearable connection not found');
+    }
+    
+    // Update the connection status
+    await updateDoc(docRef, {
+      isConnected: false,
+      disconnectedAt: serverTimestamp()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Error disconnecting wearable:', error);
+    throw error;
+  }
+};
+
+// Check if health services are available on the device
+export const checkHealthServicesAvailability = async (): Promise<{
+  appleHealth: boolean;
+  googleFit: boolean;
+}> => {
+  let appleHealth = false;
+  let googleFit = false;
+  
+  if (Platform.OS === 'ios' && AppleHealthKit) {
     try {
-      const docRef = doc(wearableConnectionsRef, connectionId);
-      const docSnap = await getDoc(docRef);
-      
-      if (!docSnap.exists()) {
-        throw new Error('Wearable connection not found');
-      }
-      
-      const connection = docSnap.data() as WearableConnection;
-      
-      // For OAuth-based services like Fitbit, we would revoke the access token here
-      if (connection.type === 'fitbit' || connection.type === 'garmin') {
-        // Placeholder for OAuth token revocation
-        console.log(`Revoking ${connection.type} access would happen here`);
-      }
-      
-      // Update the connection status
-      await updateDoc(docRef, {
-        isConnected: false,
-        disconnectedAt: serverTimestamp()
+      // Check if HealthKit is available
+      await new Promise((resolve, reject) => {
+        AppleHealthKit.isAvailable((error: Error, available: boolean) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          appleHealth = available;
+          resolve(available);
+        });
       });
-      
-      return true;
     } catch (error) {
-      console.error('Error disconnecting wearable:', error);
-      throw error;
+      console.error('Error checking HealthKit availability:', error);
     }
+  }
+  
+  if (Platform.OS === 'android' && GoogleFit) {
+    try {
+      // Check if Google Fit is available
+      const result = await GoogleFit.checkIsAuthorized();
+      googleFit = result.isAuth;
+    } catch (error) {
+      console.error('Error checking Google Fit availability:', error);
+    }
+  }
+
+  return {
+    appleHealth,
+    googleFit
+  };
+};
+
+export const getAvailableHealthServices = async (): Promise<string[]> => {
+    const services: string[] = [];
+    const availability = await checkHealthServicesAvailability();
+    
+    if (Platform.OS === 'ios' && availability.appleHealth) {
+      services.push('appleHealth');
+    }
+    
+    if (Platform.OS === 'android' && availability.googleFit) {
+      services.push('googleFit');
+    }
+    
+    // Add other services that don't require platform-specific checks
+    services.push('manual'); // Always allow manual entry
+    
+    return services;
   };
   
-  // Get system services availability
-  export const getHealthServicesStatus = async (): Promise<{
-    appleHealth: boolean;
-    googleFit: boolean;
-    fitbit: boolean;
-    garmin: boolean;
-  }> => {
+  // Add manual health data entry
+  export const addManualHealthData = async (
+    userId: string,
+    dataType: 'steps' | 'heartRate' | 'sleep' | 'workout' | 'calories',
+    data: any
+  ): Promise<boolean> => {
     try {
-      // For Apple HealthKit
-      let appleHealthAvailable = false;
-      if (Platform.OS === 'ios' && AppleHealthKit) {
-        try {
-          // Check if HealthKit is available on this device
-          appleHealthAvailable = await new Promise((resolve) => {
-            AppleHealthKit.isAvailable((error: Error, available: boolean) => {
-              if (error) {
-                resolve(false);
-                return;
-              }
-              resolve(available);
-            });
-          });
-        } catch (error) {
-          console.error('Error checking HealthKit availability:', error);
-          appleHealthAvailable = false;
-        }
-      }
-      
-      // For Google Fit
-      let googleFitAvailable = false;
-      if (Platform.OS === 'android' && GoogleFit) {
-        try {
-          // Check if Google Fit is available
-          const result = await GoogleFit.checkIsAuthorized();
-          googleFitAvailable = result.isAuth;
-        } catch (error) {
-          console.error('Error checking Google Fit availability:', error);
-          googleFitAvailable = false;
-        }
-      }
-      
-      // For third-party services, we would need to check if the user has the apps installed
-      // This is a simplified placeholder
-      const fitbitAvailable = true; // Always allow Fitbit connection attempt
-      const garminAvailable = true; // Always allow Garmin connection attempt
-      
-      return {
-        appleHealth: appleHealthAvailable,
-        googleFit: googleFitAvailable,
-        fitbit: fitbitAvailable,
-        garmin: garminAvailable
-      };
-    } catch (error) {
-      console.error('Error getting health services status:', error);
-      throw error;
-    }
-  };
-  
-  // Fallback function to provide mock data when actual health services aren't available
-  export const getHealthDataFallback = async (userId: string): Promise<UserHealthData> => {
-    try {
-      // First, check if real data exists in Firestore
-      const q = query(healthDataRef, where('userId', '==', userId));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const docData = querySnapshot.docs[0].data();
-        
-        // If we have some data but it's incomplete, we'll return it with fallbacks for missing fields
-        return {
-          userId,
-          steps: docData.steps || generateMockSteps(),
-          heartRate: docData.heartRate || generateMockHeartRate(),
-          sleepData: docData.sleepData || generateMockSleep(),
-          caloriesBurned: docData.caloriesBurned || generateMockCalories(),
-          workouts: docData.workouts || generateMockWorkouts(),
-          lastUpdated: docData.lastUpdated || Timestamp.now()
-        };
-      }
-      
-      // If no real data exists, generate completely mock data
-      const mockData: UserHealthData = {
+      // Get existing health data
+      const existingData = await getUserHealthData(userId) || {
         userId,
-        steps: generateMockSteps(),
-        heartRate: generateMockHeartRate(),
-        sleepData: generateMockSleep(),
-        caloriesBurned: generateMockCalories(),
-        workouts: generateMockWorkouts(),
+        steps: [],
+        heartRate: [],
+        sleepData: [],
+        caloriesBurned: [],
+        workouts: [],
         lastUpdated: Timestamp.now()
       };
       
-      return mockData;
+      // Prepare update object
+      const updateData: Partial<UserHealthData> = {
+        userId,
+        lastUpdated: Timestamp.now()
+      };
+      
+      // Add different types of data
+      switch (dataType) {
+        case 'steps':
+          const stepData: HealthMetric = {
+            value: data.value,
+            timestamp: Timestamp.fromDate(data.date || new Date()),
+            source: 'manual'
+          };
+          updateData.steps = [...(existingData.steps || []), stepData];
+          break;
+        
+        case 'heartRate':
+          const heartRateData: HealthMetric = {
+            value: data.value,
+            timestamp: Timestamp.fromDate(data.date || new Date()),
+            source: 'manual'
+          };
+          updateData.heartRate = [...(existingData.heartRate || []), heartRateData];
+          break;
+        
+        case 'sleep':
+          const sleepData = {
+            startTime: Timestamp.fromDate(data.startTime),
+            endTime: Timestamp.fromDate(data.endTime),
+            quality: data.quality || 'light',
+            duration: data.duration || Math.round(
+              (data.endTime.getTime() - data.startTime.getTime()) / 60000
+            )
+          };
+          updateData.sleepData = [...(existingData.sleepData || []), sleepData];
+          break;
+        
+        case 'workout':
+          const workoutData = {
+            type: data.type || 'Unknown',
+            startTime: Timestamp.fromDate(data.startTime),
+            endTime: Timestamp.fromDate(data.endTime),
+            calories: data.calories || 0,
+            heartRateAvg: data.heartRateAvg,
+            heartRateMax: data.heartRateMax,
+            distance: data.distance
+          };
+          updateData.workouts = [...(existingData.workouts || []), workoutData];
+          break;
+        
+        case 'calories':
+          const caloriesData: HealthMetric = {
+            value: data.value,
+            timestamp: Timestamp.fromDate(data.date || new Date()),
+            source: 'manual'
+          };
+          updateData.caloriesBurned = [...(existingData.caloriesBurned || []), caloriesData];
+          break;
+      }
+      
+      // Save to Firestore
+      await createOrUpdateHealthData(userId, updateData);
+      
+      return true;
     } catch (error) {
-      console.error('Error generating fallback health data:', error);
+      console.error(`Error adding manual ${dataType} data:`, error);
       throw error;
     }
   };
   
-  // Helper functions to generate mock data
-  const generateMockSteps = (): HealthMetric[] => {
-    const steps = [];
-    const now = new Date();
-    
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
+  // Get data summary for dashboard
+  export const getHealthDataSummary = async (userId: string): Promise<{
+    dailySteps: number;
+    weeklyAvgSteps: number;
+    restingHeartRate: number;
+    caloriesBurned: number;
+    averageSleepHours: number;
+    recoveryScore: number | null;
+  }> => {
+    try {
+      const healthData = await getUserHealthData(userId);
       
-      steps.push({
-        value: 5000 + Math.floor(Math.random() * 5000), // 5000-10000 steps
-        timestamp: Timestamp.fromDate(date),
-        source: 'mock'
-      });
+      if (!healthData) {
+        return {
+          dailySteps: 0,
+          weeklyAvgSteps: 0,
+          restingHeartRate: 0,
+          caloriesBurned: 0,
+          averageSleepHours: 0,
+          recoveryScore: null
+        };
+      }
+      
+      // Calculate daily steps (most recent day)
+      const sortedSteps = [...(healthData.steps || [])]
+        .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+      
+      const dailySteps = sortedSteps.length > 0 ? sortedSteps[0].value : 0;
+      
+      // Calculate weekly average steps
+      const today = new Date();
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      
+      const weekSteps = healthData.steps?.filter(step => {
+        const stepDate = step.timestamp.toDate();
+        return stepDate >= weekAgo && stepDate <= today;
+      }) || [];
+      
+      const weeklyAvgSteps = weekSteps.length > 0 
+        ? weekSteps.reduce((sum, step) => sum + step.value, 0) / weekSteps.length
+        : 0;
+      
+      // Calculate resting heart rate (average of last 3 days during sleep hours)
+      const sortedHeartRate = [...(healthData.heartRate || [])]
+        .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+      
+      const restingHeartRate = sortedHeartRate.length > 0 
+        ? sortedHeartRate.slice(0, 10).reduce((sum, hr) => sum + hr.value, 0) / 
+          Math.min(10, sortedHeartRate.length)
+        : 0;
+      
+      // Calculate calories burned (most recent day)
+      const sortedCalories = [...(healthData.caloriesBurned || [])]
+        .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+      
+      const caloriesBurned = sortedCalories.length > 0 ? sortedCalories[0].value : 0;
+      
+      // Calculate average sleep hours (past week)
+      const weekSleep = healthData.sleepData?.filter(sleep => {
+        const sleepDate = sleep.endTime.toDate();
+        return sleepDate >= weekAgo && sleepDate <= today;
+      }) || [];
+      
+      const totalSleepMinutes = weekSleep.reduce((sum, sleep) => sum + sleep.duration, 0);
+      const averageSleepHours = weekSleep.length > 0 
+        ? (totalSleepMinutes / weekSleep.length) / 60 
+        : 0;
+      
+      // Get recovery score
+      const recoveryStatus = await calculateRecoveryStatus(userId);
+      const recoveryScore = recoveryStatus?.score || null;
+      
+      return {
+        dailySteps: Math.round(dailySteps),
+        weeklyAvgSteps: Math.round(weeklyAvgSteps),
+        restingHeartRate: Math.round(restingHeartRate),
+        caloriesBurned: Math.round(caloriesBurned),
+        averageSleepHours: parseFloat(averageSleepHours.toFixed(1)),
+        recoveryScore
+      };
+    } catch (error) {
+      console.error('Error getting health data summary:', error);
+      throw error;
     }
-    
-    return steps;
   };
   
-  const generateMockHeartRate = (): HealthMetric[] => {
-    const heartRates = [];
-    const now = new Date();
-    
-    for (let i = 0; i < 24; i++) {
-      const date = new Date(now);
-      date.setHours(date.getHours() - i);
+  // Get health insights based on user data
+  export const getHealthInsights = async (userId: string): Promise<string[]> => {
+    try {
+      const healthData = await getUserHealthData(userId);
+      const insights: string[] = [];
       
-      heartRates.push({
-        value: 60 + Math.floor(Math.random() * 30), // 60-90 bpm
-        timestamp: Timestamp.fromDate(date),
-        source: 'mock'
-      });
+      if (!healthData) {
+        return ['Connect a wearable device to get personalized health insights.'];
+      }
+      
+      // Step-related insights
+      const sortedSteps = [...(healthData.steps || [])]
+        .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+      
+      if (sortedSteps.length > 0) {
+        const latestSteps = sortedSteps[0].value;
+        if (latestSteps < 5000) {
+          insights.push('Try to increase your daily steps. Aim for at least 7,500 steps per day.');
+        } else if (latestSteps > 10000) {
+          insights.push('Great job staying active! You are exceeding the recommended 10,000 steps per day.');
+        }
+      }
+      
+      // Sleep-related insights
+      const sortedSleep = [...(healthData.sleepData || [])]
+        .sort((a, b) => b.endTime.toMillis() - a.endTime.toMillis());
+      
+      if (sortedSleep.length > 0) {
+        // Calculate average sleep duration over the past week
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        const recentSleep = sortedSleep.filter(sleep => 
+          sleep.endTime.toDate() >= weekAgo
+        );
+        
+        if (recentSleep.length > 0) {
+          const avgSleepMinutes = recentSleep.reduce((sum, sleep) => sum + sleep.duration, 0) / recentSleep.length;
+          const avgSleepHours = avgSleepMinutes / 60;
+          
+          if (avgSleepHours < 7) {
+            insights.push('Youa re averaging less than 7 hours of sleep. Most adults need 7-9 hours for optimal health.');
+          } else if (avgSleepHours > 9) {
+            insights.push('You are sleeping more than 9 hours on average. While sleep is important, too much may indicate other issues.');
+          }
+          
+          // Check sleep consistency
+          const sleepStartTimes = recentSleep.map(sleep => 
+            sleep.startTime.toDate().getHours() + (sleep.startTime.toDate().getMinutes() / 60)
+          );
+          
+          const maxStartTime = Math.max(...sleepStartTimes);
+          const minStartTime = Math.min(...sleepStartTimes);
+          
+          if (maxStartTime - minStartTime > 2) {
+            insights.push('Your sleep schedule varies by more than 2 hours. Try to maintain a more consistent sleep routine.');
+          }
+        }
+      }
+      
+      // Heart rate insights
+      const sortedHeartRate = [...(healthData.heartRate || [])]
+        .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+      
+      if (sortedHeartRate.length > 10) {
+        const avgRestingHR = sortedHeartRate.slice(0, 10).reduce((sum, hr) => sum + hr.value, 0) / 10;
+        
+        if (avgRestingHR > 80) {
+          insights.push('Your resting heart rate appears elevated. Regular cardiovascular exercise can help lower it.');
+        } else if (avgRestingHR < 50 && healthData.workouts && healthData.workouts.length > 0) {
+          insights.push('Your low resting heart rate suggests good cardiovascular fitness.');
+        }
+      }
+      
+      // Workout insights
+      const sortedWorkouts = [...(healthData.workouts || [])]
+        .sort((a, b) => b.endTime.toMillis() - a.endTime.toMillis());
+      
+      if (sortedWorkouts.length > 0) {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        const recentWorkouts = sortedWorkouts.filter(workout => 
+          workout.endTime.toDate() >= weekAgo
+        );
+        
+        if (recentWorkouts.length < 3) {
+          insights.push('Try to aim for at least 3 workouts per week for optimal health benefits.');
+        } else if (recentWorkouts.length >= 5) {
+          insights.push('Great job staying active with 5+ workouts this week!');
+        }
+        
+        // Check workout variety
+        const workoutTypes = new Set(recentWorkouts.map(w => w.type));
+        if (workoutTypes.size < 2 && recentWorkouts.length >= 3) {
+          insights.push('Consider diversifying your workouts to work different muscle groups and prevent overuse injuries.');
+        }
+      } else {
+        insights.push('No recent workouts detected. Regular physical activity is important for overall health.');
+      }
+      
+      // Recovery insights
+      const recoveryStatus = await calculateRecoveryStatus(userId);
+      if (recoveryStatus) {
+        if (recoveryStatus.score < 50) {
+          insights.push('Your recovery score is low. Focus on rest, sleep, and light activity today.');
+        } else if (recoveryStatus.score > 80) {
+          insights.push('Your recovery score is excellent. Your body is ready for higher intensity training.');
+        }
+      }
+      
+      // If no insights, add a default one
+      if (insights.length === 0) {
+        insights.push('Keep tracking your health data to receive personalized insights.');
+      }
+      
+      return insights;
+    } catch (error) {
+      console.error('Error generating health insights:', error);
+      return ['Error generating insights. Please try again later.'];
     }
-    
-    return heartRates;
   };
   
-  const generateMockSleep = () => {
-    const sleepData = [];
-    const now = new Date();
-    now.setHours(8, 0, 0, 0); // 8:00 AM today
-    
-    for (let i = 0; i < 7; i++) {
-      const sleepEnd = new Date(now);
-      sleepEnd.setDate(sleepEnd.getDate() - i);
-      
-      const sleepStart = new Date(sleepEnd);
-      sleepStart.setHours(sleepStart.getHours() - 8); // 8 hours earlier
-      
-      // Deep sleep (2 hours)
-      sleepData.push({
-        startTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 2 * 60 * 60 * 1000)),
-        endTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 4 * 60 * 60 * 1000)),
-        quality: 'deep' as 'deep',
-        duration: 120 // 2 hours in minutes
-      });
-      
-      // Light sleep (4 hours)
-      sleepData.push({
-        startTime: Timestamp.fromDate(sleepStart),
-        endTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 2 * 60 * 60 * 1000)),
-        quality: 'light' as 'light',
-        duration: 120 // 2 hours in minutes
-      });
-      
-      // More light sleep
-      sleepData.push({
-        startTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 4 * 60 * 60 * 1000)),
-        endTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 6 * 60 * 60 * 1000)),
-        quality: 'light' as 'light',
-        duration: 120 // 2 hours in minutes
-      });
-      
-      // REM sleep (1.5 hours)
-      sleepData.push({
-        startTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 6 * 60 * 60 * 1000)),
-        endTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 7.5 * 60 * 60 * 1000)),
-        quality: 'rem' as 'rem',
-        duration: 90 // 1.5 hours in minutes
-      });
-      
-      // Awake (0.5 hours)
-      sleepData.push({
-        startTime: Timestamp.fromDate(new Date(sleepStart.getTime() + 7.5 * 60 * 60 * 1000)),
-        endTime: Timestamp.fromDate(sleepEnd),
-        quality: 'awake' as 'awake',
-        duration: 30 // 0.5 hours in minutes
-      });
-    }
-    
-    return sleepData;
-  };
-  
-  const generateMockCalories = (): HealthMetric[] => {
-    const calories = [];
-    const now = new Date();
-    
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      
-      calories.push({
-        value: 1800 + Math.floor(Math.random() * 800), // 1800-2600 calories
-        timestamp: Timestamp.fromDate(date),
-        source: 'mock'
-      });
-    }
-    
-    return calories;
-  };
-  
-  const generateMockWorkouts = () => {
-    const workouts = [];
-    const now = new Date();
-    
-    const workoutTypes = ['running', 'strength', 'cycling', 'walking', 'swimming'];
-    
-    for (let i = 0; i < 5; i++) {
-      const startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - i - (i % 2)); // Every other day
-      startDate.setHours(18, 0, 0, 0); // 6:00 PM
-      
-      const endDate = new Date(startDate);
-      endDate.setMinutes(endDate.getMinutes() + 45); // 45 minute workout
-      
-      const workoutType = workoutTypes[i % workoutTypes.length];
-      
-      workouts.push({
-        type: workoutType,
-        startTime: Timestamp.fromDate(startDate),
-        endTime: Timestamp.fromDate(endDate),
-        calories: 300 + Math.floor(Math.random() * 200), // 300-500 calories
-        heartRateAvg: 120 + Math.floor(Math.random() * 20), // 120-140 bpm
-        heartRateMax: 150 + Math.floor(Math.random() * 20), // 150-170 bpm
-        distance: workoutType === 'running' || workoutType === 'cycling' ? 
-          3 + Math.random() * 5 : // 3-8 km for cardio
-          undefined // no distance for strength
-      });
-    }
-    
-    return workouts;
+  export default {
+    connectWearable,
+    getUserWearableConnections,
+    syncHealthData,
+    getUserHealthData,
+    calculateRecoveryStatus,
+    disconnectWearable,
+    checkHealthServicesAvailability,
+    getAvailableHealthServices,
+    addManualHealthData,
+    getHealthDataSummary,
+    getHealthInsights
   };

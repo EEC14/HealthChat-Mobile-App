@@ -17,8 +17,14 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.healthchatdev.HealthChat",
       "infoPlist": {
-        "NSHealthShareUsageDescription": "This app requires access to health data for tracking fitness activities and recovery metrics.",
-        "NSHealthUpdateUsageDescription": "This app requires permission to write workout and health metrics data."
+        "NSHealthShareUsageDescription": "This app requires access to read your health data to track fitness and provide personalized insights",
+        "NSHealthUpdateUsageDescription": "This app requires permission to save health data to provide complete fitness tracking",
+        "UIBackgroundModes": ["fetch", "remote-notification"],
+        "NSHealthClinicalHealthRecordsShareUsageDescription": "This app requires permission to access health records"
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": ["health-records"]
       }
     },
     "android": {
@@ -79,18 +85,14 @@
         }
       ],
       "expo-font",
+      "./plugins/withHealthKit",
+      "./plugins/withGoogleFit",
       [
-        "react-native-health",
+        "expo-build-properties",
         {
-          "isClinicalDataEnabled": true,
-          "healthSharePermission": "This app requires access to health data for tracking fitness activities and recovery metrics.",
-          "healthUpdatePermission": "This app requires permission to write workout and health metrics data."
-        }
-      ],
-      [
-        "react-native-google-fit",
-        {
-          "googleFitPermission": "This app requires permission to access your fitness data to provide personalized recommendations."
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
       ]
     ],
