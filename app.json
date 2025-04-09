@@ -84,17 +84,7 @@
           "androidChannelName": "Default Channel"
         }
       ],
-      "expo-font",
-      "./plugins/withHealthKit",
-      "./plugins/withGoogleFit",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
