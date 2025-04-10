@@ -18,6 +18,7 @@
     "@anthropic-ai/sdk": "^0.36.3",
     "@expo/vector-icons": "^14.0.4",
     "@hookform/resolvers": "^3.9.1",
+    "@kingstinct/react-native-healthkit": "^8.5.0",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-picker/picker": "2.9.0",
     "@react-navigation/bottom-tabs": "^7.0.0",

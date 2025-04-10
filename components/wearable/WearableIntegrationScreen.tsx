@@ -24,13 +24,22 @@ import {
   RecoveryStatus 
 } from '../../types/WearableTypes';
 import { updateUserProfile } from '../../firebase';
+import { AntDesign } from '@expo/vector-icons';
 
 // Define a fallback color or access the correct structure
 const PRIMARY_COLOR = Colors.light ? Colors.light.primary : '#2196F3';
 
 const PRIVACY_RETENTION_DAYS = 90; // Default data retention period
 
-const WearableIntegrationScreen: React.FC = () => {
+interface WearableIntegrationScreenProps {
+  onGoBack?: () => void;
+  onDeviceConnected?: () => void;
+}
+
+const WearableIntegrationScreen: React.FC<WearableIntegrationScreenProps> = ({ 
+  onGoBack, 
+  onDeviceConnected 
+}) => {
   const { user } = useAuthContext(); // Using AuthContext instead of useAuth
   const [isLoading, setIsLoading] = useState(true);
   const [connections, setConnections] = useState<WearableConnection[]>([]);
@@ -79,34 +88,37 @@ const WearableIntegrationScreen: React.FC = () => {
 
   const handleConnectWearable = async (type: WearableType) => {
     if (!user) return;
-
+  
     try {
+      setIsLoading(true);
+      
       // Check if already connected
       const existingConnection = connections.find(c => c.type === type);
       if (existingConnection && existingConnection.isConnected) {
         Alert.alert('Already Connected', `You are already connected to ${type}.`);
+        setIsLoading(false);
         return;
       }
-
-      // Request permissions specific to the platform
+  
+      // Platform-specific checks
       if (type === 'appleHealth' && Platform.OS !== 'ios') {
         Alert.alert('Not Supported', 'Apple Health is only available on iOS devices.');
+        setIsLoading(false);
         return;
       }
-
+  
       if (type === 'googleFit' && Platform.OS !== 'android') {
         Alert.alert('Not Supported', 'Google Fit is only available on Android devices.');
+        setIsLoading(false);
         return;
       }
-
-      // Request consent for health data processing
       if (!privacySettings.shareHealthData) {
         const consentGiven = await requestHealthDataConsent();
-        if (!consentGiven) return;
+        if (!consentGiven) {
+          setIsLoading(false);
+          return;
+        }
       }
-
-      // Connect the wearable
-      // In a real app, this would involve platform-specific API calls
       const permissions = getDefaultPermissionsForType(type);
       const connectionId = await connectWearable({
         userId: user.uid,
@@ -114,8 +126,6 @@ const WearableIntegrationScreen: React.FC = () => {
         isConnected: true,
         permissions,
       });
-
-      // Update the local state
       setConnections(prev => [
         ...prev.filter(c => c.type !== type),
         {
@@ -127,18 +137,29 @@ const WearableIntegrationScreen: React.FC = () => {
           permissions,
         }
       ]);
-
+  
       // Update user profile
       await updateUserProfile(user.uid, {
         connectedWearables: [...(user.connectedWearables || []), type],
       });
-
+  
       Alert.alert('Success', `Successfully connected to ${type}!`);
+      
+      // Important: Wait a moment and then call onDeviceConnected to trigger data refresh
+      setTimeout(() => {
+        if (onDeviceConnected) {
+          onDeviceConnected();
+        }
+      }, 500);
+      
     } catch (error) {
-      console.error('Error connecting wearable:', error);
+      console.error(`Error connecting to ${type}:`, error);
       Alert.alert('Connection Failed', `Failed to connect to ${type}. Please try again.`);
+    } finally {
+      setIsLoading(false);
     }
   };
+  
 
   const requestHealthDataConsent = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -187,10 +208,6 @@ const WearableIntegrationScreen: React.FC = () => {
         return ['steps', 'heart_rate', 'sleep', 'calories'];
       case 'googleFit':
         return ['steps', 'heart_rate', 'sleep', 'calories'];
-      case 'fitbit':
-        return ['steps', 'heart_rate', 'sleep', 'calories'];
-      case 'garmin':
-        return ['steps', 'heart_rate', 'sleep', 'calories'];
       default:
         return ['steps'];
     }
@@ -224,6 +241,17 @@ const WearableIntegrationScreen: React.FC = () => {
     }
   };
 
+  const handleDone = async () => {
+    // Clear any previous attempt refresh flags
+    if (onDeviceConnected) {
+      onDeviceConnected();
+    }
+    
+    if (onGoBack) {
+      onGoBack();
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
@@ -232,12 +260,45 @@ const WearableIntegrationScreen: React.FC = () => {
     );
   }
 
+  const additionalStyles = StyleSheet.create({
+    headerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#e0e0e0',
+    },
+    backButton: {
+      padding: 8,
+    },
+    doneButton: {
+      backgroundColor: PRIMARY_COLOR,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+      marginHorizontal: 16,
+      marginVertical: 24,
+    },
+    doneButtonText: {
+      color: '#fff',
+      fontWeight: '600',
+      fontSize: 16,
+    }
+  });
+
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Wearable Integration</Text>
-        <Text style={styles.headerSubtitle}>
-          Connect your wearable devices to enhance your fitness experience
+      <View style={additionalStyles.headerContainer}>
+        <TouchableOpacity 
+          onPress={onGoBack}
+          style={additionalStyles.backButton}
+        >
+          <AntDesign name="arrowleft" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { marginLeft: 16, flex: 1 }]}>
+          Wearable Integration
         </Text>
       </View>
 
@@ -323,28 +384,6 @@ const WearableIntegrationScreen: React.FC = () => {
             )}
           </View>
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.deviceCard}
-          onPress={() => handleConnectWearable('fitbit')}
-        >
-          <Ionicons name="watch" size={24} color={PRIMARY_COLOR} />
-          <View style={styles.deviceInfo}>
-            <Text style={styles.deviceName}>Fitbit</Text>
-            <Text style={styles.deviceDescription}>
-              Activity tracking, sleep analysis, and more
-            </Text>
-          </View>
-          <View style={styles.statusContainer}>
-            {connections.some(c => c.type === 'fitbit' && c.isConnected) ? (
-              <View style={styles.connectedBadge}>
-                <Text style={styles.connectedText}>Connected</Text>
-              </View>
-            ) : (
-              <Ionicons name="add-circle" size={24} color={PRIMARY_COLOR} />
-            )}
-          </View>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.sectionContainer}>
@@ -377,6 +416,19 @@ const WearableIntegrationScreen: React.FC = () => {
           </View>
         </View>
       </View>
+      {connections.some(c => c.isConnected) && (
+        <View style={styles.gdprInfo}>
+          <Text style={styles.gdprTitle}>Connected Device Capabilities</Text>
+          <Text style={styles.gdprText}>
+            Your iPhone can track step count and basic activity data. For heart rate, 
+            sleep analysis, and more advanced metrics, you would need an Apple Watch 
+            or other compatible fitness tracker.
+          </Text>
+          <Text style={styles.gdprText}>
+            We'll use whatever data is available to provide the best possible recommendations.
+          </Text>
+        </View>
+      )}
       
       <View style={styles.gdprInfo}>
         <Text style={styles.gdprTitle}>Your Privacy Rights</Text>
@@ -386,6 +438,33 @@ const WearableIntegrationScreen: React.FC = () => {
           third parties without your explicit consent.
         </Text>
       </View>
+      <View
+      style={{
+        paddingBottom: 35,
+      }}>
+      <TouchableOpacity 
+          style={{
+            backgroundColor: PRIMARY_COLOR,
+            paddingVertical: 14,
+            paddingHorizontal: 20,
+            borderRadius: 10,
+            alignItems: 'center',
+            marginHorizontal: 16,
+            marginVertical: 24,
+          }}
+          onPress={() => {
+            if (onDeviceConnected) {
+              onDeviceConnected();
+            } else if (onGoBack) {
+              onGoBack();
+            }
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>
+            {connections.some(c => c.isConnected) ? "Done - Refresh Health Data" : "Done"}
+          </Text>
+        </TouchableOpacity>
+        </View>
     </ScrollView>
   );
 };

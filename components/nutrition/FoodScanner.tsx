@@ -7,14 +7,18 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  TextInput
+  TextInput,
+  Modal,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { Camera, CameraView, CameraType, BarcodeScanningResult } from 'expo-camera';
 import { 
-  getNutritionInfo, 
-  scanBarcode 
+  searchFoodByName, 
+  scanBarcode,
+  createCustomFoodItem
 } from '../../utils/foodRecognitionService';
-import { FoodItem, FoodRecognitionResult } from '../../types/NutritionTypes';
+import { FoodItem } from '../../types/NutritionTypes';
 import { Ionicons } from '@expo/vector-icons';
 
 // Fallback primary color if Colors can't be accessed
@@ -30,33 +34,42 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [matchingFoods, setMatchingFoods] = useState<string[]>([]);
+  const [matchingFoods, setMatchingFoods] = useState<FoodItem[]>([]);
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [isManualAddModalVisible, setIsManualAddModalVisible] = useState(false);
+  const [customFood, setCustomFood] = useState({
+    name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    servingSize: ''
+  });
   
   useEffect(() => {
     (async () => {
-        const { status } = await Camera.requestCameraPermissionsAsync();
+      const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     })();
   }, []);
 
   useEffect(() => {
     // Search for matching foods when searchText changes
-    if (searchText.length > 2) {
-      // Sample food list - in a real app, this would be from a database
-      const foodList = [
-        'apple', 'banana', 'broccoli', 'carrot', 'chicken breast',
-        'egg', 'milk', 'orange', 'pasta', 'pizza', 'potato',
-        'rice', 'salmon', 'yogurt', 'avocado'
-      ];
-      
-      const matches = foodList.filter(food => 
-        food.toLowerCase().includes(searchText.toLowerCase())
-      );
-      setMatchingFoods(matches);
-    } else {
-      setMatchingFoods([]);
-    }
+    const searchFoods = async () => {
+      if (searchText.length > 2) {
+        try {
+          const results = await searchFoodByName(searchText);
+          setMatchingFoods(results);
+        } catch (error) {
+          console.error('Error searching foods:', error);
+          setMatchingFoods([]);
+        }
+      } else {
+        setMatchingFoods([]);
+      }
+    };
+
+    searchFoods();
   }, [searchText]);
 
   const handleBarCodeScanned = async (scanningResult: BarcodeScanningResult) => {
@@ -76,7 +89,7 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
       } else {
         Alert.alert(
           'Product Not Found',
-          'This barcode is not in our database. Please try searching for the food manually.',
+          'This barcode is not in our database. Please try searching for the food manually or add it custom.',
           [{ text: 'OK' }]
         );
         setScanned(false);
@@ -90,11 +103,10 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
     }
   };
 
-  const handleSelectFood = (foodName: string) => {
-    const nutritionInfo = getNutritionInfo(foodName);
-    setSelectedFood(nutritionInfo);
+  const handleSelectFood = async (foodItem: FoodItem) => {
+    setSelectedFood(foodItem);
     setMatchingFoods([]);
-    setSearchText(foodName);
+    setSearchText(foodItem.name);
   };
 
   const confirmFood = () => {
@@ -107,6 +119,24 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
     setScanned(false);
     setSelectedFood(null);
     setSearchText('');
+  };
+
+  const handleManualFoodAdd = () => {
+    try {
+      const newFood = createCustomFoodItem({
+        name: customFood.name,
+        calories: parseFloat(customFood.calories) || 0,
+        protein: parseFloat(customFood.protein) || 0,
+        carbs: parseFloat(customFood.carbs) || 0,
+        fat: parseFloat(customFood.fat) || 0,
+        servingSize: customFood.servingSize || '1 serving'
+      });
+      
+      onFoodDetected(newFood);
+      setIsManualAddModalVisible(false);
+    } catch (error) {
+      Alert.alert('Error', 'Invalid food item details');
+    }
   };
 
   if (hasPermission === null) {
@@ -131,7 +161,9 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
           <Ionicons name="close" size={28} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Scan Food</Text>
-        <View style={{ width: 28 }} />
+        <TouchableOpacity onPress={() => setIsManualAddModalVisible(true)} style={styles.addButton}>
+          <Ionicons name="add" size={28} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {!selectedFood ? (
@@ -150,14 +182,17 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
           {matchingFoods.length > 0 ? (
             <FlatList
               data={matchingFoods}
-              keyExtractor={(item) => item}
+              keyExtractor={(item) => item.id}
               style={styles.searchResults}
               renderItem={({ item }) => (
                 <TouchableOpacity 
                   style={styles.searchResultItem}
                   onPress={() => handleSelectFood(item)}
                 >
-                  <Text style={styles.searchResultText}>{item}</Text>
+                  <Text style={styles.searchResultText}>{item.name}</Text>
+                  <Text style={styles.searchResultDetails}>
+                    {item.calories} cal • {item.servingSize}
+                  </Text>
                 </TouchableOpacity>
               )}
             />
@@ -188,7 +223,6 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
           )}
         </>
       ) : (
-        // Rest of the component remains the same as in the original file
         <View style={styles.detailsContainer}>
           <View style={styles.foodDetails}>
             <Text style={styles.foodName}>{selectedFood.name}</Text>
@@ -243,6 +277,85 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
         </View>
       )}
       
+      {/* Manual Food Add Modal */}
+      <Modal
+        visible={isManualAddModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsManualAddModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.manualAddModal}>
+            <Text style={styles.manualAddTitle}>Add Custom Food</Text>
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Food Name"
+              value={customFood.name}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, name: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Calories"
+              keyboardType="numeric"
+              value={customFood.calories}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, calories: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Protein (g)"
+              keyboardType="numeric"
+              value={customFood.protein}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, protein: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Carbs (g)"
+              keyboardType="numeric"
+              value={customFood.carbs}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, carbs: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Fat (g)"
+              keyboardType="numeric"
+              value={customFood.fat}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, fat: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Serving Size (optional)"
+              value={customFood.servingSize}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, servingSize: text}))}
+            />
+            
+            <View style={styles.manualAddButtons}>
+              <TouchableOpacity 
+                style={styles.manualAddCancelButton}
+                onPress={() => setIsManualAddModalVisible(false)}
+              >
+                <Text style={styles.manualAddCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.manualAddConfirmButton, { backgroundColor: PRIMARY_COLOR }]}
+                onPress={handleManualFoodAdd}
+              >
+                <Text style={styles.manualAddConfirmButtonText}>Add Food</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+      
       {isProcessing && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={PRIMARY_COLOR} />
@@ -252,6 +365,7 @@ const FoodScanner: React.FC<FoodScannerProps> = ({ onFoodDetected, onClose }) =>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -445,6 +559,63 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  manualAddModal: {
+    backgroundColor: '#fff',
+    margin: 20,
+    borderRadius: 10,
+    padding: 20,
+  },
+  manualAddTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  manualAddInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  manualAddButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  manualAddCancelButton: {
+    flex: 1,
+    padding: 10,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  manualAddCancelButtonText: {
+    color: '#333',
+  },
+  manualAddConfirmButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  manualAddConfirmButtonText: {
+    color: '#fff',
+  },
+  searchResultDetails: {
+    fontSize: 12,
+    color: '#666',
+  },
+  addButton: {
+    padding: 5,
+  }
 });
 
 export default FoodScanner;

@@ -68,15 +68,15 @@ export type ColorsType = typeof Colors;
 
 export interface ExtendedUserProfile extends UserProfile {
 }
-
+import { FoodItem } from "./NutritionTypes";
 export interface SavedPlan {
   id: string;
   userId: string;
-  type: 'workout' | 'diet' | 'meditation' | 'habit' | 'recovery';
+  type: PlanType;
   name: string;
   plan: string;
-  createdAt: number;
   audioCues?: AudioCue[];
+  scannedFoods?: FoodItem[]; // Add this line
 }
 
 // Export our new types

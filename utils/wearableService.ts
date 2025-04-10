@@ -19,37 +19,34 @@ import {
   RecoveryStatus 
 } from '../types/WearableTypes';
 
-// Import health services
-import AppleHealthKit from 'react-native-health';
 import GoogleFit, { Scopes } from 'react-native-google-fit';
+import HealthKit, { 
+  HKQuantityTypeIdentifier, 
+  HKCategoryTypeIdentifier,
+  HKWorkoutActivityType,
+  HKUnit
+} from '@kingstinct/react-native-healthkit';
 
-// Collection references
 const wearableConnectionsRef = collection(db, 'wearableConnections');
 const healthDataRef = collection(db, 'healthData');
 
 // HealthKit permissions
-const HEALTHKIT_OPTIONS = {
-  permissions: {
-    read: [
-      AppleHealthKit.Constants.Permissions.Steps,
-      AppleHealthKit.Constants.Permissions.StepCount,
-      AppleHealthKit.Constants.Permissions.DistanceWalkingRunning,
-      AppleHealthKit.Constants.Permissions.HeartRate,
-      AppleHealthKit.Constants.Permissions.SleepAnalysis,
-      AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
-      AppleHealthKit.Constants.Permissions.Workout
-    ],
-    write: [
-      AppleHealthKit.Constants.Permissions.Steps,
-      AppleHealthKit.Constants.Permissions.StepCount,
-      AppleHealthKit.Constants.Permissions.DistanceWalkingRunning,
-      AppleHealthKit.Constants.Permissions.HeartRate,
-      AppleHealthKit.Constants.Permissions.SleepAnalysis,
-      AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
-      AppleHealthKit.Constants.Permissions.Workout
-    ]
-  }
-};
+const HEALTHKIT_READ_PERMISSIONS = [
+  HKQuantityTypeIdentifier.stepCount,
+  HKQuantityTypeIdentifier.distanceWalkingRunning,
+  HKQuantityTypeIdentifier.heartRate,
+  HKCategoryTypeIdentifier.sleepAnalysis,
+  HKQuantityTypeIdentifier.activeEnergyBurned
+];
+
+
+const HEALTHKIT_WRITE_PERMISSIONS = [
+  HKQuantityTypeIdentifier.stepCount,
+  HKQuantityTypeIdentifier.distanceWalkingRunning,
+  HKQuantityTypeIdentifier.heartRate,
+  HKCategoryTypeIdentifier.sleepAnalysis,
+  HKQuantityTypeIdentifier.activeEnergyBurned
+];
 
 // Google Fit scopes
 const GOOGLEFIT_OPTIONS = {
@@ -67,36 +64,69 @@ interface GoogleFitAuthResult {
   message?: string;
 }
 
+const inspectHealthKitModule = () => {
+  const workoutMethods = Object.keys(HealthKit).filter(
+    key => key.toLowerCase().includes('workout')
+  );
+};
+
+const requestWorkoutAuthorization = async (): Promise<boolean> => {
+  try {
+    // Display available info about the HealthKit module
+    inspectHealthKitModule();
+    try {
+      await HealthKit.requestAuthorization(['HKWorkoutTypeIdentifier'], []);
+      return true;
+    } catch (error) {
+      console.error('Error with HKWorkoutTypeIdentifier authorization:', error);
+      try {
+        await HealthKit.requestAuthorization(['workoutType'], []);
+        return true;
+      } catch (alternativeError) {
+        console.error('Error with alternative workout authorization:', alternativeError);
+        
+        // As a last resort, try any available workout query method to trigger implicit authorization
+        if (typeof HealthKit.queryWorkouts === 'function') {
+          try {
+            await HealthKit.queryWorkouts({ 
+              from: new Date(Date.now() - 86400000), // 24 hours ago
+              to: new Date()
+            });
+            return true;
+          } catch (queryError) {
+            console.error('Error querying workouts:', queryError);
+          }
+        }
+      }
+    }
+    
+    console.warn('All workout authorization methods failed');
+    return false;
+  } catch (error) {
+    console.error('Fatal error in requestWorkoutAuthorization:', error);
+    return false;
+  }
+};
+
 // Initialize HealthKit with proper type annotations
 const initializeHealthKit = async (): Promise<boolean> => {
-  return new Promise<boolean>((resolve, reject) => {
-    // Use 'any' for the error type to match what the library expects
-    AppleHealthKit.isAvailable((error: any, available: boolean) => {
-      if (error) {
-        console.error('Error checking HealthKit availability:', error);
-        reject(error);
-        return;
-      }
-      
-      if (!available) {
-        console.log('HealthKit is not available on this device');
-        resolve(false);
-        return;
-      }
-      
-      // Initialize with proper error type
-      AppleHealthKit.initHealthKit(HEALTHKIT_OPTIONS, (initError: any) => {
-        if (initError) {
-          console.error('Error initializing HealthKit:', initError);
-          reject(initError);
-          return;
-        }
-        
-        console.log('HealthKit initialized successfully');
-        resolve(true);
-      });
-    });
-  });
+  if (Platform.OS !== 'ios') {
+    return false;
+  }
+
+  try {
+    const isAvailable = await HealthKit.isHealthDataAvailable();
+    if (!isAvailable) {
+      console.error('HealthKit is not available on this device');
+      return false;
+    }
+    await HealthKit.requestAuthorization(HEALTHKIT_READ_PERMISSIONS, HEALTHKIT_WRITE_PERMISSIONS);
+    
+    return true;
+  } catch (error) {
+    console.error('Exception during HealthKit initialization:', error);
+    return false;
+  }
 };
 
 // Define interface for GoogleFit authorization result
@@ -135,12 +165,25 @@ const initializeGoogleFit = async (): Promise<boolean> => {
 // Connect to wearable with proper type handling
 export const connectWearable = async (connection: Omit<WearableConnection, 'id' | 'lastSynced'>): Promise<string> => {
   try {
-    console.log(`Connecting ${connection.type} for user ${connection.userId}`);
     
     let permissionGranted = false;
     
     if (connection.type === 'appleHealth' && Platform.OS === 'ios') {
-      permissionGranted = await initializeHealthKit();
+      // Core permissions are required - if these fail, connection fails
+      const standardAuth = await initializeHealthKit();
+      
+      if (!standardAuth) {
+        throw new Error('Failed to authorize core HealthKit permissions');
+      }
+      
+      // Workout permissions are optional - we try but don't fail if they're rejected
+      try {
+        await requestWorkoutAuthorization();
+      } catch (workoutAuthError) {
+      }
+      
+      // Standard permissions were granted, so we succeed
+      permissionGranted = true;
     } 
     else if (connection.type === 'googleFit' && Platform.OS === 'android') {
       permissionGranted = await initializeGoogleFit();
@@ -171,20 +214,6 @@ export const connectWearable = async (connection: Omit<WearableConnection, 'id' 
   }
 };
 
-// Helper function to get health data with proper types
-const getHealthKitData = <T>(method: string, options: any): Promise<T[]> => {
-  return new Promise((resolve, reject) => {
-    // @ts-ignore - Use dynamic method call
-    AppleHealthKit[method](options, (error: any, results: T[]) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(results || []);
-    });
-  });
-};
-
 // Get data from Apple HealthKit with proper type handling
 const getAppleHealthData = async (): Promise<Partial<UserHealthData>> => {
   // Initialize health data
@@ -204,68 +233,200 @@ const getAppleHealthData = async (): Promise<Partial<UserHealthData>> => {
   startDate.setDate(startDate.getDate() - 7);
   
   const options = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
+    from: startDate,
+    to: endDate,
   };
   
   try {
-    // Use Promise.all for parallel fetching with proper typing
-    const [stepsData, heartRateData, sleepData, workoutData, caloriesData] = await Promise.all([
-      getHealthKitData<any>('getDailyStepCountSamples', options),
-      getHealthKitData<any>('getHeartRateSamples', options),
-      getHealthKitData<any>('getSleepSamples', options),
-      getHealthKitData<any>('getWorkouts', options),
-      getHealthKitData<any>('getActiveEnergyBurned', options)
-    ]);
+    // Get steps data
+    try {
+      const stepsData = await HealthKit.queryQuantitySamples(
+        HKQuantityTypeIdentifier.stepCount,
+        options
+      );
+      
+      if (stepsData && Array.isArray(stepsData)) {
+        healthData.steps = stepsData.map(item => ({
+          value: item.quantity || 0,
+          timestamp: Timestamp.fromDate(new Date(item.endDate)),
+          source: 'HealthKit'
+        }));
+      }
+    } catch (error) {
+      console.error('Error getting steps data:', error);
+    }
     
-    // Process steps data
-    healthData.steps = stepsData.map(item => ({
-      value: item.value || 0,
-      timestamp: Timestamp.fromDate(new Date(item.endDate)),
-      source: 'HealthKit'
-    }));
+    // Get heart rate data
+    try {
+      const heartRateData = await HealthKit.queryQuantitySamples(
+        HKQuantityTypeIdentifier.heartRate,
+        options
+      );
+      
+      if (heartRateData && Array.isArray(heartRateData)) {
+        healthData.heartRate = heartRateData.map(item => ({
+          value: item.quantity || 0,
+          timestamp: Timestamp.fromDate(new Date(item.endDate)),
+          source: 'HealthKit'
+        }));
+      }
+    } catch (error) {
+      console.error('Error getting heart rate data:', error);
+    }
     
-    // Process heart rate data
-    healthData.heartRate = heartRateData.map(item => ({
-      value: item.value || 0,
-      timestamp: Timestamp.fromDate(new Date(item.endDate)),
-      source: 'HealthKit'
-    }));
+    // Get sleep data
+    try {
+      const sleepData = await HealthKit.queryCategorySamples(
+        HKCategoryTypeIdentifier.sleepAnalysis,
+        options
+      );
+      
+      if (sleepData && Array.isArray(sleepData)) {
+        // Map sleep categories to our quality types
+        const sleepQualityMap: {[key: string]: 'deep' | 'light' | 'rem' | 'awake'} = {
+          '0': 'light', // inBed
+          '1': 'deep',  // asleep
+          '2': 'awake', // awake
+          '3': 'deep',  // deep
+          '4': 'light', // core/light
+          '5': 'rem'    // rem
+        };
+        
+        healthData.sleepData = sleepData.map(item => ({
+          startTime: Timestamp.fromDate(new Date(item.startDate)),
+          endTime: Timestamp.fromDate(new Date(item.endDate)),
+          quality: sleepQualityMap[item.value.toString()] || 'light',
+          duration: Math.round((new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) / 60000)
+        }));
+      }
+    } catch (error) {
+      console.error('Error getting sleep data:', error);
+    }
     
-    // Process sleep data
-    const sleepQualityMap: {[key: string]: 'deep' | 'light' | 'rem' | 'awake'} = {
-      'INBED': 'light',
-      'ASLEEP': 'deep',
-      'AWAKE': 'awake',
-      'DEEP': 'deep',
-      'CORE': 'deep',
-      'REM': 'rem'
-    };
+    // Get workout data - NOTE: different API call for workouts
+    try {
+      const workoutMethods = Object.keys(HealthKit).filter(
+        key => key.toLowerCase().includes('workout')
+      );
+      if (typeof HealthKit.queryWorkouts === 'function') {
+        try {
+          const workoutData = await HealthKit.queryWorkouts({
+            from: startDate,
+            to: endDate
+          });
+          
+          if (workoutData && Array.isArray(workoutData)) {
+              
+            healthData.workouts = workoutData.map(item => ({
+              type: typeof item.workoutActivityType === 'number' ? 
+                String(item.workoutActivityType) : 
+                String(item.workoutActivityType || 'Unknown'),
+              startTime: Timestamp.fromDate(new Date(item.startDate)),
+              endTime: Timestamp.fromDate(new Date(item.endDate)),
+              calories: item.totalEnergyBurned?.quantity || 0,
+              heartRateAvg: typeof item.metadata?.averageHeartRate === 'number' 
+                ? item.metadata.averageHeartRate 
+                : undefined,
+              heartRateMax: typeof item.metadata?.maxHeartRate === 'number' 
+                ? item.metadata.maxHeartRate 
+                : undefined,
+              distance: item.totalDistance?.quantity || undefined
+            }));
+          } else {
+            healthData.workouts = [];
+          }
+        } catch (error) {
+          console.error('Error using queryWorkouts:', error);
+          healthData.workouts = [];
+        }
+      } else {
+      }
+      
+      // Second approach: try queryWorkoutSamples if available or first approach failed
+      if ((!healthData.workouts || healthData.workouts.length === 0) && 
+          typeof HealthKit.queryWorkoutSamples === 'function') {
+        try {
+          try {
+            const workoutData = await HealthKit.queryWorkoutSamples('kcal', 'm', startDate, endDate, 0, true);
+            
+            if (workoutData && Array.isArray(workoutData)) {
+              healthData.workouts = workoutData.map(item => ({
+                type: typeof item.workoutActivityType === 'number' ? 
+                  String(item.workoutActivityType) : 
+                  String(item.workoutActivityType || 'Unknown'),
+                startTime: Timestamp.fromDate(new Date(item.startDate)),
+                endTime: Timestamp.fromDate(new Date(item.endDate)),
+                calories: item.totalEnergyBurned?.quantity || 0,
+                heartRateAvg: typeof item.metadata?.averageHeartRate === 'number' 
+                  ? item.metadata.averageHeartRate 
+                  : undefined,
+                heartRateMax: typeof item.metadata?.maxHeartRate === 'number' 
+                  ? item.metadata.maxHeartRate 
+                  : undefined,
+                distance: item.totalDistance?.quantity || undefined
+              }));
+            }
+          } catch (basicParamError) {
+            console.error('Error with basic params:', basicParamError);
+            const params: any = {
+              energyUnitString: 'kcal',
+              distanceUnitString: 'm',
+              from: startDate,
+              to: endDate,
+              limit: 0,
+              ascending: true
+            };
+            
+            try {
+              const workoutData = await HealthKit.queryWorkoutSamples(params);
+              
+              if (workoutData && Array.isArray(workoutData)) {
+                healthData.workouts = workoutData.map(item => ({
+                  type: typeof item.workoutActivityType === 'number' ? 
+                    String(item.workoutActivityType) : 
+                    String(item.workoutActivityType || 'Unknown'),
+                  startTime: Timestamp.fromDate(new Date(item.startDate)),
+                  endTime: Timestamp.fromDate(new Date(item.endDate)),
+                  calories: item.totalEnergyBurned?.quantity || 0,
+                  heartRateAvg: typeof item.metadata?.averageHeartRate === 'number' 
+                    ? item.metadata.averageHeartRate 
+                    : undefined,
+                  heartRateMax: typeof item.metadata?.maxHeartRate === 'number' 
+                    ? item.metadata.maxHeartRate 
+                    : undefined,
+                  distance: item.totalDistance?.quantity || undefined
+                }));
+              }
+            } catch (objectParamError) {
+              console.error('Error with object params:', objectParamError);
+            }
+          }
+        } catch (error) {
+          console.error('General error in queryWorkoutSamples approach:', error);
+        }
+      } else if (!healthData.workouts || healthData.workouts.length === 0) {
+      }
+    } catch (error) {
+      console.error('Error getting workout data:', error);
+    }
     
-    healthData.sleepData = sleepData.map(item => ({
-      startTime: Timestamp.fromDate(new Date(item.startDate)),
-      endTime: Timestamp.fromDate(new Date(item.endDate)),
-      quality: sleepQualityMap[item.value] || 'light',
-      duration: Math.round((new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) / 60000)
-    }));
-    
-    // Process workout data
-    healthData.workouts = workoutData.map(item => ({
-      type: item.activityName || 'Unknown',
-      startTime: Timestamp.fromDate(new Date(item.start)),
-      endTime: Timestamp.fromDate(new Date(item.end)),
-      calories: item.totalEnergyBurned || 0,
-      heartRateAvg: item.metadata?.averageHeartRate,
-      heartRateMax: item.metadata?.maxHeartRate,
-      distance: item.totalDistance
-    }));
-    
-    // Process calories data
-    healthData.caloriesBurned = caloriesData.map(item => ({
-      value: item.value || 0,
-      timestamp: Timestamp.fromDate(new Date(item.endDate)),
-      source: 'HealthKit'
-    }));
+    // Get calories data
+    try {
+      const caloriesData = await HealthKit.queryQuantitySamples(
+        HKQuantityTypeIdentifier.activeEnergyBurned,
+        options
+      );
+      
+      if (caloriesData && Array.isArray(caloriesData)) {
+        healthData.caloriesBurned = caloriesData.map(item => ({
+          value: item.quantity || 0,
+          timestamp: Timestamp.fromDate(new Date(item.endDate)),
+          source: 'HealthKit'
+        }));
+      }
+    } catch (error) {
+      console.error('Error getting calories data:', error);
+    }
     
   } catch (error) {
     console.error('Error fetching Apple Health data:', error);
@@ -273,7 +434,6 @@ const getAppleHealthData = async (): Promise<Partial<UserHealthData>> => {
   
   return healthData;
 };
-
 // Get data from Google Fit with proper type handling
 const getGoogleFitData = async (): Promise<Partial<UserHealthData>> => {
   // Initialize health data
@@ -299,7 +459,6 @@ const getGoogleFitData = async (): Promise<Partial<UserHealthData>> => {
   try {
     // Start recording data with the correct callback parameter
     GoogleFit.startRecording((callback: any) => {
-      console.log('Recording started', callback);
     }, ['step', 'distance', 'activity']);
     
     // Get steps data
@@ -459,17 +618,7 @@ export const checkHealthServicesAvailability = async (): Promise<{
   
   if (Platform.OS === 'ios') {
     try {
-      // Use the correctly typed promise for checking availability
-      appleHealth = await new Promise<boolean>((resolve) => {
-        AppleHealthKit.isAvailable((error: any, available: boolean) => {
-          if (error) {
-            console.error('Error checking HealthKit availability:', error);
-            resolve(false);
-            return;
-          }
-          resolve(available);
-        });
-      });
+      appleHealth = await HealthKit.isHealthDataAvailable();
     } catch (error) {
       console.error('Error checking HealthKit availability:', error);
     }
@@ -496,9 +645,6 @@ export const checkHealthServicesAvailability = async (): Promise<{
 // Sync health data from connected wearable
 export const syncHealthData = async (userId: string, wearableType: string): Promise<Partial<UserHealthData>> => {
   try {
-    console.log(`Syncing ${wearableType} data for user ${userId}`);
-    
-    // Initialize the data structure with empty arrays
     let healthData: Partial<UserHealthData> = {
       userId,
       lastUpdated: Timestamp.now(),
@@ -514,6 +660,12 @@ export const syncHealthData = async (userId: string, wearableType: string): Prom
     
     // Get data based on platform and wearable type
     if ((normalizedType === 'applehealth' || normalizedType === 'apple health') && Platform.OS === 'ios') {
+      // Request standard authorizations
+      await HealthKit.requestAuthorization(HEALTHKIT_READ_PERMISSIONS, []);
+      
+      // Also request workout authorization specifically 
+      await requestWorkoutAuthorization();
+      
       const appleHealthData = await getAppleHealthData();
       healthData = { ...appleHealthData, userId };
     } 
@@ -677,62 +829,125 @@ export const calculateRecoveryStatus = async (userId: string): Promise<RecoveryS
   try {
     const userData = await getUserHealthData(userId);
     
-    if (!userData || !userData.sleepData || userData.sleepData.length === 0) {
+    if (!userData) {
       return null;
     }
     
-    // Sort sleep data by end time (most recent first)
-    const recentSleep = userData.sleepData
-      .sort((a, b) => b.endTime.toMillis() - a.endTime.toMillis())
-      .slice(0, 3);
+    // We can proceed even without sleep data now, using heart rate data if available
+    if (!userData.sleepData || userData.sleepData.length === 0) {
+      if (!userData.heartRate || userData.heartRate.length === 0) {
+        return null; // We need at least one of these metrics
+      }
+    }
     
-    // Calculate deep sleep percentage
-    const totalSleepDuration = recentSleep.reduce((acc, sleep) => acc + sleep.duration, 0);
-    const deepSleepDuration = recentSleep
-      .filter(sleep => sleep.quality === 'deep')
-      .reduce((acc, sleep) => acc + sleep.duration, 0);
+    // Calculate sleep metrics if available
+    let deepSleepPercent = 0;
+    let sleepScore = 50; // Default to middle value when no sleep data
     
-    const deepSleepPercent = totalSleepDuration > 0
-      ? (deepSleepDuration / totalSleepDuration) * 100
-      : 0;
+    if (userData.sleepData && userData.sleepData.length > 0) {
+      // Sort sleep data by end time (most recent first)
+      const recentSleep = userData.sleepData
+        .sort((a, b) => b.endTime.toMillis() - a.endTime.toMillis())
+        .slice(0, 3);
+      
+      // Calculate deep sleep percentage
+      const totalSleepDuration = recentSleep.reduce((acc, sleep) => acc + sleep.duration, 0);
+      const deepSleepDuration = recentSleep
+        .filter(sleep => sleep.quality === 'deep')
+        .reduce((acc, sleep) => acc + sleep.duration, 0);
+      
+      deepSleepPercent = totalSleepDuration > 0
+        ? (deepSleepDuration / totalSleepDuration) * 100
+        : 0;
+        
+      sleepScore = Math.min(100, Math.max(0, deepSleepPercent * 2));
+    }
     
-    // Get recent heart rate average
-    const recentHeartRate = userData.heartRate?.length > 0
-      ? userData.heartRate
-          .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis())
-          .slice(0, 10)
-          .reduce((acc, hr) => acc + hr.value, 0) / 
-          Math.min(10, userData.heartRate.length)
-      : 70; // Default value if no heart rate data
+    // Get heart rate metrics
+    let recentHeartRate = 70; // Default value
+    let heartRateScore = 50; // Default to middle value
     
-    // Calculate activity intensity from recent workouts
-    const recentWorkouts = userData.workouts?.length > 0
-      ? userData.workouts
-          .filter(w => {
-            const workoutDate = w.endTime.toDate();
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            return workoutDate > yesterday;
-          })
-      : [];
+    if (userData.heartRate && userData.heartRate.length > 0) {
+      recentHeartRate = userData.heartRate
+        .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis())
+        .slice(0, 10)
+        .reduce((acc, hr) => acc + hr.value, 0) / 
+        Math.min(10, userData.heartRate.length);
+      
+      heartRateScore = Math.min(100, Math.max(0, 
+        recentHeartRate < 60 ? 100 : 
+        recentHeartRate < 70 ? 85 : 
+        recentHeartRate < 80 ? 70 : 
+        recentHeartRate < 90 ? 50 : 30
+      ));
+    }
     
-    // Calculate activity score based on recent workouts
-    // Lower score means more recovery needed
-    const activityScore = recentWorkouts.length > 0
-      ? Math.min(100, Math.max(0, 100 - (recentWorkouts.reduce((acc, w) => 
-          acc + (w.calories || 0), 0) / 20)))
-      : 100; // Full recovery if no recent workouts
+    // Calculate activity level using multiple approaches
+    let activityScore = 100; // Default to well-rested if no activity data
     
-    // Calculate overall score
-    const sleepScore = Math.min(100, Math.max(0, deepSleepPercent * 2));
-    const heartRateScore = Math.min(100, Math.max(0, 
-      recentHeartRate < 60 ? 100 : 
-      recentHeartRate < 70 ? 85 : 
-      recentHeartRate < 80 ? 70 : 
-      recentHeartRate < 90 ? 50 : 30
-    ));
+    // 1. First try using workout data if available
+    if (userData.workouts && userData.workouts.length > 0) {
+      const recentWorkouts = userData.workouts.filter(w => {
+        const workoutDate = w.endTime.toDate();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        return workoutDate > yesterday;
+      });
+      
+      if (recentWorkouts.length > 0) {
+        activityScore = Math.min(100, Math.max(0, 100 - (
+          recentWorkouts.reduce((acc, w) => acc + (w.calories || 0), 0) / 20
+        )));
+      }
+    } 
+    // 2. If no workouts, try using burned calories if available
+    else if (userData.caloriesBurned && userData.caloriesBurned.length > 0) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const recentCalories = userData.caloriesBurned
+        .filter(c => c.timestamp.toDate() > yesterday)
+        .reduce((acc, c) => acc + c.value, 0);
+      
+      // Adjust for calories - approximately 1000-2000 calories is moderate activity
+      if (recentCalories > 0) {
+        activityScore = Math.min(100, Math.max(0, 100 - (recentCalories / 30)));
+      }
+    }
+    // 3. If no calorie data, use steps if available
+    else if (userData.steps && userData.steps.length > 0) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const recentSteps = userData.steps
+        .filter(s => s.timestamp.toDate() > yesterday)
+        .reduce((acc, s) => acc + s.value, 0);
+      
+      // Adjust for steps - approximately 10,000 steps is moderate activity
+      if (recentSteps > 0) {
+        activityScore = Math.min(100, Math.max(0, 100 - (recentSteps / 150)));
+      }
+    }
+    // If no activity data at all, we keep the default of 100 (well-rested)
     
-    const overallScore = Math.round((sleepScore * 0.4) + (heartRateScore * 0.3) + (activityScore * 0.3));
+    // Adjust weights based on what data is available
+    let sleepWeight = 0.4;
+    let heartRateWeight = 0.3;
+    let activityWeight = 0.3;
+    
+    // If sleep data is missing, redistribute its weight
+    if (!userData.sleepData || userData.sleepData.length === 0) {
+      heartRateWeight += sleepWeight / 2;
+      activityWeight += sleepWeight / 2;
+      sleepWeight = 0;
+    }
+    
+    // Calculate overall score with adjusted weights
+    const overallScore = Math.round(
+      (sleepScore * sleepWeight) + 
+      (heartRateScore * heartRateWeight) + 
+      (activityScore * activityWeight)
+    );
     
     // Generate recommendation
     let recommendation = '';
@@ -744,6 +959,17 @@ export const calculateRecoveryStatus = async (userId: string): Promise<RecoveryS
       recommendation = 'Your body is ready for moderate training.';
     } else {
       recommendation = 'You are well recovered for high-intensity training.';
+    }
+    
+    // Include data source information in recommendation if workout data is missing
+    if (!userData.workouts || userData.workouts.length === 0) {
+      const dataSource = userData.caloriesBurned && userData.caloriesBurned.length > 0 
+        ? "calorie burn" 
+        : userData.steps && userData.steps.length > 0 
+          ? "step count" 
+          : "heart rate and sleep data";
+      
+      recommendation += ` (Based on your ${dataSource})`;
     }
     
     return {

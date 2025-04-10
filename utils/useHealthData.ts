@@ -10,11 +10,20 @@ import {
   SleepSummary 
 } from '../types/WearableTypes';
 
+type DataAvailability = {
+  hasWorkouts: boolean;
+  hasSleepData: boolean;
+  hasHeartRateData: boolean;
+  hasStepData: boolean;
+  hasCalorieData: boolean;
+};
+
 type HealthDataState = {
   isLoading: boolean;
   healthData: UserHealthData | null;
   recoveryStatus: RecoveryStatus | null;
   recentSleepSummary: SleepSummary | null;
+  dataAvailability: DataAvailability;  // Add this line
   error: Error | null;
   refreshData: () => Promise<void>;
 };
@@ -26,6 +35,13 @@ const useHealthData = (): HealthDataState => {
   const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus | null>(null);
   const [recentSleepSummary, setRecentSleepSummary] = useState<SleepSummary | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [dataAvailability, setDataAvailability] = useState<DataAvailability>({
+    hasWorkouts: false,
+    hasSleepData: false,
+    hasHeartRateData: false,
+    hasStepData: false,
+    hasCalorieData: false
+  });
 
   const fetchHealthData = async () => {
     if (!user) {
@@ -41,7 +57,16 @@ const useHealthData = (): HealthDataState => {
       const data = await getUserHealthData(user.uid);
       setHealthData(data);
 
-      // Calculate recovery status
+      if (data) {
+        setDataAvailability({
+          hasWorkouts: Boolean(data.workouts?.length),
+          hasSleepData: Boolean(data.sleepData?.length),
+          hasHeartRateData: Boolean(data.heartRate?.length),
+          hasStepData: Boolean(data.steps?.length),
+          hasCalorieData: Boolean(data.caloriesBurned?.length)
+        });
+      }
+
       if (data) {
         const status = await calculateRecoveryStatus(user.uid);
         setRecoveryStatus(status);
@@ -119,6 +144,7 @@ const useHealthData = (): HealthDataState => {
     healthData,
     recoveryStatus,
     recentSleepSummary,
+    dataAvailability,
     error,
     refreshData: fetchHealthData,
   };

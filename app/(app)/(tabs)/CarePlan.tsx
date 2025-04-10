@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { generatePlan, generatePlanQuestions, parseWorkoutPlan } from "@/utils/OpenAi";
 import Markdown from "react-native-markdown-display";
-import { ColorsType, PlanType, StepType } from "@/types";
+import { ColorsType, FoodItem, PlanType, StepType } from "@/types";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -36,8 +36,9 @@ import { generateRecoveryPlan, generateRecoveryPlanQuestions } from '../../../ut
 import NutritionScannerScreen from '@/components/nutrition/NutritionScannerScreen';
 import WearableIntegrationScreen from '@/components/wearable/WearableIntegrationScreen';
 import useHealthData from '@/utils/useHealthData';
+import WorkoutPlanGenerator from '@/components/plans/WorkoutPlanGenerator';
+import { getUserWearableConnections } from "@/utils/wearableService";
 
-// Define primary color fallback
 const PRIMARY_COLOR = Colors.light ? Colors.light.primary : '#2196F3';
 
 const getRecoveryScoreFromPlan = (plan: string): number => {
@@ -67,8 +68,36 @@ const CarePlan: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [dietView, setDietView] = useState<'plan' | 'scanner'>('plan');
   const [showWearableSetup, setShowWearableSetup] = useState(false);
-  const { isLoading: isHealthDataLoading, healthData, recoveryStatus } = useHealthData();
   const { t } = useTranslation();
+  const [ scannedItems, setScannedItems ] = useState<FoodItem[]>([]);
+  const [showWorkoutGenerator, setShowWorkoutGenerator] = useState(false);
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const { isLoading: isHealthDataLoading, healthData, recoveryStatus, dataAvailability, error: healthDataError, refreshData } = useHealthData();
+  const didAttemptRefresh = React.useRef(false);
+  const previousDataState = React.useRef('');
+  const didInitialRefresh = React.useRef(false);
+
+
+
+  useEffect(() => {
+    // Only log when isLoading changes to avoid excessive logging
+    if (healthData && dataAvailability) {
+      const healthDataState = {
+        hasSteps: healthData.steps?.length > 0,
+        hasHeartRate: healthData.heartRate?.length > 0,
+        hasSleepData: healthData.sleepData?.length > 0,
+        hasWorkouts: healthData.workouts?.length > 0,
+      };
+      
+      // Stringify to compare with previous state
+      const stateString = JSON.stringify(healthDataState);
+      if (stateString !== previousDataState.current) {
+        previousDataState.current = stateString;
+      }
+    }
+  }, [healthData, dataAvailability, isHealthDataLoading]);
+  
+
 
   const handleGoalsSubmit = async () => {
     if (!goals.trim()) return;
@@ -164,7 +193,12 @@ const CarePlan: React.FC = () => {
 
   const handlePlanSelect = (type: PlanType) => {
     setPlanType(type);
-    setStep("questionnaire");
+    if (type === 'workout' && healthData && recoveryStatus) {
+      setStep("plan");
+      setGeneratedPlan("");
+    } else {
+      setStep("questionnaire");
+    }
   };
 
   const resetPlan = useCallback(() => {
@@ -214,14 +248,20 @@ const CarePlan: React.FC = () => {
       Alert.alert('Error', 'Plan type not specified');
       return;
     }
-  
-    try {
-      // If we're editing an existing plan
+    try{
+        // If we're editing an existing plan
+        const planData = {
+          name: name,
+          plan: generatedPlan,
+          audioCues: planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined,
+          scannedFoods: planType === 'diet' ? scannedItems : undefined
+        };
       if (currentPlanId) {
         await updatePlan(currentPlanId, {
           name: name,
           plan: generatedPlan,
-          audioCues: planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined
+          audioCues: planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined,
+          scannedFoods: planType === 'diet' ? scannedItems : undefined
         });
         Alert.alert('Success', 'Plan updated successfully');
       } else {
@@ -231,7 +271,8 @@ const CarePlan: React.FC = () => {
           planType,
           name,
           generatedPlan,
-          planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined
+          planType === 'workout' && workoutAudioCues ? workoutAudioCues : undefined,
+          planType === 'diet' ? scannedItems : undefined
         );
         setCurrentPlanId(savedPlanId);
         Alert.alert('Success', 'Plan saved successfully');
@@ -246,6 +287,122 @@ const CarePlan: React.FC = () => {
       }
     }
   };
+
+  const addJsonBlocksIfNeeded = (plan: string): string => {
+    // If plan already contains JSON blocks, return as is
+    if (plan.includes('```json')) {
+      return plan;
+    }
+    
+    // Otherwise, add basic JSON blocks for exercises
+    // Extract exercises from plan text using regex
+    const exerciseRegex = /- ([^:]+): (\d+) reps/g;
+    const exercises = [];
+    let match;
+    
+    while ((match = exerciseRegex.exec(plan)) !== null) {
+      exercises.push({
+        name: match[1].trim(),
+        sets: 3, // Default value
+        reps: parseInt(match[2]),
+        duration: 0,
+        rest: 60 // Default rest time
+      });
+    }
+    
+    // If no exercises found, create a placeholder
+    if (exercises.length === 0) {
+      exercises.push({
+        name: "Exercise",
+        sets: 3,
+        reps: 12,
+        duration: 0,
+        rest: 60
+      });
+    }
+    
+    // Create the JSON block
+    const jsonBlock = `\`\`\`json
+  {
+    "exercises": ${JSON.stringify(exercises, null, 2)}
+  }
+  \`\`\``;
+    
+    // Append to plan
+    return plan + '\n\n' + jsonBlock;
+  };
+
+  const handleWearableConnection = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Call refreshData directly instead of healthData.refreshData
+      if (typeof refreshData === 'function') {
+        await refreshData();
+        
+        // Show success message with recovery score if available
+        if (recoveryStatus) {
+          Alert.alert(
+            "Health Data Updated", 
+            `Your health data has been synced. Your current recovery score is ${recoveryStatus.score}/100.`
+          );
+        } else {
+          Alert.alert(
+            "Health Data Updated",
+            "Your health data has been synced successfully."
+          );
+        }
+        
+        // If we're in workout plan view, refresh the UI
+        if (planType === 'workout' && step === 'plan') {
+          setIsEditing(true); 
+          setIsEditing(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing health data:', error);
+      Alert.alert(
+        "Sync Failed",
+        "There was a problem updating your health data. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkWearableConnectionStatus = useCallback(async () => {
+    
+    if (!user?.uid) {
+      return false;
+    }
+    
+    try {
+      const connections = await getUserWearableConnections(user.uid);
+      const hasConnectedDevice = connections.some(c => c.isConnected);
+      if (hasConnectedDevice && !didInitialRefresh.current) {
+        didInitialRefresh.current = true;
+        
+        if (refreshData) {
+          setIsLoading(true);
+          await refreshData();
+          setIsLoading(false);
+        }
+      }
+      
+      return hasConnectedDevice;
+    } catch (error) {
+      console.error('Error checking wearable connection status:', error);
+      return false;
+    }
+  }, [user?.uid, refreshData]);
+
+  const didRunInitialCheck = React.useRef(false);
+  useEffect(() => {
+    if (planType === 'workout' && !didRunInitialCheck.current) {
+      checkWearableConnectionStatus();
+      didRunInitialCheck.current = true;
+    }
+  }, [planType]);
 
   const renderHeader = () => (
     <View
@@ -262,6 +419,7 @@ const CarePlan: React.FC = () => {
           onPress={() => {
             if (step === "plan") {
               setStep("questionnaire");
+              setShowWearableSetup(false);
             } else if (step === "questionnaire") {
               setStep("select");
             }
@@ -285,6 +443,16 @@ const CarePlan: React.FC = () => {
           {step === "plan" && "Your Personalized Plan"}
         </Text>
       <View style={styles.headerActions}>
+
+      {step === "plan" && planType === "workout" && recoveryStatus && !showWorkoutGenerator && (
+        <TouchableOpacity
+          onPress={() => setShowWorkoutGenerator(true)}
+          style={styles.customizeButton}
+        >
+          <MaterialCommunityIcons name="dumbbell" size={20} color="#007AFF" />
+          <Text style={styles.customizeButtonText}>Customize</Text>
+        </TouchableOpacity>
+      )}
 
       {step === "plan" && !showWearableSetup &&(
         <>
@@ -461,6 +629,61 @@ const CarePlan: React.FC = () => {
           </View>
         </View>
       </View>
+    </Modal>
+  );
+
+  const renderCustomizeModal = () => (
+    <Modal
+      visible={showCustomizeModal}
+      animationType="slide"
+      onRequestClose={() => setShowCustomizeModal(false)}
+    >
+      <SafeAreaView style={{flex: 1}}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: '#e9ecef'
+        }}>
+          <TouchableOpacity onPress={() => setShowCustomizeModal(false)}>
+            <AntDesign name="close" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={{
+            flex: 1,
+            textAlign: 'center',
+            fontSize: 18,
+            fontWeight: 'bold'
+          }}>
+            Customize Workout
+          </Text>
+          <View style={{width: 24}} />
+        </View>
+        
+        <WorkoutPlanGenerator
+          onGeneratePlan={(plan) => {
+            // When a plan is generated, add JSON blocks if needed
+            // and update the main plan
+            const enhancedPlan = addJsonBlocksIfNeeded(plan);
+            setGeneratedPlan(enhancedPlan);
+            
+            // Try to parse workout audio cues
+            try {
+              const audioCues = parseWorkoutPlan(enhancedPlan);
+              setWorkoutAudioCues(audioCues);
+            } catch (error) {
+              console.error('Error parsing workout plan:', error);
+            }
+            
+            // Mark the plan as edited so the save button appears
+            setIsEditing(true);
+            
+            // Close the modal
+            setShowCustomizeModal(false);
+          }}
+          isGenerating={isLoading}
+          refreshHealthData={refreshData}        />
+      </SafeAreaView>
     </Modal>
   );
 
@@ -768,156 +991,379 @@ const CarePlan: React.FC = () => {
       );
     }
 
-if (step === "plan") {
-  if (showWearableSetup) {
-    return <WearableIntegrationScreen />;
-  }
-  return (
-    <View style={{flex: 1, position: 'relative'}}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContainer,
-          { backgroundColor: currentColors.background },
-        ]}
-        style={{ marginBottom: 70 }} // Add space for the toolbar
-      >
-        <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
-          Your {planType === "workout" ? "Workout" : 
-            planType === "diet" ? "Diet" : 
-            planType === "meditation" ? "Meditation" : 
-            planType === "habit" ? "Habit Stacking":
-            "Recovery"} Plan
-        </Text>
-        
-        {/* Add Voice Guidance Player for workout plans */}
-        {planType === 'workout' && workoutAudioCues && (
-          <VoiceGuidancePlayer
-            exerciseCues={workoutAudioCues}
-            onComplete={() => {}}
+    if (step === "plan") {
+      if (showWearableSetup) {
+        return (
+          <WearableIntegrationScreen 
+            onGoBack={() => setShowWearableSetup(false)}
+            onDeviceConnected={async () => {
+              setIsLoading(true);
+              try {
+                if (refreshData) {
+                  await refreshData();
+                }
+                setShowWearableSetup(false);
+              } catch (error) {
+                console.error('Error refreshing data after connection:', error);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
           />
-        )}
-  
-        {planType === 'workout' ? (
-          <Markdown style={getMarkdownStyles(currentColors)}>
-            {formatWorkoutPlan(generatedPlan)}
-          </Markdown>
-        ) : (
-          <Markdown style={getMarkdownStyles(currentColors)}>
-            {generatedPlan}
-          </Markdown>
-        )}
+        );
+      }
+      
+      return (
+        <View style={{flex: 1, position: 'relative'}}>
+          {planType !== "diet" ? (
+            <ScrollView
+              contentContainerStyle={[
+                styles.scrollContainer,
+                { backgroundColor: currentColors.background },
+              ]}
+              style={{ marginBottom: 70 }} // Add space for the toolbar
+            >
+              <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
+                Your {planType === "workout" ? "Workout" : 
+                  planType === "meditation" ? "Meditation" : 
+                  planType === "habit" ? "Habit Stacking":
+                  "Recovery"} Plan
+              </Text>
+              
+              {planType === 'workout' ? (
+                <>
+                  {/* Connection Status Check */}
+                  {isHealthDataLoading ? (
+                    <View style={{
+                      backgroundColor: '#f5f5f5',
+                      padding: 16,
+                      borderRadius: 12,
+                      marginBottom: 16,
+                      alignItems: 'center'
+                    }}>
+                      <ActivityIndicator size="small" color="#1E3A8A" />
+                      <Text style={{marginTop: 8}}>Loading health data...</Text>
+                    </View>
+                  ) : (!dataAvailability?.hasHeartRateData && !dataAvailability?.hasWorkouts) ? (
+                    <View style={{
+                      backgroundColor: '#fff8e1',
+                      borderRadius: 12,
+                      padding: 16,
+                      marginBottom: 20,
+                      borderLeftWidth: 4,
+                      borderLeftColor: '#ffc107',
+                    }}>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+                        No Health Data Available
+                      </Text>
+                      <Text style={{ marginBottom: 12 }}>
+                        {(user?.connectedWearables || []).length > 0
+                          ? "Your wearable is connected, but no health data is available yet. This may take a moment to sync."
+                          : "Connect a wearable device to get personalized workout recommendations based on your recovery status."}
+                      </Text>
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: '#1E3A8A',
+                          padding: 10,
+                          borderRadius: 8,
+                          alignItems: 'center',
+                        }}
+                        onPress={() => {
+                          if ((user?.connectedWearables || []).length > 0 && refreshData) {
+                            // Try refreshing data first
+                            setIsLoading(true);
+                            refreshData().finally(() => {
+                              setIsLoading(false);
+                              // If still no data, show setup screen
+                              if (!dataAvailability?.hasHeartRateData) {
+                                setShowWearableSetup(true);
+                              }
+                            });
+                          } else {
+                            setShowWearableSetup(true);
+                          }
+                        }}
+                      >
+                        <Text style={{ color: 'white' }}>
+                          {(user?.connectedWearables || []).length > 0 ? "Refresh Health Data" : "Connect Wearable"}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : healthDataError ? (
+                    <View style={{
+                      backgroundColor: '#ffebee',
+                      borderRadius: 12,
+                      padding: 16,
+                      marginBottom: 20,
+                      borderLeftWidth: 4,
+                      borderLeftColor: '#f44336',
+                    }}>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+                        Health Data Error
+                      </Text>
+                      <Text style={{ marginBottom: 12 }}>
+                        {healthDataError.message || 'There was a problem retrieving your health data.'}
+                      </Text>
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: '#1E3A8A',
+                          padding: 10,
+                          borderRadius: 8,
+                          alignItems: 'center',
+                        }}
+                        onPress={() => {
+                          if (refreshData) {
+                            setIsLoading(true);
+                            refreshData().finally(() => setIsLoading(false));
+                          }
+                        }}
+                      >
+                        <Text style={{ color: 'white' }}>Retry</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
+                  {recoveryStatus ? (
+                    <View style={{
+                      backgroundColor: '#f0f5ff',
+                      padding: 16,
+                      borderRadius: 12,
+                      marginBottom: 16
+                    }}>
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                        <Text style={{fontSize: 18, fontWeight: 'bold'}}>Recovery Status: {recoveryStatus.score}/100</Text>
+                        <TouchableOpacity 
+                          style={{
+                            backgroundColor: '#1E3A8A',
+                            paddingVertical: 6,
+                            paddingHorizontal: 12,
+                            borderRadius: 8
+                          }}
+                          onPress={() => {
+                            setShowCustomizeModal(true);
+                          }}
+                        >
+                          <Text style={{color: 'white'}}>Customize</Text>
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <Text style={{marginTop: 8, color: '#666'}}>
+                        {recoveryStatus.recommendation}
+                      </Text>
+                      
+                      <View style={{
+                        marginTop: 12,
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        padding: 12,
+                        backgroundColor: 'white',
+                        borderRadius: 8
+                      }}>
+                        <Text>Recommended Intensity:</Text>
+                        <Text style={{fontWeight: 'bold'}}> 
+                          {recoveryStatus.score > 80 ? 'High' : 
+                          recoveryStatus.score > 60 ? 'Medium' : 'Low'}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={{
+                      backgroundColor: '#f0f5ff',
+                      padding: 16,
+                      borderRadius: 12,
+                      marginBottom: 16,
+                      borderLeftWidth: 4,
+                      borderLeftColor: '#1890ff',
+                    }}>
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                        <Text style={{fontSize: 18, fontWeight: 'bold'}}>Workout Customization</Text>
+                        <TouchableOpacity 
+                          style={{
+                            backgroundColor: '#1E3A8A',
+                            paddingVertical: 6,
+                            paddingHorizontal: 12,
+                            borderRadius: 8
+                          }}
+                          onPress={() => setShowCustomizeModal(true)}
+                        >
+                          <Text style={{color: 'white'}}>Customize</Text>
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <Text style={{marginTop: 8, color: '#666'}}>
+                        Create a custom workout plan tailored to your preferences.
+                      </Text>
+                      
+                      <Text style={{marginTop: 12, color: '#666', fontStyle: 'italic'}}>
+                        Note: For personalized recovery recommendations, connect a device that tracks heart rate data.
+                      </Text>
+                    </View>
+                  )}
 
-        {planType === 'recovery' && (
-          <RecoveryScoreCard 
-            score={getRecoveryScoreFromPlan(generatedPlan)} 
-            date={new Date()} 
-            colors={currentColors}
-          />
-        )}
+                  {dataAvailability && dataAvailability.hasStepData && !dataAvailability.hasHeartRateData && (
+                    <View style={{
+                      backgroundColor: '#e6f7ff',
+                      borderRadius: 12,
+                      padding: 16,
+                      marginBottom: 16,
+                      borderLeftWidth: 4,
+                      borderLeftColor: '#1890ff',
+                    }}>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+                        Basic Health Data Connected
+                      </Text>
+                      <Text>
+                        We're receiving step data from your device. For more personalized workout recommendations, 
+                        including heart rate and sleep data, you would need a compatible smartwatch or fitness tracker.
+                      </Text>
+                      {recoveryStatus ? (
+                        <Text style={{ marginTop: 8 }}>
+                          Your recovery score is calculated based on available data.
+                        </Text>
+                      ) : (
+                        <Text style={{ marginTop: 8 }}>
+                          Recovery status calculation requires more health metrics than are currently available.
+                        </Text>
+                      )}
+                    </View>
+                  )}
+    
+                  {showWorkoutGenerator ? (
+                    <WorkoutPlanGenerator
+                      onGeneratePlan={(plan) => {
+                        // When a plan is generated, add JSON blocks if needed
+                        // and update the main plan
+                        const enhancedPlan = addJsonBlocksIfNeeded(plan);
+                        setGeneratedPlan(enhancedPlan);
+                        try {
+                          const audioCues = parseWorkoutPlan(enhancedPlan);
+                          setWorkoutAudioCues(audioCues);
+                        } catch (error) {
+                        }
+                        
+                        // Mark the plan as edited so the save button appears
+                        setIsEditing(true);
+                        
+                        // Close the generator view
+                        setShowWorkoutGenerator(false);
+                      }}
+                      isGenerating={isLoading}
+                      refreshHealthData={refreshData}
+                    />
+                  ) : (
+                    <>
+                      {workoutAudioCues && (
+                        <VoiceGuidancePlayer
+                          exerciseCues={workoutAudioCues}
+                          onComplete={() => {}}
+                        />
+                      )}
+    
+                      <Markdown style={getMarkdownStyles(currentColors)}>
+                        {formatWorkoutPlan(generatedPlan)}
+                      </Markdown>
+                    </>
+                  )}
+                </>
+              ) : (
+                // Other plan types stay the same
+                <Markdown style={getMarkdownStyles(currentColors)}>
+                  {generatedPlan}
+                </Markdown>
+              )}
+    
+              {planType === 'recovery' && (
+                <RecoveryScoreCard 
+                  score={getRecoveryScoreFromPlan(generatedPlan)} 
+                  date={new Date()} 
+                  colors={currentColors}
+                />
+              )}
+                
+              <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
+                <AntDesign name="arrowleft" size={16} color="#000" />
+                <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
+              </TouchableOpacity>
+              
+              <View style={{ height: 30 }} />
+              {planType === 'recovery' && (
+                <View style={{ height: 30 }} />
+              )}
+            </ScrollView>
+          ) : (
+            <View style={{flex: 1, position: 'relative'}}>
+              <View style={styles.tabContainer}>
+                <TouchableOpacity 
+                  style={[
+                    styles.tabButton, 
+                    dietView === 'plan' && [styles.activeTab, { borderBottomColor: PRIMARY_COLOR }]
+                  ]}
+                  onPress={() => setDietView('plan')}
+                >
+                  <Text style={[
+                    styles.tabText, 
+                    dietView === 'plan' && { color: PRIMARY_COLOR, fontWeight: 'bold' }
+                  ]}>
+                    Diet Plan
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.tabButton, 
+                    dietView === 'scanner' && [styles.activeTab, { borderBottomColor: PRIMARY_COLOR }]
+                  ]}
+                  onPress={() => setDietView('scanner')}
+                >
+                  <Text style={[
+                    styles.tabText, 
+                    dietView === 'scanner' && { color: PRIMARY_COLOR, fontWeight: 'bold' }
+                  ]}>
+                    Nutrition Scanner
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              {dietView === 'plan' ? (
+                // Show the regular diet plan view
+                <ScrollView
+                  contentContainerStyle={[
+                    styles.scrollContainer,
+                    { backgroundColor: currentColors.background },
+                  ]}
+                  style={{ marginBottom: 70 }}
+                >
+                  <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
+                    Your Diet Plan
+                  </Text>
+                  <Markdown style={getMarkdownStyles(currentColors)}>
+                    {generatedPlan}
+                  </Markdown>
+                  
+                  <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
+                    <AntDesign name="arrowleft" size={16} color="#000" />
+                    <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
+                  </TouchableOpacity>
+                  
+                  <View style={{ height: 30 }} />
+                </ScrollView>
+              ) : (
+                <NutritionScannerScreen />
+              )}
+            </View>
+          )}
           
-        <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
-          <AntDesign name="arrowleft" size={16} color="#000" />
-          <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
-        </TouchableOpacity>
-        
-        {/* Add extra space at the bottom */}
-        <View style={{ height: 30 }} />
-        {planType === 'recovery' && (
-          <View style={{ height: 30 }} />
-        )}
-      </ScrollView>
-      
-      {/* Position the toolbar absolutely */}
-      <View style={styles.toolbarContainer}>
-        {planType && (
-          <PlanModifierToolbar
-            planType={planType}
-            currentPlan={generatedPlan}
-            onPlanChange={handlePlanModification}
-          />
-        )}
-      </View>
-    </View>
-  );
-}
-
-if (step === "plan" && planType === "diet") {
-  return (
-    <View style={{flex: 1, position: 'relative'}}>
-      {/* Add tabs to switch between plan and scanner */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[
-            styles.tabButton, 
-            dietView === 'plan' && [styles.activeTab, { borderBottomColor: PRIMARY_COLOR }]
-          ]}
-          onPress={() => setDietView('plan')}
-        >
-          <Text style={[
-            styles.tabText, 
-            dietView === 'plan' && { color: PRIMARY_COLOR, fontWeight: 'bold' }
-          ]}>
-            Diet Plan
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[
-            styles.tabButton, 
-            dietView === 'scanner' && [styles.activeTab, { borderBottomColor: PRIMARY_COLOR }]
-          ]}
-          onPress={() => setDietView('scanner')}
-        >
-          <Text style={[
-            styles.tabText, 
-            dietView === 'scanner' && { color: PRIMARY_COLOR, fontWeight: 'bold' }
-          ]}>
-            Nutrition Scanner
-          </Text>
-        </TouchableOpacity>
-      </View>
-      
-      {dietView === 'plan' ? (
-        // Show the regular diet plan view
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContainer,
-            { backgroundColor: currentColors.background },
-          ]}
-          style={{ marginBottom: 70 }}
-        >
-          <Text style={[styles.planTitle, { color: currentColors.textPrimary }]}>
-            Your Diet Plan
-          </Text>
-          
-          <Markdown style={getMarkdownStyles(currentColors)}>
-            {generatedPlan}
-          </Markdown>
-          
-          <TouchableOpacity style={styles.resetButton} onPress={resetPlan}>
-            <AntDesign name="arrowleft" size={16} color="#000" />
-            <Text style={styles.resetText}>{t('dietPlan.questionnaire.another')}</Text>
-          </TouchableOpacity>
-          
-          <View style={{ height: 30 }} />
-        </ScrollView>
-      ) : (
-        // Show the nutrition scanner
-        <NutritionScannerScreen />
-      )}
-      
-      {/* Keep the toolbar for the plan view */}
-      {dietView === 'plan' && (
-        <View style={styles.toolbarContainer}>
-          <PlanModifierToolbar
-            planType={planType}
-            currentPlan={generatedPlan}
-            onPlanChange={handlePlanModification}
-          />
+          {/* Position the toolbar absolutely */}
+          <View style={styles.toolbarContainer}>
+            {planType && (
+              <PlanModifierToolbar
+                planType={planType}
+                currentPlan={generatedPlan}
+                onPlanChange={handlePlanModification}
+              />
+            )}
+          </View>
         </View>
-      )}
-    </View>
-  );
-}
+      );
+    }
 
     return null;
   };
@@ -985,7 +1431,9 @@ if (step === "plan" && planType === "diet") {
       {renderHeader()}
       {renderContent()}
       {renderResetModal()}
-      
+      {renderCustomizeModal()}
+
+
       <SavedPlansModal
         isVisible={showSavedPlans}
         onClose={() => {
@@ -999,6 +1447,10 @@ if (step === "plan" && planType === "diet") {
           
           if (plan.type === 'workout' && plan.audioCues) {
             setWorkoutAudioCues(plan.audioCues);
+          }
+          if (plan.type === 'diet' && plan.scannedFoods) {
+            setScannedItems(plan.scannedFoods);
+            setDietView('scanner');
           }
           
           setStep('plan');
@@ -1024,6 +1476,45 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  recoveryPanel: {
+    backgroundColor: '#f0f8ff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007AFF',
+  },
+  recoveryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  customizeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f5ff',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  customizeButtonText: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginLeft: 4,
+  },
+  modifyButton: {
+    backgroundColor: '#596cab2b',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  modifyButtonText: {
+    color: '#007BFF',
+    fontWeight: '500',
   },
   saveButton: {
     marginRight: 10,

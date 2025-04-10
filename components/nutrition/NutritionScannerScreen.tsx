@@ -9,6 +9,9 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; 
 import FoodScanner from './FoodScanner';
@@ -23,19 +26,34 @@ import {
   logMeal, 
   getUserDietPlans
 } from '../../utils/nutritionService';
-import { useAuthContext } from '../../context/AuthContext'; // Updated import
+import { 
+  searchFoodByName,
+  createCustomFoodItem
+} from '../../utils/foodRecognitionService';
+import { useAuthContext } from '../../context/AuthContext';
 
 // Define a fallback color or access the correct structure
 const PRIMARY_COLOR = Colors.light ? Colors.light.primary : '#2196F3';
 
 const NutritionScannerScreen: React.FC = () => {
-  const { user } = useAuthContext(); // Using AuthContext instead of useAuth
+  const { user } = useAuthContext();
   const [isScannerVisible, setScannerVisible] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
   const [scannedItems, setScannedItems] = useState<FoodItem[]>([]);
   const [activeDietPlan, setActiveDietPlan] = useState<DietPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isManualAddModalVisible, setIsManualAddModalVisible] = useState(false);
+  const [searchResults, setSearchResults] = useState<FoodItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [customFood, setCustomFood] = useState({
+    name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    servingSize: ''
+  });
   
   // Calculate nutrition totals
   const nutritionTotals = scannedItems.reduce((acc, item) => {
@@ -87,6 +105,25 @@ const NutritionScannerScreen: React.FC = () => {
     loadDietPlan();
   }, [user]);
 
+  // Search for foods
+  useEffect(() => {
+    const searchFoods = async () => {
+      if (searchQuery.length > 2) {
+        try {
+          const results = await searchFoodByName(searchQuery);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Error searching foods:', error);
+          setSearchResults([]);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    };
+
+    searchFoods();
+  }, [searchQuery]);
+
   const handleFoodDetected = (food: FoodItem) => {
     setScannedItems(prev => [...prev, food]);
     setScannerVisible(false);
@@ -128,6 +165,34 @@ const NutritionScannerScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to save your meal. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Handle manual food addition
+  const handleManualFoodAdd = () => {
+    try {
+      const newFood = createCustomFoodItem({
+        name: customFood.name,
+        calories: parseFloat(customFood.calories) || 0,
+        protein: parseFloat(customFood.protein) || 0,
+        carbs: parseFloat(customFood.carbs) || 0,
+        fat: parseFloat(customFood.fat) || 0,
+        servingSize: customFood.servingSize || '1 serving'
+      });
+      
+      setScannedItems(prev => [...prev, newFood]);
+      setIsManualAddModalVisible(false);
+      // Reset custom food form
+      setCustomFood({
+        name: '',
+        calories: '',
+        protein: '',
+        carbs: '',
+        fat: '',
+        servingSize: ''
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Invalid food item details');
     }
   };
 
@@ -185,20 +250,29 @@ const NutritionScannerScreen: React.FC = () => {
         <View style={styles.foodListContainer}>
           <View style={styles.foodListHeader}>
             <Text style={styles.foodListTitle}>Food Items</Text>
-            <TouchableOpacity
-              style={[styles.scanButton, { backgroundColor: PRIMARY_COLOR }]}
-              onPress={() => setScannerVisible(true)}
-            >
-              <Ionicons name="camera-outline" size={20} color="#fff" />
-              <Text style={styles.scanButtonText}>Scan Food</Text>
-            </TouchableOpacity>
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={[styles.scanButton, { backgroundColor: PRIMARY_COLOR, marginRight: 8 }]}
+                onPress={() => setScannerVisible(true)}
+              >
+                <Ionicons name="camera-outline" size={20} color="#fff" />
+                <Text style={styles.scanButtonText}>Scan</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.scanButton, { backgroundColor: PRIMARY_COLOR }]}
+                onPress={() => setIsManualAddModalVisible(true)}
+              >
+                <Ionicons name="add-outline" size={20} color="#fff" />
+                <Text style={styles.scanButtonText}>Manual</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           
           {scannedItems.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="restaurant-outline" size={64} color="#ccc" />
               <Text style={styles.emptyText}>
-                No food items added yet. Scan a food item to begin.
+                No food items added yet. Scan or add a food item to begin.
               </Text>
             </View>
           ) : (
@@ -276,6 +350,86 @@ const NutritionScannerScreen: React.FC = () => {
           onFoodDetected={handleFoodDetected}
           onClose={() => setScannerVisible(false)}
         />
+      </Modal>
+
+      {/* Manual Food Add Modal */}
+      <Modal
+        visible={isManualAddModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsManualAddModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.manualAddModal}>
+            <Text style={styles.manualAddTitle}>Add Custom Food</Text>
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Food Name"
+              value={customFood.name}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, name: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Calories"
+              keyboardType="numeric"
+              value={customFood.calories}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, calories: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Protein (g)"
+              keyboardType="numeric"
+              value={customFood.protein}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, protein: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Carbs (g)"
+              keyboardType="numeric"
+              value={customFood.carbs}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, carbs: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Fat (g)"
+              keyboardType="numeric"
+              value={customFood.fat}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, fat: text}))}
+            />
+            
+            <TextInput
+              style={styles.manualAddInput}
+              placeholder="Serving Size (optional)"
+              value={customFood.servingSize}
+              onChangeText={(text) => setCustomFood(prev => ({...prev, servingSize: text}))}
+            />
+            
+            <View style={styles.manualAddButtons}>
+              <TouchableOpacity 
+                style={styles.manualAddCancelButton}
+                onPress={() => setIsManualAddModalVisible(false)}
+              >
+                <Text style={styles.manualAddCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.manualAddConfirmButton, { backgroundColor: PRIMARY_COLOR }]}
+                onPress={handleManualFoodAdd}
+                disabled={!customFood.name || !customFood.calories}
+              >
+                <Text style={styles.manualAddConfirmButtonText}>Add Food</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -450,6 +604,60 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  manualAddModal: {
+    backgroundColor: '#fff',
+    margin: 20,
+    borderRadius: 10,
+    padding: 20,
+  },
+  manualAddTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  manualAddInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  manualAddButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  manualAddCancelButton: {
+    flex: 1,
+    padding: 10,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  manualAddCancelButtonText: {
+    color: '#333',
+  },
+  manualAddConfirmButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  manualAddConfirmButtonText: {
+    color: '#fff',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
