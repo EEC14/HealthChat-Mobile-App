@@ -18,8 +18,6 @@ import {
   HealthMetric, 
   RecoveryStatus 
 } from '../types/WearableTypes';
-
-import GoogleFit, { Scopes } from 'react-native-google-fit';
 import HealthKit, { 
   HKQuantityTypeIdentifier, 
   HKCategoryTypeIdentifier,
@@ -48,21 +46,7 @@ const HEALTHKIT_WRITE_PERMISSIONS = [
   HKQuantityTypeIdentifier.activeEnergyBurned
 ];
 
-// Google Fit scopes
-const GOOGLEFIT_OPTIONS = {
-  scopes: [
-    Scopes.FITNESS_ACTIVITY_READ,
-    Scopes.FITNESS_BODY_READ,
-    Scopes.FITNESS_HEART_RATE_READ,
-    Scopes.FITNESS_SLEEP_READ
-  ]
-};
 
-// Define interface for GoogleFit authorization result
-interface GoogleFitAuthResult {
-  success: boolean;
-  message?: string;
-}
 
 const inspectHealthKitModule = () => {
   const workoutMethods = Object.keys(HealthKit).filter(
@@ -129,38 +113,6 @@ const initializeHealthKit = async (): Promise<boolean> => {
   }
 };
 
-// Define interface for GoogleFit authorization result
-interface GoogleFitAuthResult {
-  success: boolean;
-  message?: string;
-}
-
-// Initialize Google Fit with proper type handling
-const initializeGoogleFit = async (): Promise<boolean> => {
-  try {
-    // The return type is different across versions, so we need to handle it carefully
-    const authResult = await GoogleFit.authorize(GOOGLEFIT_OPTIONS);
-    
-    // Check if authResult has a success property
-    if (typeof authResult === 'object' && authResult !== null) {
-      const typedResult = authResult as GoogleFitAuthResult;
-      
-      if (!typedResult.success) {
-        const errorMsg = typedResult.message || 'Authorization failed';
-        console.error('Google Fit authorization failed:', errorMsg);
-        return false;
-      }
-      
-      return true;
-    }
-    
-    // If we can't determine success, assume failure
-    return false;
-  } catch (error) {
-    console.error('Error initializing Google Fit:', error);
-    throw error;
-  }
-};
 
 // Connect to wearable with proper type handling
 export const connectWearable = async (connection: Omit<WearableConnection, 'id' | 'lastSynced'>): Promise<string> => {
@@ -185,9 +137,6 @@ export const connectWearable = async (connection: Omit<WearableConnection, 'id' 
       // Standard permissions were granted, so we succeed
       permissionGranted = true;
     } 
-    else if (connection.type === 'googleFit' && Platform.OS === 'android') {
-      permissionGranted = await initializeGoogleFit();
-    }
     else {
       throw new Error(`${connection.type} is not supported on ${Platform.OS}`);
     }
@@ -434,187 +383,13 @@ const getAppleHealthData = async (): Promise<Partial<UserHealthData>> => {
   
   return healthData;
 };
-// Get data from Google Fit with proper type handling
-const getGoogleFitData = async (): Promise<Partial<UserHealthData>> => {
-  // Initialize health data
-  const healthData: Partial<UserHealthData> = {
-    steps: [],
-    heartRate: [],
-    sleepData: [],
-    caloriesBurned: [],
-    workouts: []
-  };
-  
-  // Time period (7 days)
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 7);
-  
-  // Format dates as strings in the format expected by GoogleFit
-  const timeOptions = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString()
-  };
-  
-  try {
-    // Start recording data with the correct callback parameter
-    GoogleFit.startRecording((callback: any) => {
-    }, ['step', 'distance', 'activity']);
-    
-    // Get steps data
-    let stepsData: any[] = [];
-    try {
-      const stepsResponse = await GoogleFit.getDailyStepCountSamples(timeOptions);
-      
-      if (Array.isArray(stepsResponse)) {
-        for (const source of stepsResponse) {
-          if (source.steps && source.steps.length > 0) {
-            stepsData = source.steps;
-            break;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error getting steps data:', error);
-    }
-    
-    healthData.steps = stepsData.map(item => ({
-      value: item.value,
-      timestamp: Timestamp.fromDate(new Date(item.date)),
-      source: 'GoogleFit'
-    }));
-    
-    // Get heart rate data
-    try {
-      const heartRateData = await GoogleFit.getHeartRateSamples(timeOptions);
-      
-      if (Array.isArray(heartRateData)) {
-        healthData.heartRate = heartRateData.map(item => ({
-          value: item.value,
-          timestamp: Timestamp.fromDate(new Date(item.endDate || item.startDate)),
-          source: 'GoogleFit'
-        }));
-      }
-    } catch (error) {
-      console.error('Error getting heart rate data:', error);
-    }
-    
-    // Get sleep data
-    try {
-      // Add the missing inLocalTimeZone parameter
-      const sleepData = await GoogleFit.getSleepSamples(timeOptions, false);
-      
-      if (Array.isArray(sleepData)) {
-        healthData.sleepData = sleepData.map(item => {
-          // Based on the SleepSampleResponse type, determine the sleep quality
-          // The actual property might be different based on the library version
-          let quality: 'deep' | 'light' | 'rem' | 'awake' = 'light'; // default
-          
-          // Check available properties and determine quality
-          if ('sleepState' in item) {
-            // Some versions use sleepState
-            const sleepState = (item as any).sleepState;
-            if (sleepState === 1) quality = 'awake';
-            else if (sleepState === 2) quality = 'light';
-            else if (sleepState === 3 || sleepState === 4) quality = 'deep';
-            else if (sleepState === 5) quality = 'rem';
-          } else if ('stage' in item) {
-            // Some versions use stage
-            const stage = (item as any).stage;
-            if (stage === 1) quality = 'awake';
-            else if (stage === 2) quality = 'light';
-            else if (stage === 3 || stage === 4) quality = 'deep';
-            else if (stage === 5) quality = 'rem';
-          }
-          
-          return {
-            startTime: Timestamp.fromDate(new Date(item.startDate)),
-            endTime: Timestamp.fromDate(new Date(item.endDate)),
-            quality,
-            duration: Math.round((new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) / 60000)
-          };
-        });
-      }
-    } catch (error) {
-      console.error('Error getting sleep data:', error);
-    }
-    
-    // Get workout data
-    try {
-      const workoutData = await GoogleFit.getActivitySamples(timeOptions);
-      
-      if (Array.isArray(workoutData)) {
-        healthData.workouts = workoutData.map(item => {
-          // Map activity types
-          let activityName = 'Unknown';
-          
-          // According to the GoogleFit API documentation, the property should be 'activityName' or 'activity'
-          if (item.activityName) {
-            activityName = item.activityName;
-          } else if ('activityType' in item) {
-            // Some versions might use activityType
-            const activityType = (item as any).activityType;
-            switch (activityType) {
-              case 7: // Walking
-                activityName = 'Walking';
-                break;
-              case 8: // Running
-                activityName = 'Running';
-                break;
-              case 1: // Biking
-                activityName = 'Biking';
-                break;
-              default:
-                activityName = `Activity ${activityType}`;
-            }
-          }
-          
-          return {
-            type: activityName,
-            startTime: Timestamp.fromDate(new Date(item.start)),
-            endTime: Timestamp.fromDate(new Date(item.end)),
-            calories: item.calories || 0,
-            heartRateAvg: undefined,
-            heartRateMax: undefined,
-            distance: item.distance
-          };
-        });
-      }
-    } catch (error) {
-      console.error('Error getting workout data:', error);
-    }
-    
-    // Get calories data
-    try {
-      const caloriesData = await GoogleFit.getDailyCalorieSamples(timeOptions);
-      
-      if (Array.isArray(caloriesData)) {
-        healthData.caloriesBurned = caloriesData.map(item => ({
-          // CalorieResponse has 'calorie' property, not 'value'
-          value: item.calorie || 0,
-          // It has startDate and endDate, not 'date'
-          timestamp: Timestamp.fromDate(new Date(item.endDate || item.startDate)),
-          source: 'GoogleFit'
-        }));
-      }
-    } catch (error) {
-      console.error('Error getting calories data:', error);
-    }
-    
-  } catch (error) {
-    console.error('Error fetching Google Fit data:', error);
-  }
-  
-  return healthData;
-};
+
 
 // Check if health services are available with proper type handling
 export const checkHealthServicesAvailability = async (): Promise<{
   appleHealth: boolean;
-  googleFit: boolean;
 }> => {
   let appleHealth = false;
-  let googleFit = false;
   
   if (Platform.OS === 'ios') {
     try {
@@ -623,22 +398,9 @@ export const checkHealthServicesAvailability = async (): Promise<{
       console.error('Error checking HealthKit availability:', error);
     }
   }
-  
-  if (Platform.OS === 'android') {
-    try {
-      // For Google Fit, just try to authorize and check success
-      const authResult = await GoogleFit.authorize(GOOGLEFIT_OPTIONS);
-      if (typeof authResult === 'object' && authResult !== null && 'success' in authResult) {
-        googleFit = authResult.success;
-      }
-    } catch (error) {
-      console.error('Error checking Google Fit availability:', error);
-    }
-  }
 
   return {
-    appleHealth,
-    googleFit
+    appleHealth
   };
 };
 
@@ -669,10 +431,6 @@ export const syncHealthData = async (userId: string, wearableType: string): Prom
       const appleHealthData = await getAppleHealthData();
       healthData = { ...appleHealthData, userId };
     } 
-    else if ((normalizedType === 'googlefit' || normalizedType === 'google fit') && Platform.OS === 'android') {
-      const googleFitData = await getGoogleFitData();
-      healthData = { ...googleFitData, userId };
-    }
     else {
       throw new Error(`${wearableType} is not supported on ${Platform.OS}`);
     }

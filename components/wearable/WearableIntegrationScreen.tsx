@@ -107,11 +107,6 @@ const WearableIntegrationScreen: React.FC<WearableIntegrationScreenProps> = ({
         return;
       }
   
-      if (type === 'googleFit' && Platform.OS !== 'android') {
-        Alert.alert('Not Supported', 'Google Fit is only available on Android devices.');
-        setIsLoading(false);
-        return;
-      }
       if (!privacySettings.shareHealthData) {
         const consentGiven = await requestHealthDataConsent();
         if (!consentGiven) {
@@ -205,8 +200,6 @@ const WearableIntegrationScreen: React.FC<WearableIntegrationScreenProps> = ({
   const getDefaultPermissionsForType = (type: WearableType): string[] => {
     switch (type) {
       case 'appleHealth':
-        return ['steps', 'heart_rate', 'sleep', 'calories'];
-      case 'googleFit':
         return ['steps', 'heart_rate', 'sleep', 'calories'];
       default:
         return ['steps'];
@@ -354,28 +347,6 @@ const WearableIntegrationScreen: React.FC<WearableIntegrationScreenProps> = ({
           </View>
           <View style={styles.statusContainer}>
             {connections.some(c => c.type === 'appleHealth' && c.isConnected) ? (
-              <View style={styles.connectedBadge}>
-                <Text style={styles.connectedText}>Connected</Text>
-              </View>
-            ) : (
-              <Ionicons name="add-circle" size={24} color={PRIMARY_COLOR} />
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.deviceCard}
-          onPress={() => handleConnectWearable('googleFit')}
-        >
-          <Ionicons name="fitness" size={24} color={PRIMARY_COLOR} />
-          <View style={styles.deviceInfo}>
-            <Text style={styles.deviceName}>Google Fit</Text>
-            <Text style={styles.deviceDescription}>
-              Physical activity, heart rate, and more
-            </Text>
-          </View>
-          <View style={styles.statusContainer}>
-            {connections.some(c => c.type === 'googleFit' && c.isConnected) ? (
               <View style={styles.connectedBadge}>
                 <Text style={styles.connectedText}>Connected</Text>
               </View>
