@@ -2,7 +2,7 @@
   "expo": {
     "name": "HealthChat",
     "slug": "HealthChat",
-    "version": "1.0.22",
+    "version": "1.0.23",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
@@ -16,10 +16,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.healthchatdev.HealthChat",
-
       "entitlements": {
         "com.apple.developer.healthkit": true,
-        "com.apple.developer.healthkit.access": ["health-records"]
+        "com.apple.developer.healthkit.access": [
+          "health-records",
+          "health-records"
+        ]
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -75,10 +80,13 @@
         }
       ],
       "expo-font",
-      ["@kingstinct/react-native-healthkit", {
-        "NSHealthShareUsageDescription": "This app requires access to read your health data to track fitness and provide personalized insights",
-        "NSHealthUpdateUsageDescription": "This app requires permission to save health data to provide complete fitness tracking"
-      }]
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "This app requires access to read your health data to track fitness and provide personalized insights",
+          "NSHealthUpdateUsageDescription": "This app requires permission to save health data to provide complete fitness tracking"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

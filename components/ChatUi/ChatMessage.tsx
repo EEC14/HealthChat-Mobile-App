@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Platform } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Platform, Animated } from "react-native";
 import * as Speech from 'expo-speech';
 import { useAuthContext } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -8,7 +8,8 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { Message, SpecializationType } from "@/types";
 import { characters } from "@/utils/OpenAi";
 import Markdown from 'react-native-markdown-display';
-
+import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome5 } from "@expo/vector-icons";
 interface ChatMessageProps {
   message: Message;
   onReply: (message: Message) => void;
@@ -129,6 +130,25 @@ const SPECIALIST_VOICES = {
   },
 };
 
+const specialistIcons = {
+  [SpecializationType.DEFAULT]: "robot",
+  [SpecializationType.GENERAL]: "user-md",
+  [SpecializationType.ORTHOPEDIC]: "bone",
+  [SpecializationType.PHYSIOTHERAPY]: "running",
+  [SpecializationType.PSYCHOLOGY]: "brain",
+  [SpecializationType.CARDIOLOGY]: "heartbeat",
+  [SpecializationType.DERMATOLOGY]: "allergies",
+  [SpecializationType.DENTISTRY]: "tooth",
+  [SpecializationType.GYNECOLOGY]: "venus",
+  [SpecializationType.PEDIATRICS]: "baby",
+  [SpecializationType.OPHTHALMOLOGY]: "eye",
+  [SpecializationType.OTOLARYNGOLOGY]: "ear",
+  [SpecializationType.NEUROLOGY]: "brain",
+  [SpecializationType.GASTROENTEROLOGY]: "stomach",
+  [SpecializationType.ENDOCRINOLOGY]: "vial",
+  [SpecializationType.UROLOGY]: "kidneys",
+};
+
 const getBestVoiceForSpecialist = async (specialistType: SpecializationType) => {
   try {
     const voices = await Speech.getAvailableVoicesAsync();
@@ -203,6 +223,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply, motivationa
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const isBot = message.role === 'assistant';
+  const [actionVisible, setActionVisible] = useState(false);
+  const actionOpacity = useState(new Animated.Value(0))[0];
+
+  useEffect(() => {
+    if (actionVisible) {
+      Animated.timing(actionOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(actionOpacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [actionVisible]);
 
   const getCharacterName = (characterType?: SpecializationType) => {
     if (!characterType && !message.character) return "";
@@ -215,6 +253,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply, motivationa
     if (!isBot) return profilePictures["user"];
     const characterName = getCharacterName();    
     return profilePictures[characterName] || profilePictures["Health Assistant"];
+  };
+
+  const getSpecialistIcon = () => {
+    if (!message.character) return "robot";
+    return specialistIcons[message.character] || "user-md";
   };
   
   useEffect(() => {
@@ -260,42 +303,74 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onReply, motivationa
     }
   };
 
-const renderReplyPreview = () => {
-  if (!message.replyTo) return null;
-  const replyMessage = message.replyTo as Message;
-  
-  return (
-    <View style={replyStyles.replyContainer}>
-      <View style={replyStyles.replyLine} />
-      <Text style={replyStyles.replyText} numberOfLines={1}>
-        {replyMessage.role === 'user' ? 'You' : getCharacterName(replyMessage.character)}
-        : {replyMessage.content}
-      </Text>
-    </View>
-  );
-};
+  const renderReplyPreview = () => {
+    if (!message.replyTo) return null;
+    const replyMessage = message.replyTo as Message;
+    
+    return (
+      <View style={styles.replyPreviewContainer}>
+        <View style={styles.replyPreviewLine} />
+        <Text style={styles.replyPreviewText} numberOfLines={1}>
+          {replyMessage.role === 'user' ? 'You' : getCharacterName(replyMessage.character)}
+          : {replyMessage.content.substring(0, 60)}
+          {replyMessage.content.length > 60 ? '...' : ''}
+        </Text>
+      </View>
+    );
+  };
 
-  return (
-    <TouchableOpacity 
-    onLongPress={() => onReply(message)}
+  const toggleAction = () => {
+    setActionVisible(!actionVisible);
+  };
+
+return (
+  <TouchableOpacity 
+    activeOpacity={0.8}
+    onLongPress={toggleAction}
     delayLongPress={200}
-    >
+    onPress={() => actionVisible && setActionVisible(false)}
+  >
     <View style={[
       styles.messageContainer,
-      isBot ? styles.botMessage : styles.userMessage,
+      isBot ? styles.botMessageContainer : styles.userMessageContainer,
       message.isPartial && styles.partialMessage,
-      motivationalMode && styles.motivationalMessage
     ]}>
-        {!motivationalMode && (
-          <Image 
-            source={getProfilePicture()} 
-            style={styles.profilePicture} 
-          />
-        )}
+      {!motivationalMode && isBot && (
+        <View style={styles.avatarContainer}>
+          {theme === 'dark' ? (
+            <LinearGradient
+              colors={['#2C2C7E', '#1C1C5E']}
+              style={styles.avatarGradient}
+            >
+              <FontAwesome5 name={getSpecialistIcon()} size={16} color="#FFF" />
+            </LinearGradient>
+          ) : (
+            <Image 
+              source={getProfilePicture()} 
+              style={styles.profilePicture} 
+            />
+          )}
+        </View>
+      )}
+      
+      {!motivationalMode && !isBot && (
+        <View style={styles.avatarContainer}>
+          <LinearGradient
+            colors={theme === 'dark' ? ['#4A4A7C', '#35355E'] : ['#E0E0FF', '#C0C0FF']}
+            style={styles.avatarGradient}
+          >
+            <FontAwesome5 name="user" size={16} color={theme === 'dark' ? "#FFF" : "#5050A0"} />
+          </LinearGradient>
+        </View>
+      )}
+
       <View style={[
-        styles.textContainer,
-        isBot ? styles.botContainer : styles.userContainer,
-        motivationalMode && styles.motivationalTextContainer
+        styles.contentContainer,
+        isBot ? 
+          theme === 'dark' ? styles.botContentDark : styles.botContentLight
+          : 
+          theme === 'dark' ? styles.userContentDark : styles.userContentLight,
+        motivationalMode && styles.motivationalContent
       ]}>
         {/* Character name for bot messages */}
         {isBot && (
@@ -303,19 +378,90 @@ const renderReplyPreview = () => {
             {getCharacterName()}
           </Text>
         )}
+        
+        {/* Reply preview if applicable */}
         {renderReplyPreview()}
-        {/* Message text */}
+        
+        {/* Message content */}
         <Markdown style={{
-          body: styles.text,
-          link: { color: '#3498db' }, // Blue color for links
-          strong: { fontWeight: 'bold' }
+          body: {
+            color: isBot ? 
+              theme === 'dark' ? '#FFFFFF' : '#333333' 
+              : 
+              '#FFFFFF',
+            fontSize: 16,
+            lineHeight: 22,
+          },
+          paragraph: {
+            marginVertical: 8,
+          },
+          link: { 
+            color: isBot ? '#4DA3FF' : '#B3DAFF',
+            textDecorationLine: 'none',
+          },
+          strong: { 
+            fontWeight: 'bold',
+          },
+          heading1: {
+            fontSize: 22,
+            fontWeight: 'bold',
+            marginTop: 16,
+            marginBottom: 8,
+          },
+          heading2: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            marginTop: 14,
+            marginBottom: 7,
+          },
+          heading3: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            marginTop: 12,
+            marginBottom: 6,
+          },
+          heading4: {
+            fontSize: 16,
+            fontWeight: 'bold',
+            marginTop: 10,
+            marginBottom: 5,
+          },
+          heading5: {
+            fontSize: 14,
+            fontWeight: 'bold',
+            marginTop: 8,
+            marginBottom: 4,
+          },
+          heading6: {
+            fontSize: 12,
+            fontWeight: 'bold',
+            marginTop: 6,
+            marginBottom: 3,
+          },
+          list_item: {
+            marginVertical: 4,
+            flexDirection: 'row',
+          },
+          bullet_list: {
+            marginVertical: 8,
+          },
+          ordered_list: {
+            marginVertical: 8,
+          },
         }}>
           {message.content}
         </Markdown>
 
-        {/* Bottom row with timestamp and speaker */}
-        <View style={styles.bottomRow}>
-          <Text style={styles.timestamp}>
+        {/* Message footer with timestamp and actions */}
+        <View style={styles.messageFooter}>
+          <Text style={[
+            styles.timestamp,
+            { color: isBot ? 
+              theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'
+              : 
+              'rgba(255,255,255,0.7)'
+            }
+          ]}>
             {message.timestamp?.toLocaleTimeString([], { 
               hour: '2-digit', 
               minute: '2-digit' 
@@ -325,128 +471,197 @@ const renderReplyPreview = () => {
           {isBot && (
             <TouchableOpacity 
               onPress={handleSpeak}
-              style={styles.speakerButton}
+              style={styles.actionButton}
             >
               <AntDesign 
-                name={isSpeaking ? "pausecircle" : "sound"} 
-                size={16} 
-                color={isBot ? currentColors.textPrimary : "white"} 
+                name={isSpeaking ? "pausecircleo" : "sound"} 
+                size={18} 
+                color={isBot ? 
+                  theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'
+                  : 
+                  'rgba(255,255,255,0.8)'
+                } 
               />
             </TouchableOpacity>
           )}
         </View>
       </View>
     </View>
-    </TouchableOpacity>
-  );
+
+    {/* Hidden action buttons that appear on long press */}
+    <Animated.View style={[
+      styles.actionPanel,
+      { 
+        opacity: actionOpacity,
+        transform: [{ 
+          translateY: actionOpacity.interpolate({
+            inputRange: [0, 1],
+            outputRange: [10, 0]
+          })
+        }]
+      },
+      isBot ? styles.botActionPanel : styles.userActionPanel
+    ]}>
+      <TouchableOpacity 
+        style={styles.actionPanelButton}
+        onPress={() => {
+          onReply(message);
+          setActionVisible(false);
+        }}
+      >
+        <AntDesign name="retweet" size={16} color="#FFF" />
+        <Text style={styles.actionPanelText}>Reply</Text>
+      </TouchableOpacity>
+      
+      {isBot && (
+        <TouchableOpacity 
+          style={styles.actionPanelButton}
+          onPress={() => {
+            handleSpeak();
+            setActionVisible(false);
+          }}
+        >
+          <AntDesign name={isSpeaking ? "pausecircleo" : "sound"} size={16} color="#FFF" />
+          <Text style={styles.actionPanelText}>{isSpeaking ? "Pause" : "Speak"}</Text>
+        </TouchableOpacity>
+      )}
+    </Animated.View>
+  </TouchableOpacity>
+);
 };
 
-
 const styles = StyleSheet.create({
-  messageContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginVertical: 5,
-  },
-  botMessage: {
-    alignSelf: "flex-start",
-  },
-  userMessage: {
-    alignSelf: "flex-end",
-    flexDirection: "row-reverse",
-  },
-  profilePicture: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginHorizontal: 10,
-  },
-  textContainer: {
-    maxWidth: "80%",
-    padding: 10,
-    borderRadius: 10,
-  },
-  text: {
-    fontSize: 16,
-    color: "#FFFFFF"
-  },
-  botText: {
-    color: "#000000",
-  },
-  userText: {
-    color: "#000000",
-  },
-  videoContainer: {
-    backgroundColor: "#000000",
-    borderRadius: 8,
-    overflow: "hidden",
-    marginTop: 5,
-  },
-  video: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#000000",
-  },
-  botContainer: {
-    backgroundColor: '#2C2C2E',
-  },
-  userContainer: {
-    backgroundColor: '#007AFF',
-  },
-  characterName: {
-    color: '#868686',
-    fontSize: 12,
-    marginBottom: 4,
-    fontWeight: '500',
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  timestamp: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
-  },
-  speakerButton: {
-    padding: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  partialMessage: {
-    opacity: 0.8
-  },
-  motivationalMessage: {
-    marginLeft: 10,
-  },
-  motivationalTextContainer: {
-    maxWidth: "90%",
-  }
+messageContainer: {
+  flexDirection: 'row',
+  marginVertical: 8,
+  paddingHorizontal: 6,
+},
+botMessageContainer: {
+  alignSelf: 'flex-start',
+  maxWidth: '90%',
+},
+userMessageContainer: {
+  alignSelf: 'flex-end',
+  maxWidth: '90%',
+  flexDirection: 'row-reverse',
+},
+avatarContainer: {
+  width: 36,
+  height: 36,
+  marginHorizontal: 8,
+  alignSelf: 'flex-start',
+  borderRadius: 18,
+  overflow: 'hidden',
+},
+avatarGradient: {
+  width: '100%',
+  height: '100%',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+profilePicture: {
+  width: '100%',
+  height: '100%',
+  borderRadius: 18,
+},
+contentContainer: {
+  borderRadius: 18,
+  paddingHorizontal: 16,
+  paddingVertical: 12,
+  maxWidth: '85%',
+},
+botContentDark: {
+  backgroundColor: 'rgba(50, 50, 60, 0.9)',
+},
+botContentLight: {
+  backgroundColor: '#F0F2F5',
+},
+userContentDark: {
+  backgroundColor: '#0A84FF',
+},
+userContentLight: {
+  backgroundColor: '#0A84FF',
+},
+motivationalContent: {
+  maxWidth: '90%',
+  borderRadius: 20,
+},
+characterName: {
+  color: '#7D7D9C',
+  fontSize: 13,
+  fontWeight: '600',
+  marginBottom: 4,
+},
+replyPreviewContainer: {
+  backgroundColor: 'rgba(150, 150, 180, 0.15)',
+  borderRadius: 12,
+  padding: 8,
+  marginBottom: 8,
+  borderLeftWidth: 2,
+  borderLeftColor: '#0A84FF',
+},
+replyPreviewLine: {
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  bottom: 0,
+  width: 2,
+  backgroundColor: '#0A84FF',
+},
+replyPreviewText: {
+  fontSize: 13,
+  opacity: 0.8,
+  marginLeft: 6,
+},
+messageFooter: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  alignItems: 'center',
+  marginTop: 6,
+},
+timestamp: {
+  fontSize: 11,
+  marginRight: 6,
+},
+actionButton: {
+  padding: 4,
+  borderRadius: 12,
+},
+partialMessage: {
+  opacity: 0.7,
+},
+actionPanel: {
+  position: 'absolute',
+  bottom: -34,
+  flexDirection: 'row',
+  borderRadius: 12,
+  paddingVertical: 6,
+  paddingHorizontal: 10,
+  backgroundColor: 'rgba(50, 50, 60, 0.9)',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.15,
+  shadowRadius: 6,
+  elevation: 3,
+  zIndex: 100,
+},
+botActionPanel: {
+  left: 50,
+},
+userActionPanel: {
+  right: 10,
+},
+actionPanelButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 8,
+},
+actionPanelText: {
+  color: '#FFF',
+  fontSize: 12,
+  fontWeight: '500',
+  marginLeft: 4,
+},
 });
-const replyStyles = StyleSheet.create({
-  replyContainer: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  replyText: {
-    color: '#868686',
-    fontSize: 14,
-  },
-  replyLine: {
-    position: 'absolute',
-    left: -2,
-    top: 0,
-    bottom: 0,
-    width: 2,
-    backgroundColor: '#007AFF',
-  },
-  partialMessage: {
-    opacity: 0.8
-  }
-});
-
 
 export default ChatMessage;
