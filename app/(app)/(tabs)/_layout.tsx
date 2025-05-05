@@ -81,7 +81,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="CarePlan"
+          name="WellnessHub"
           options={{
             title: "Care Plans",
             tabBarLabel: "Care Plans",
@@ -116,7 +116,7 @@ function renderTabIcon(name: string, color: string, size: number) {
       );
     case "Subscription":
       return <FontAwesome6 name="crown" size={size} color={color} />;
-    case "CarePlan":
+    case "WellnessHub":
       return (
         <MaterialCommunityIcons name="dumbbell" size={size} color={color} />
       );
