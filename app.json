@@ -2,7 +2,7 @@
   "expo": {
     "name": "HealthChat",
     "slug": "HealthChat",
-    "version": "1.0.23",
+    "version": "1.0.25",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
