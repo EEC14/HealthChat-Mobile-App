@@ -13,6 +13,7 @@ import {
 import { useAuthContext } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useRouter } from "expo-router";
 
 // Component imports
 import { RecoveryScoreCard } from '@/components/Recovery/RecoveryScoreCard';
@@ -36,6 +37,7 @@ const WellnessHub = () => {
   const { theme } = useTheme();
   const currentColors = Colors[theme];
   const PRIMARY_COLOR = Colors.light ? Colors.light.primary : '#2196F3';
+  const router = useRouter();
   
   // View states
   const [currentView, setCurrentView] = useState('home');
@@ -979,7 +981,7 @@ const WellnessHub = () => {
         <TouchableOpacity
           style={styles.upgradeButton}
           onPress={() => {
-            // Navigate to subscription screen
+            router.push('/(app)/(tabs)/Subscription');
           }}
         >
           <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
