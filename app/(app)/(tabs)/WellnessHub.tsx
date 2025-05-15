@@ -36,7 +36,7 @@ const WellnessHub = () => {
   const { user } = useAuthContext();
   const { theme } = useTheme();
   const currentColors = Colors[theme];
-  const PRIMARY_COLOR = Colors.light ? Colors.light.primary : '#2196F3';
+  const PRIMARY_COLOR = currentColors.primary;
   const router = useRouter();
   
   // View states
@@ -386,18 +386,38 @@ const WellnessHub = () => {
             colors={currentColors}
           />
         ) : (
-          <View style={styles.connectWearableCard}>
-            <Text style={styles.cardTitle}>Connect Your Wearable</Text>
-            <Text style={styles.cardDescription}>
-              Get personalized recovery scores and recommendations by connecting your fitness tracker.
-            </Text>
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={handleConnectWearable}
+          <View
+          style={[
+            styles.connectWearableCard,
+            { backgroundColor: currentColors.secondary },
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: currentColors.textPrimary }]}>
+            Connect Your Wearable
+          </Text>
+          <Text
+            style={[styles.cardDescription, { color: currentColors.textSecondary }]}
+          >
+            Get personalized recovery scores and recommendations by connecting your
+            fitness tracker.
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.primaryButton,
+              { backgroundColor: currentColors.primary },
+            ]}
+            onPress={handleConnectWearable}
+          >
+            <Text
+              style={[
+                styles.primaryButtonText,
+                { color: currentColors.background },
+              ]}
             >
-              <Text style={styles.primaryButtonText}>Connect Device</Text>
-            </TouchableOpacity>
-          </View>
+              Connect Device
+            </Text>
+          </TouchableOpacity>
+        </View>
         )}
         
         {/* Create Plan Options */}
@@ -781,7 +801,15 @@ const WellnessHub = () => {
   };
   
   const renderHeader = () => (
-    <View style={styles.header}>
+    <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: currentColors.surface,
+            borderBottomColor: currentColors.border,
+          },
+        ]}
+      >
       {currentView !== 'home' && (
         <TouchableOpacity 
           onPress={() => {
@@ -842,7 +870,7 @@ const WellnessHub = () => {
         </TouchableOpacity>
       )}
       
-      <Text style={styles.headerTitle}>
+      <Text style={[styles.headerTitle, { color: currentColors.textPrimary }]}>
         {currentView === 'home' ? 'Wellness Hub' :
          currentView === 'questionnaire' ? 'Create Plan' : 'Your Plan'}
       </Text>
@@ -992,7 +1020,7 @@ const WellnessHub = () => {
   }
   
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
       {renderHeader()}
       
       {currentView === 'home' && renderHome()}

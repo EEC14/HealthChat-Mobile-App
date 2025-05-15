@@ -222,726 +222,341 @@ const Subscription: React.FC = () => {
     }
   };
 
-  return (
-    <>
-      <View>
-        <ExternalLinkHandler
-          visible={webviewVisible}
-          url={webviewUrl}
-          onClose={closeWebview}
-        />
+// … your existing imports and function definitions stay exactly the same :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+
+// … your existing imports/hooks/functions remain unchanged
+return (
+  <>
+    {/* keep your webview/modal wrapper */}
+    <ExternalLinkHandler
+      visible={webviewVisible}
+      url={webviewUrl}
+      onClose={closeWebview}
+    />
+
+    <ScrollView
+      style={[styles.container, { backgroundColor: currentColors.background }]}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      {/* ── ACCOUNT INFO ── */}
+      <View style={[styles.card, { backgroundColor: currentColors.surface }]}>
+        <Text style={[styles.cardTitle, { color: currentColors.textSecondary }]}>
+          {t('layout.accountModel.account')}
+        </Text>
+        <View style={styles.infoRow}>
+          <AntDesign name="user" size={20} color={currentColors.iconDefault} />
+          <Text style={[styles.infoText, { color: currentColors.textPrimary }]}>
+            {user?.email ?? '—'}
+          </Text>
+        </View>
       </View>
-      <ScrollView
-        style={{
-          padding: 16,
-          flex: 1,
-          backgroundColor: currentColors.background,
-        }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "flex-start",
-            gap: 20,
-            paddingBottom: 100,
-          }}
+
+      {/* ── SUBSCRIPTION STATUS vs UPGRADE ── */}
+      {user?.isPro || user?.isDeluxe ? (
+        <MotiView
+          from={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring' }}
+          style={[
+            styles.card,
+            styles.centered,
+            { backgroundColor: currentColors.surface },
+          ]}
         >
-          <View style={{ gap: 4 }}>
-            <Text
-              style={{
-                fontWeight: "900",
-                fontSize: 16,
-                color: currentColors.textPrimary,
-              }}
-            >
-              Account:
+          <Animated.View style={[styles.crown, animatedCrownStyle]}>
+            <FontAwesome6 name="crown" size={48} color={currentColors.primary} />
+          </Animated.View>
+          <Text style={[styles.statusTitle, { color: currentColors.textPrimary }]}>
+            {`You're a ${user.isPro ? 'Pro' : 'Deluxe'} Member`}
+          </Text>
+          {(user.subscriptionSource === 'referral_trial' ||
+            user.subscriptionSource === 'referral_reward') && (
+            <Text style={[styles.statusSubtitle, { color: currentColors.textSecondary }]}>
+              {user.subscriptionSource === 'referral_trial'
+                ? formatTrialTimeRemaining(user.deluxeExpiresAt!)
+                : formatTrialTimeRemaining(user.proExpiresAt!)}
             </Text>
-            <View
-              style={[
-                styles.infoBox,
-                { backgroundColor: currentColors.surface },
-              ]}
-            >
-              <AntDesign
-                name="user"
-                size={16}
-                color={currentColors.iconDefault}
-              />
-              <Text
-                style={[styles.emailText, { color: currentColors.textPrimary }]}
-              >
-                {user?.email}
-              </Text>
-            </View>
-          </View>
-          {user?.isPro || user?.isDeluxe ? (
-          <MotiView
-            from={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring" }}
-            style={{ alignItems: "center", gap: 30 }}
-          >
-            <View style={{ alignItems: "center", gap: 2 }}>
-              <Animated.View style={animatedCrownStyle}>
-                <FontAwesome6 name="crown" size={64} color="gold" />
-              </Animated.View>
-              <MotiText
-                from={{ translateY: 20, opacity: 0 }}
-                animate={{ translateY: 0, opacity: 1 }}
-                transition={{ delay: 200 }}
-                style={{
-                  fontSize: 24,
-                  fontWeight: "bold",
-                  color: currentColors.textPrimary,
-                  marginTop: 10,
-                }}
-              >
-                You're a {user.isPro ? "Pro" : "Deluxe"} Member!
-              </MotiText>
-              
-              {/* Add trial information if applicable */}
-              {user.subscriptionSource === 'referral_trial' && user.deluxeExpiresAt && (
-                <MotiText
-                  from={{ translateY: 20, opacity: 0 }}
-                  animate={{ translateY: 0, opacity: 1 }}
-                  transition={{ delay: 250 }}
-                  style={{ 
-                    color: currentColors.textSecondary,
-                    fontSize: 16,
-                    marginTop: 5
-                  }}
-                >
-                  Trial - {formatTrialTimeRemaining(user.deluxeExpiresAt)}
-                </MotiText>
-              )}
-              
-              {user.subscriptionSource === 'referral_reward' && (
-                <>
-                  {user.isPro && user.proExpiresAt && (
-                    <MotiText
-                      from={{ translateY: 20, opacity: 0 }}
-                      animate={{ translateY: 0, opacity: 1 }}
-                      transition={{ delay: 250 }}
-                      style={{
-                        color: currentColors.textSecondary,
-                        fontSize: 16,
-                        marginTop: 5
-                      }}
-                    >
-                      Referral Reward - {formatTrialTimeRemaining(user.proExpiresAt)}
-                    </MotiText>
-                  )}
-                  {user.isDeluxe && user.deluxeExpiresAt && (
-                    <MotiText
-                      from={{ translateY: 20, opacity: 0 }}
-                      animate={{ translateY: 0, opacity: 1 }}
-                      transition={{ delay: 250 }}
-                      style={{
-                        color: currentColors.textSecondary,
-                        fontSize: 16,
-                        marginTop: 5
-                      }}
-                    >
-                      Referral Reward - {formatTrialTimeRemaining(user.deluxeExpiresAt)}
-                    </MotiText>
-                  )}
-                </>
-              )}
-              
-              <MotiText
-                from={{ translateY: 20, opacity: 0 }}
-                animate={{ translateY: 0, opacity: 1 }}
-                transition={{ delay: 300 }}
-                style={{ color: currentColors.textSecondary }}
-              >
-                {t('layout.accountModel.enjoy')} {user.isPro ? "Pro" : "Deluxe"}{" "}
-                features
-              </MotiText>
-            </View>
-
-              <View
-                style={{
-                  backgroundColor: currentColors.surface,
-                  borderRadius: 20,
-                  padding: 20,
-                  width: "100%",
-                  gap: 30,
-                }}
-              >
-                <View style={{ gap: 4, alignItems: "center" }}>
-                  <AntDesign
-                    name="setting"
-                    size={56}
-                    color={currentColors.textPrimary}
-                  />
-                  <View>
-                    <Text
-                      className="text-lg font-semibold text-center"
-                      style={{ color: currentColors.textPrimary }}
-                    >
-                      {t('layout.accountModel.manage')}
-                    </Text>
-                    <Text
-                      className="text-sm text-center"
-                      style={{ color: currentColors.textSecondary }}
-                    >
-                      {t('layout.accountModel.modifyPlan')}
-                    </Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  disabled={loading}
-                  onPress={handleManageBilling}
-                  className="flex-row items-center justify-center gap-2 py-4 bg-[#1E3A8A] rounded-lg"
-                >
-                  <Text className="text-lg font-medium text-white ">
-                    {loading ? "Loading" : "Go to Dashboard"}
-                  </Text>
-                  {loading ? (
-                    <ActivityIndicator
-                      animating={loading}
-                      size="small"
-                      color="#fff"
-                    />
-                  ) : (
-                    <AntDesign name="arrowright" size={24} color="white" />
-                  )}
-                </TouchableOpacity>
-              </View>
-              {user?.subscriptionSource === 'referral_trial' && user?.deluxeExpiresAt && (
-              <View 
-                style={{
-                  backgroundColor: currentColors.primary + '10',
-                  borderColor: currentColors.primary + '30',
-                  borderWidth: 1,
-                  borderRadius: 10,
-                  padding: 16,
-                  marginTop: 20,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                  <AntDesign name="clockcircle" size={20} color={currentColors.primary} style={{ marginRight: 8 }} />
-                  <Text style={{ fontWeight: 'bold', fontSize: 16, color: currentColors.textPrimary }}>
-                    Your Deluxe Trial
-                  </Text>
-                </View>
-                <Text style={{ color: currentColors.textSecondary, marginBottom: 10 }}>
-                  Your trial ends in {formatTrialTimeRemaining(user.deluxeExpiresAt)}. Subscribe now to keep enjoying Deluxe features!
-                </Text>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: currentColors.primary,
-                    paddingVertical: 10,
-                    paddingHorizontal: 16,
-                    borderRadius: 8,
-                    alignSelf: 'flex-start',
-                  }}
-                  onPress={() => handleSubscribe('deluxe')}
-                >
-                  <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                    Upgrade to Deluxe
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            </MotiView>
-          ) : (
-            <View style={{ alignSelf: "stretch" }}>
-              {/* Lottie Animation */}
-              <View
-                style={{
-                  alignItems: "center",
-                  position: "absolute",
-                  height: "120%",
-                  width: "100%",
-                  top: -240,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  justifyContent: "center",
-                  backgroundColor: "transparent",
-                  zIndex: -1,
-                }}
-              >
-                <AnimatedLottieView
-                  ref={lottieRef}
-                  source={require("@/assets/subscription-animation.json")}
-                  autoPlay={true}
-                  loop={false}
-                  style={{ width: 300, height: 1000 }}
-                />
-              </View>
-              <MotiText
-                from={{ opacity: 0, translateY: -20 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                style={{
-                  fontSize: 28,
-                  fontWeight: "bold",
-                  textAlign: "center",
-                  color: currentColors.textPrimary,
-                  marginBottom: 2,
-                }}
-              >
-                {t('layout.accountModel.upgrade')}
-              </MotiText>
-              <MotiText
-                from={{ opacity: 0, translateY: -20 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                style={{
-                  fontSize: 14,
-                  textAlign: "center",
-                  color: currentColors.textSecondary,
-                  marginBottom: 20,
-                }}
-              >
-                {t('layout.accountModel.choosePlan')}
-              </MotiText>
-              {/* Plan Selection */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  marginBottom: 20,
-                }}
-              >
-                {Object.keys(Plans).map((plan) => (
-                  <Pressable
-                    key={plan}
-                    onPress={() => handlePlanSelect(plan as "pro" | "deluxe" | "ProYearly" | "DeluxeYearly")}
-                    style={{
-                      paddingHorizontal: 10,
-                      paddingVertical: 10,
-                      marginHorizontal: 5,
-                      borderRadius: 20,
-                      backgroundColor:
-                        selectedPlan === plan
-                          ? "#1E3A8A"
-                          : currentColors.surface,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          selectedPlan === plan
-                            ? "white"
-                            : currentColors.textPrimary,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {plan}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              {/* Subscription Details */}
-              <MotiView
-                from={{ opacity: 0, translateY: 20 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ delay: 300 }}
-                style={{
-                  alignSelf: "stretch",
-                  backgroundColor: currentColors.surface,
-                  borderRadius: 20,
-                  padding: 20,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    marginBottom: 15,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 36,
-                      fontWeight: "bold",
-                      color: currentColors.textPrimary,
-                    }}
-                  >
-                    ${Plans[selectedPlan].price}
-                  </Text>
-                  <Text
-                    style={{
-                      alignSelf: "flex-end",
-                      color: currentColors.textPrimary,
-                      marginLeft: 5,
-                    }}
-                  >
-                    /month or year
-                  </Text>
-                </View>
-
-                {Plans[selectedPlan].features.map((feature, index) => (
-                  <MotiView
-                    key={index}
-                    from={{ opacity: 0, translateX: -20 }}
-                    animate={{ opacity: 1, translateX: 0 }}
-                    transition={{ delay: 400 + index * 100 }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <MaterialIcons
-                      name="check"
-                      size={24}
-                      color={currentColors.textPrimary}
-                      style={{ marginRight: 10 }}
-                    />
-                    <Text style={{ color: currentColors.textPrimary }}>
-                      {feature}
-                    </Text>
-                  </MotiView>
-                ))}
-
-                {user ? (
-                  <TouchableOpacity
-                    onPress={() => handleSubscribe()}
-                    style={{
-                      backgroundColor: "#1E3A8A",
-                      borderRadius: 25,
-                      paddingVertical: 15,
-                      alignItems: "center",
-                      marginTop: 15,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: 18,
-                      }}
-                    >
-                      {loading ? "Processing..." : "Subscribe Now"}
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <Link
-                    href="/(app)/(auth)/Signin"
-                    style={{
-                      backgroundColor: currentColors.background,
-                      padding: 15,
-                      borderRadius: 15,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: currentColors.textPrimary,
-                        textAlign: "center",
-                      }}
-                    >
-                      {t('layout.profilePage.logModify')}
-                    </Text>
-                  </Link>
-                )}
-              </MotiView>
-            </View>
           )}
-          <View>
-            <TouchableOpacity
-                    disabled={loading}
-                    onPress={async () => {
-                      try {
-                        setLoading(true);
-                        await Purchases.restorePurchases();
-                        alert("Purchases restored successfully!");
-                      } catch (error) {
-                        console.error("Error restoring purchases:", error);
-                        alert("Failed to restore purchases. Please try again.");
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    className="flex-row items-center justify-center gap-2 py-4 bg-[#1E3A8A] rounded-lg"
-            >
-                    <Text className="text-lg font-medium text-white">
-                      {loading ? "Loading" : "Restore Purchases"}
-                    </Text>
-                    {loading ? (
-                      <ActivityIndicator
-                        animating={loading}
-                        size="small"
-                        color="#fff"
-                      />
-                    ) : (
-                      <AntDesign name="reload1" size={24} color="white" />
-                    )}                    
-            </TouchableOpacity>
-          </View>
-          <View style={{ gap: 4 }}>
-            <Text
-              style={{
-                fontWeight: "900",
-                fontSize: 16,
-                color: currentColors.textPrimary,
-              }}
-            >
-              {t('layout.accountModel.themeChoose')}
-            </Text>
-            <Pressable
-              onPress={toggleTheme}
-              style={[
-                styles.themeToggle,
-                { backgroundColor: currentColors.surface },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={
-                  theme === "light"
-                    ? "moon-waning-crescent"
-                    : "white-balance-sunny"
-                }
-                size={26}
-                color={
-                  theme === "light" ? currentColors.textPrimary : "#FFD700"
-                }
-              />
-              <Text
-                style={{
-                  color: currentColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: "600",
-                }}
-              >
-                {theme === "dark" ? "Dark Mode" : "Light Mode"}
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: currentColors.primary }]}
+            onPress={handleManageBilling}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={currentColors.background} />
+            ) : (
+              <Text style={[styles.actionText, { color: currentColors.background }]}>
+                {t('layout.accountModel.manage')}
               </Text>
-            </Pressable>
-          </View>  
-          <View style={{ gap: 4 }}>
-            <Text
-              style={{
-                fontWeight: "900",
-                fontSize: 16,
-                color: currentColors.textPrimary,
-              }}
-            >
-              {t('layout.accountModel.mailManage')}
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.infoBox,
-                { backgroundColor: currentColors.textPrimary },
-              ]}
-              onPress={handleProfileWeb}
-            >
-              <AntDesign
-                name="logout"
-                size={18}
-                color={currentColors.background}
-              />
-              <Text
-                style={[styles.logoutText, { color: currentColors.background }]}
-              >
-                {t('layout.accountModel.mailChange')}
-              </Text>
-            </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </MotiView>
+      ) : (
+        <MotiView
+          from={{ opacity: 0, translateY: 20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ delay: 200 }}
+          style={[styles.card, { backgroundColor: currentColors.surface }]}
+        >
+          <LottieView
+            ref={lottieRef}
+            source={require('@/assets/subscription-animation.json')}
+            autoPlay
+            loop={false}
+            style={styles.upgradeAnim}
+          />
+          <Text style={[styles.cardTitle, { color: currentColors.textPrimary, fontSize: 20 }]}>
+            {t('layout.accountModel.upgrade')}
+          </Text>
+          <Text style={[styles.cardSubtitle, { color: currentColors.textSecondary }]}>
+            {t('layout.accountModel.choosePlan')}
+          </Text>
+
+          {/* Plan Selector */}
+          <View style={styles.planTabs}>
+            {(Object.keys(Plans) as Array<keyof typeof Plans>).map((plan) => {
+              const isSelected = selectedPlan === plan;
+              return (
+                <Pressable
+                  key={plan}
+                  onPress={() => handlePlanSelect(plan as any)}
+                  style={[
+                    styles.planTab,
+                    {
+                      backgroundColor: isSelected
+                        ? currentColors.primary
+                        : currentColors.surface,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.planTabText,
+                      {
+                        color: isSelected
+                          ? currentColors.background
+                          : currentColors.textPrimary,
+                      },
+                    ]}
+                  >
+                    {Plans[plan].name}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-          <View style={{ gap: 4 }}>
-            <Text
-              style={{
-                fontWeight: "900",
-                fontSize: 16,
-                color: currentColors.textPrimary,
-              }}
-            >
-              {t('layout.accountModel.deleteAcc')}
-            </Text>
+
+          {/* Plan Details */}
+          <View style={[styles.card, { backgroundColor: currentColors.surface }]}>
+            <View style={styles.priceRow}>
+              <Text style={[styles.price, { color: currentColors.textPrimary }]}>
+                ${Plans[selectedPlan].price}
+              </Text>
+              <Text style={[styles.perPeriod, { color: currentColors.textSecondary }]}>
+                /month or year
+              </Text>
+            </View>
+            {Plans[selectedPlan].features.map((feature, i) => (
+              <View key={i} style={styles.featureRow}>
+                <MaterialIcons
+                  name="check"
+                  size={20}
+                  color={currentColors.primary}
+                  style={styles.featureIcon}
+                />
+                <Text style={[styles.featureText, { color: currentColors.textPrimary }]}>
+                  {feature}
+                </Text>
+              </View>
+            ))}
             <TouchableOpacity
-              style={[
-                styles.infoBox,
-                { backgroundColor: '#DC2626' }
-              ]}
-              onPress={handleDeleteAccount}
+              style={[styles.actionButton, { backgroundColor: currentColors.primary }]}
+              onPress={() => handleSubscribe(selectedPlan)}
               disabled={loading}
             >
-              <MaterialCommunityIcons
-                name="delete-alert"
-                size={18}
-                color="white"
-              />
-              <Text
-                style={[styles.logoutText, { color: 'white' }]}
-              >
-                {loading ? "Processing..." : "Delete Account"}
-              </Text>
+              {loading ? (
+                <ActivityIndicator size="small" color={currentColors.background} />
+              ) : (
+                <Text style={[styles.actionText, { color: currentColors.background }]}>
+                  {t('layout.accountModel.subscribe')}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
-          <View style={{ gap: 4 }}>
-            <Text
-              style={{
-                fontWeight: "900",
-                fontSize: 16,
-                color: currentColors.textPrimary,
-              }}
-            >
-              Log out:
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.infoBox,
-                { backgroundColor: currentColors.textPrimary },
-              ]}
-              onPress={logout}
-            >
-              <AntDesign
-                name="logout"
-                size={18}
-                color={currentColors.background}
-              />
-              <Text
-                style={[styles.logoutText, { color: currentColors.background }]}
-              >
-                Log Out
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ gap: 4 }}>
-            <TouchableOpacity
-              style={[
-                styles.infoBox,
-                { backgroundColor: currentColors.textPrimary },
-              ]}
-              onPress={openTerms}
-            >
-              <Text
-                style={[styles.logoutText, { color: currentColors.background }]}
-              >
-                Terms of service
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ gap: 4 }}>
-            <TouchableOpacity
-              style={[
-                styles.infoBox,
-                { backgroundColor: currentColors.textPrimary },
-              ]}
-              onPress={openPrivacy}
-            >
-              <Text
-                style={[styles.logoutText, { color: currentColors.background }]}
-              >
-                Privacy Policy
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </>
-  );
+        </MotiView>
+      )}
+
+      {/* ── UTILITY ACTIONS ── */}
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity
+          style={[styles.actionRow, { backgroundColor: currentColors.surface }]}
+          onPress={async () => {
+            setLoading(true);
+            try { await Purchases.restorePurchases(); alert('Restored'); }
+            catch { alert('Restore failed'); }
+            finally { setLoading(false); }
+          }}
+          disabled={loading}
+        >
+          <AntDesign name="reload1" size={20} color={currentColors.iconDefault} />
+          <Text style={[styles.actionRowText, { color: currentColors.textPrimary }]}>
+            Restore
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionRow, { backgroundColor: currentColors.surface }]}
+          onPress={logout}
+        >
+          <AntDesign name="logout" size={20} color={currentColors.iconDefault} />
+          <Text style={[styles.actionRowText, { color: currentColors.textPrimary }]}>
+            Logout
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionRow, { backgroundColor: currentColors.surface }]}
+          onPress={openTerms}
+        >
+          <Text style={[styles.actionRowText, { color: currentColors.primary }]}>
+            Terms
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionRow, { backgroundColor: currentColors.surface }]}
+          onPress={openPrivacy}
+        >
+          <Text style={[styles.actionRowText, { color: currentColors.primary }]}>
+            Privacy Policy
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionRow, { backgroundColor: currentColors.surface }]}
+          onPress={handleProfileWeb}
+        >
+          <MaterialIcons name="mail" size={20} color={currentColors.iconDefault} />
+          <Text style={[styles.actionRowText, { color: currentColors.textPrimary }]}>
+            {t('layout.accountModel.mailChange')}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionRow, { backgroundColor: currentColors.warn }]}
+          onPress={handleDeleteAccount}
+          disabled={loading}
+        >
+          <MaterialCommunityIcons
+            name="delete-alert"
+            size={20}
+            color={currentColors.background}
+          />
+          <Text style={[styles.actionRowText, { color: currentColors.background }]}>
+            {t('layout.accountModel.deleteAcc')}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionRow, { backgroundColor: currentColors.surface }]}
+          onPress={toggleTheme}
+        >
+          <MaterialCommunityIcons
+            name={
+              theme === 'light'
+                ? 'moon-waning-crescent'
+                : 'white-balance-sunny'
+            }
+            size={20}
+            color={currentColors.iconDefault}
+          />
+          <Text style={[styles.actionRowText, { color: currentColors.textPrimary }]}>
+            {t('layout.accountModel.themeChoose')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  </>
+);
 };
-
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Overlay with transparency
-  },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 200,
-  },
-  modalText: {
-    color: "black",
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  closeText: {
-    color: "blue",
-    marginTop: 20,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    zIndex: 4,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  closeButton: {
-    padding: 8,
-  },
-  title: {
-    flex: 1,
-    marginHorizontal: 10,
-    fontSize: 16,
-    color: "#000",
-  },
-  loader: {
-    marginRight: 10,
-  },
-  webview: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-start",
-  },
-  loaderContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  infoBox: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 30,
-    paddingVertical: 20,
-    width: "100%",
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  emailText: {
-    fontSize: 18,
-    fontWeight: "900",
-  },
-  logoutButton: {
-    paddingVertical: 20,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    gap: 6,
-    flexDirection: "row-reverse",
+  container: { flex: 1 },
 
-    width: "100%",
-    alignItems: "center",
+  card: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  logoutText: {
-    fontWeight: "bold",
-    fontSize: 16,
+  cardTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  cardSubtitle: { fontSize: 14, marginBottom: 12 },
+
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  infoText: { fontSize: 16 },
+
+  centered: { alignItems: 'center', justifyContent: 'center' },
+  crown: { marginBottom: 12 },
+  statusTitle: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  statusSubtitle: { fontSize: 14 },
+
+  upgradeAnim: {
+    width: 150,
+    height: 150,
+    alignSelf: 'center',
+    marginBottom: 8,
   },
-  modelHeader: {
-    padding: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+
+  planTabs: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
   },
-  themeToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 20,
-    borderRadius: 10,
+  planTab: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginHorizontal: 4,
   },
+  planTabText: { fontSize: 14, fontWeight: '600' },
+
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 12,
+  },
+  price: { fontSize: 32, fontWeight: '700' },
+  perPeriod: { fontSize: 14, marginLeft: 4 },
+
+  featureRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  featureIcon: { marginRight: 8 },
+  featureText: { fontSize: 14 },
+
+  actionButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  actionText: { fontSize: 16, fontWeight: '600' },
+
+  actionsContainer: { marginTop: 24, marginHorizontal: 16 },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  actionRowText: { marginLeft: 8, fontSize: 16 },
+
 });
+
 export default Subscription;
